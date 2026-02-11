@@ -47,6 +47,9 @@ inspectionConfig.forEach(pt => {
 // ==========================================================================
 // 2. MODULE NAVIGATION
 // ==========================================================================
+// ==========================================================================
+// 2. MODULE NAVIGATION
+// ==========================================================================
 window.switchTab = function(id, btn) {
     // 1. Cacher toutes les vues
     document.querySelectorAll('.view').forEach(v => {
@@ -59,48 +62,45 @@ window.switchTab = function(id, btn) {
     if (target) {
         target.classList.add('active');
         target.style.display = 'block';
-}
+    }
 
     // 3. Gérer l'état visuel des boutons de navigation
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     if (btn) btn.classList.add('active');
 
-    // 4. Rafraîchissement intelligent (un seul appel par onglet)
-   // 4. Rafraîchissement intelligent
+    // 4. Rafraîchissement intelligent
     switch(id) {
         case 'pilotage':
-            window.updatePilotage();
+            if (window.updatePilotage) window.updatePilotage();
             break;
         case 'inventaire':
-            window.renderInventory();
+            if (window.renderInventory) window.renderInventory();
             break;
         case 'maintenance':
         case 'logistique':
-            window.renderMaintenance();
+            if (window.renderMaintenance) window.renderMaintenance();
             break;
         case 'finance':
-            // On appelle la fonction de calcul ET de mise à jour UI
             if (window.updateFinance) window.updateFinance();
             else if (window.updateFinanceUI) window.updateFinanceUI();
             break;
         case 'crm':
-            window.renderCRM();
+            if (window.renderCRM) window.renderCRM();
             break;
         case 'admin':
             if (window.updateAdmin) window.updateAdmin();
             break;
-        case 'dashboard': // C'est ici que l'Historique se déclenche !
+        case 'dashboard':
             if (window.updateHistory) window.updateHistory();
             break;
         case 'options':
-            window.renderConfigEditor();
+            if (window.renderConfigEditor) window.renderConfigEditor();
             break;
     }
 
     // 5. Relancer les icônes si Lucide est utilisé
     if (window.lucide) lucide.createIcons();
-};
-
+}; // <--- L'accolade était absente ou mal placée ici
 // ==========================================================================
 // 3. MODULE EXPERTISE & CALCULS
 // ==========================================================================
@@ -1603,14 +1603,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // ==========================================================================
-// 9. INITIALISATION
+// 9. INITIALISATION ET AUTHENTIFICATION
 // ==========================================================================
+
+// Utilisation de window. pour éviter l'erreur "Identifier has already been declared"
+window.SB_URL = 'https://rayyxgqgiwjytesoykgd.supabase.co';
+window.SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJheXl4Z3FnaXdqeXRlc295a2dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MjgxMTQsImV4cCI6MjA4NjQwNDExNH0.KTGP8Kj9ueLBzasriq4sHJyNDK6nSryvZjc6NCsWRSM';
+
+// Initialisation unique du client
+if (!window.oxClient) {
+    window.oxClient = supabase.createClient(window.SB_URL, window.SB_KEY);
+}
+
 window.initApp = function() {
-    window.renderExpertise();
-    window.updatePilotage();
-    // On s'assure que si on est sur l'onglet négo, les calculs sont faits
-    window.runCalculations(); 
-    window.switchTab('pilotage');
+    console.log("Démarrage de l'application OX PRO...");
+    if (window.renderExpertise) window.renderExpertise();
+    if (window.updatePilotage) window.updatePilotage();
+    if (window.runCalculations) window.runCalculations(); 
+    
+    // On lance la vue par défaut
+    window.switchTab('pilotage', document.querySelector('.nav-item.active'));
 };
 
-window.onload = window.initApp;
+// On s'assure que le DOM est chargé avant de lancer l'app
+document.addEventListener('DOMContentLoaded', () => {
+    window.initApp();
+    if (window.loadProfile) window.loadProfile();
+    if (window.updateProfileStats) window.updateProfileStats();
+});
