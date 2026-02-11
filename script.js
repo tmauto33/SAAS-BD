@@ -1634,11 +1634,22 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 window.handleLogout = async function() {
-    const confirmLogout = confirm("Voulez-vous vraiment vous déconnecter ?");
-    if (confirmLogout) {
-        await oxClient.auth.signOut();
-        localStorage.removeItem('ox_authenticated');
-        window.location.href = 'index.html';
+    if (confirm("Voulez-vous vraiment vous déconnecter ?")) {
+        try {
+            // Déconnexion de Supabase
+            await window.oxClient.auth.signOut();
+            
+            // Nettoyage du stockage local
+            localStorage.removeItem('ox_authenticated');
+            
+            // Retour à la page de connexion
+            window.location.href = 'index.html';
+        } catch (error) {
+            console.error("Erreur déconnexion:", error);
+            // Par sécurité, on redirige quand même
+            window.location.href = 'index.html';
+        }
     }
 };
+
 
