@@ -1,0 +1,303 @@
+/* --- VARIABLES OFFICIELLES --- */
+:root {
+    --sp-green: #1ed760;
+    --sp-black: #121212;
+    --sp-deep-black: #000000;
+    --sp-card-grey: #181818; 
+    --sp-text-white: #ffffff;
+    --sp-text-muted: #b3b3b3;
+    --sp-pink: #f8d7da; 
+    --neon-shadow: 0 0 20px rgba(30, 215, 96, 0.4);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--sp-deep-black);
+    color: var(--sp-text-white);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* --- HEADER --- */
+.v-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 8%;
+    background-color: #000;
+}
+
+.v-logo {
+    font-size: 1.5rem;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--sp-green);
+}
+
+.v-btn-login {
+    background-color: white;
+    color: black;
+    padding: 10px 25px;
+    border-radius: 500px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.v-btn-login:hover { transform: scale(1.05); }
+
+/* --- CONTENEUR PRINCIPAL --- */
+.v-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 60px 20px;
+    text-align: center;
+}
+
+h1 {
+    font-size: 3.5rem;
+    font-weight: 900;
+    margin-bottom: 20px;
+    letter-spacing: -1.5px;
+}
+
+.subtitle {
+    color: var(--sp-text-muted);
+    font-size: 1.2rem;
+    margin-bottom: 40px;
+}
+
+/* --- LOGOS PAIEMENT (FIXÉ) --- */
+.payment-methods {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 25px;
+    margin-bottom: 50px;
+}
+
+.payment-methods img {
+    height: 24px; /* Taille fixe pour éviter les logos géants */
+    width: auto;
+    filter: brightness(1.1);
+    opacity: 0.9;
+}
+
+/* --- GRILLE DE PRIX --- */
+.v-grid {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+}
+
+.v-card {
+    background-color: var(--sp-card-grey);
+    border-radius: 12px;
+    padding: 45px 35px;
+    width: 400px; /* Largeur confortable comme sur la photo */
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #282828;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* --- CARTE PRO AVEC EFFET NÉON --- */
+.v-card.pro {
+    border: 2px solid var(--sp-green);
+    box-shadow: var(--neon-shadow);
+}
+
+.v-card.pro:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 0 35px rgba(30, 215, 96, 0.6);
+}
+
+/* --- ÉLÉMENTS INTERNES DES CARTES --- */
+.v-badge {
+    background-color: var(--sp-pink);
+    color: #000;
+    font-weight: 800;
+    font-size: 0.8rem;
+    padding: 6px 14px;
+    border-radius: 5px;
+    margin-bottom: 25px;
+    width: fit-content;
+}
+
+.v-badge.pro {
+    background-color: #0d6efd;
+    color: white;
+}
+
+h2 {
+    font-size: 2.5rem;
+    font-weight: 900;
+    margin-bottom: 8px;
+}
+
+.price-sub {
+    color: var(--sp-text-muted);
+    font-size: 1rem;
+    margin-bottom: 25px;
+    display: block;
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid #333;
+    margin: 25px 0;
+}
+
+/* --- LISTES D'AVANTAGES --- */
+ul {
+    list-style: none;
+    margin-bottom: 40px;
+    flex-grow: 1;
+}
+
+ul li {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    font-size: 1.05rem;
+    color: #e0e0e0;
+}
+
+ul li i {
+    color: var(--sp-green);
+    margin-right: 15px;
+    width: 20px;
+}
+
+/* --- BOUTONS D'ACTION --- */
+.v-card button {
+    width: 100%;
+    padding: 16px;
+    border-radius: 500px;
+    border: none;
+    font-weight: 800;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: transform 0.2s, filter 0.2s;
+}
+
+.v-card:not(.pro) button { background-color: var(--sp-pink); color: #000; }
+.v-card.pro button { background-color: var(--sp-green); color: #000; }
+
+.v-card button:hover { 
+    transform: scale(1.04);
+    filter: brightness(1.1);
+}
+
+/* --- PAGE DE CONNEXION --- */
+#view-login {
+    display: none;
+    justify-content: center;
+    align-items: center;
+    min-height: 90vh;
+}
+
+.v-login-box {
+    background-color: #121212;
+    padding: 50px;
+    border-radius: 15px;
+    width: 100%;
+    max-width: 450px;
+    text-align: center;
+}
+
+.login-icon {
+    font-size: 3rem;
+    color: var(--sp-green);
+    margin-bottom: 20px;
+}
+
+.v-login-box h1 {
+    font-size: 2.2rem;
+    margin-bottom: 40px;
+    letter-spacing: -1px;
+}
+
+.form-group {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+}
+
+.v-login-box input {
+    width: 100%;
+    padding: 15px;
+    background-color: #2a2a2a;
+    border: 1px solid #727272;
+    border-radius: 5px;
+    color: white;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.v-login-box input:focus {
+    border-color: white;
+    outline: none;
+}
+
+.v-btn-auth {
+    width: 100%;
+    padding: 15px;
+    background-color: var(--sp-green);
+    color: black;
+    border-radius: 500px;
+    border: none;
+    font-weight: 800;
+    font-size: 1.1rem;
+    cursor: pointer;
+    margin-top: 15px;
+}
+
+.social-divider {
+    margin: 30px 0;
+    color: #727272;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.social-divider::before, .social-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #333;
+}
+
+.social-btn {
+    width: 100%;
+    padding: 13px;
+    background: transparent;
+    border: 1px solid #727272;
+    color: white;
+    border-radius: 500px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.social-btn:hover { background: rgba(255,255,255,0.05); }

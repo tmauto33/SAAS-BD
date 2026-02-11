@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OptimizeX PRO</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+</main>
+    </div> <script src="script.js"></script>
+</body>
+  
+    <div class="app-container">
+    <aside class="sidebar">
+        <div class="logo"><i data-lucide="zap"></i> OX<span>PRO</span></div>
+        <nav>
+              <button class="nav-item active" onclick="switchTab('pilotage',this)">
+    <i data-lucide="layout-grid"></i> <span>Pilotage</span>
+</button>
+<button class="nav-item" onclick="switchTab('analyse', this)">
+    <i data-lucide="search"></i> <span>Analyse</span>
+</button>
+             
+                <button class="nav-item" onclick="switchTab('expertise', this)"><i data-lucide="clipboard-check"></i> <span>Expertise</span></button>
+                <button class="nav-item" onclick="switchTab('nego', this)"><i data-lucide="trending-down"></i> <span>Négo</span></button>
+                <button class="nav-item" onclick="switchTab('annonce', this)"><i data-lucide="megaphone"></i> <span>Annonce</span></button>
+              <button class="nav-item" onclick="switchTab('inventaire', this)">
+    <i data-lucide="car"></i> <span>Inventaire</span></button>
+              <button class="nav-item" onclick="switchTab('maintenance', this)">
+    <i data-lucide="wrench"></i> <span>Logistique</span></button>
+              <button class="nav-item" onclick="switchTab('crm', this)">
+    <i data-lucide="users"></i> <span>CRM Clients</span></button>
+              <button class="nav-item" onclick="switchTab('finance', this)">
+    <i data-lucide="landmark"></i> <span>Trésorerie</span></button>
+              <button class="nav-item" onclick="switchTab('admin', this)">
+    <i data-lucide="file-text"></i> <span>Admin & Légal</span></button>
+              
+              <button class="nav-item" onclick="switchTab('dashboard', this)"><i data-lucide="database"></i> <span>Historique</span></button>  
+              <button class="nav-item" onclick="switchTab('options', this)"><i data-lucide="settings"></i> <span>Options</span></button>
+                <button class="nav-item" onclick="switchTab('profil', this)"><i data-lucide="user-circle"></i> <span>Profil</span></button>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+          
+         <section id="pilotage" class="view active">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 25px;">
+        <div>
+            <h1 style="margin:0;">Tableau de <span>Bord</span></h1>
+            <p style="color:#666; font-size:0.9rem;" id="dash-welcome">Bienvenue dans votre gestionnaire</p>
+        </div>
+        <div id="dash-date" style="text-align:right; font-weight:bold; color:var(--accent);"></div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 25px;">
+        
+        <div class="card" style="position:relative; overflow:hidden;">
+            <div style="color:#666; font-size:0.75rem; font-weight:800; text-transform:uppercase;">Trésorerie Actuelle</div>
+            <h2 style="font-size:1.8rem; margin:10px 0;" id="kpi-cash">0 €</h2>
+            <div style="font-size:0.7rem; color:#22c55e;">+ 12.5% vs mois dernier</div>
+            <div style="position:absolute; right:-10px; bottom:-10px; opacity:0.05;"><i data-lucide="wallet" style="width:80px; height:80px;"></i></div>
+        </div>
+
+        <div class="card" style="position:relative; overflow:hidden;">
+            <div style="color:#666; font-size:0.75rem; font-weight:800; text-transform:uppercase;">Volume Stock</div>
+            <h2 style="font-size:1.8rem; margin:10px 0;" id="kpi-stock-count">0</h2>
+            <div style="font-size:0.7rem; color:#666;" id="kpi-stock-value">Valeur : 0 €</div>
+            <div style="position:absolute; right:-10px; bottom:-10px; opacity:0.05;"><i data-lucide="car" style="width:80px; height:80px;"></i></div>
+        </div>
+
+        <div class="card" style="position:relative; overflow:hidden; border-left: 4px solid var(--accent);">
+            <div style="color:#666; font-size:0.75rem; font-weight:800; text-transform:uppercase;">Marge Réalisée (Mois)</div>
+            <h2 style="font-size:1.8rem; margin:10px 0; color:var(--accent);" id="kpi-marge">0 €</h2>
+            <div style="width:100%; height:4px; background:#111; border-radius:2px; margin-top:10px;">
+                <div id="dash-progress-bar" style="width:0%; height:100%; background:var(--accent); transition:0.5s;"></div>
+            </div>
+        </div>
+
+        <div class="card" style="position:relative; overflow:hidden;">
+            <div style="color:#666; font-size:0.75rem; font-weight:800; text-transform:uppercase;">Rotation Moyenne</div>
+            <h2 style="font-size:1.8rem; margin:10px 0;" id="kpi-rotation">0j</h2>
+            <div style="font-size:0.7rem; color:#f97316;">Attention : 2 véhicules stagnent</div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 25px;">
+        
+        <div class="card" style="min-height:300px;">
+            <h3>Evolution des Ventes</h3>
+            <div id="dash-chart-container" style="height:220px; margin-top:20px; display:flex; align-items:flex-end; gap:10px; padding-bottom:20px; border-bottom:1px solid #222;">
+                </div>
+            <div style="display:flex; justify-content:space-between; margin-top:10px; color:#444; font-size:0.7rem;">
+                <span>Lun</span><span>Mar</span><span>Mer</span><span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span>
+            </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:20px;">
+            <div class="card" style="background:var(--accent); color:white;">
+                <h3 style="margin-bottom:15px;">Action Rapide</h3>
+                <button class="btn-orange" style="background:white; color:black; width:100%; margin-bottom:10px;" onclick="switchTab('inventaire')">AJOUTER UN VÉHICULE</button>
+                <button class="btn-orange" style="background:rgba(0,0,0,0.2); color:white; width:100%; border:1px solid rgba(255,255,255,0.3);" onclick="switchTab('crm')">NOUVEAU CLIENT</button>
+            </div>
+
+            <div class="card">
+                <h3>Alertes Stock</h3>
+                <div id="dash-alerts" style="margin-top:10px; font-size:0.8rem; color:#666;">
+                    Aucune alerte en cours.
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+            
+            <section id="analyse" class="view">
+                <h1>Dossier <span>Analyse</span></h1>
+                <button class="btn-orange" onclick="lookupVehicle()" style="width: auto; padding: 10px 20px; margin-bottom: 25px; background: var(--accent);">VÉHICULE TEST</button>
+                
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <h3><i data-lucide="car"></i> Identification</h3>
+                        <input type="text" id="plate" placeholder="AA-123-AA" class="plate-style">
+                        <input type="text" id="model-name" placeholder="Marque & Modèle">
+                        <input type="text" id="motorisation" placeholder="Motorisation (ex: 2.0 TDI 150)">
+                        <input type="text" id="finition" placeholder="Finition (ex: S-Line)">
+                        <input type="number" id="km" placeholder="Kilométrage" oninput="runCalculations()">
+                    </div>
+
+                    <div class="card">
+                        <h3><i data-lucide="calculator"></i> Finance</h3>
+                        <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">PRIX D'ANNONCE (€)</label>
+                        <input type="number" id="ad-price" oninput="runCalculations()" placeholder="Prix affiché">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">VALEUR MARCHÉ (€)</label>
+                        <input type="number" id="market-val" oninput="runCalculations()" placeholder="Prix de revente">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">PRIX D'ACHAT CIBLE (€)</label>
+                        <input type="number" id="target-price" oninput="runCalculations()" placeholder="Prix payé au vendeur">
+                        <input type="number" id="fees-admin" value="0" oninput="runCalculations()" hidden>
+                        <div id="roi-badge" style="font-weight: 800; color: var(--accent); margin-top: 10px;">ROI : <span id="roi-val">0</span>%</div>
+                    </div>
+
+                    <div class="card">
+                        <h3><i data-lucide="user"></i> Contact</h3>
+                        <input type="text" id="v-name" placeholder="Nom du vendeur">
+                        <input type="text" id="v-phone" placeholder="Téléphone">
+                        <select id="v-profile">
+                            <option value="">-- Profil Vendeur --</option>
+                            <option value="Particulier">Particulier</option>
+                            <option value="Professionnel">Professionnel</option>
+                            <option value="Pressé">Vendeur Pressé</option>
+                            <option value="Succession">Succession</option>
+                        </select>
+                        <select id="buy-status" onchange="runCalculations()" style="margin-top: 10px; width: 100%; padding: 8px; border-radius: 6px;">
+    <option value="En attente">⏳ En attente</option>
+    <option value="ACHETÉ">✅ ACHETÉ (En Stock)</option>
+    <option value="REFUSÉ">❌ REFUSÉ</option>
+</select>
+                        <button class="btn-orange" onclick="saveCurrentDeal()" style="margin-top: 10px;">💾 SAUVEGARDER LE DOSSIER</button>
+                    </div>
+
+                    <div class="card dark-card">
+                        <h3><i data-lucide="info" style="color: var(--accent);"></i> Synthèse Rapide</h3>
+                        <div style="display: flex; flex-direction: column; gap: 15px;">
+                            <div style="display: flex; justify-content: space-between;"><span>Marge Net</span><strong id="flash-marge" style="color: var(--success);">0 €</strong></div>
+                            <div style="display: flex; justify-content: space-between;"><span>ROI</span><strong id="flash-roi" style="color: var(--accent);">0 %</strong></div>
+                            <div style="display: flex; justify-content: space-between;"><span>Score État</span><strong id="flash-score">100/100</strong></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+          
+          
+
+            <section id="expertise" class="view">
+                <h1>Expertise <span>27 Points</span></h1>
+                <div id="checklist-render" class="dashboard-grid"></div>
+                <div class="card" style="margin-top:24px;">
+                    <h3>Frais de remise en état (Estimation IA)</h3>
+                    <input type="text" id="repairs" readonly style="font-size: 1.5rem; color: var(--accent); font-weight: 800; text-align: center; background: #f9f9f9; border: 1px solid #ddd; width: 100%; border-radius: 8px; padding: 10px;">                  
+                </div>
+            </section>
+
+            <section id="nego" class="view">
+    <h1>Stratégie <span>Ackermann</span></h1>
+    
+    <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div class="card">
+            <h3><i data-lucide="message-square"></i> Simulateur de Riposte</h3>
+            <label class="input-label">L'OBJECTION DU VENDEUR :</label>
+            <select id="v-objection" onchange="generateSmartRiposte()" style="width:100%; margin-top:5px; padding:10px; border-radius:8px;">
+    <option value="">-- Choisir l'objection --</option>
+    <option value="particulier">"Je préfère la vendre à un particulier plus cher."</option>
+    <option value="prix">"C'est trop bas, j'en veux plus."</option>
+    <option value="garage">"Un garage m'en propose autant sans expertise."</option>
+    <option value="etat">"Elle est en parfait état, je ne baisse pas."</option>
+    <option value="presse">"Je n'ai pas le temps, je verrai plus tard."</option>
+    <option value="comparaison">"Sur Leboncoin, les autres sont plus chères."</option>
+</select>
+            
+            <textarea id="v-notes" 
+                      placeholder="Notes sur la psychologie du vendeur..." 
+                      style="width:100%; height:80px; margin-top:15px; padding:12px; border-radius:8px; border:1px solid #ddd; font-family:inherit;"
+                      oninput="runCalculations()"></textarea>
+        </div>
+
+        <div class="card" style="background: var(--accent-dim); border: 1px solid var(--accent);">
+            <h3><i data-lucide="brain-circuit" style="color: var(--accent);"></i> Riposte IA Suggestion</h3>
+            <div id="smart-riposte-display" style="margin-top: 15px; font-size: 1rem; line-height: 1.6; color: #333; font-style: italic;">
+                Sélectionnez une objection pour voir l'argument...
+            </div>
+        </div>
+    </div>
+
+    <h3 style="margin-top:30px; margin-bottom:15px;">Paliers de Négociation</h3>
+    <div id="ackermann-timeline" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;"></div>
+</section>
+          
+
+          
+          <section id="annonce" class="view">
+    <h1>Générateur <span>d'Annonce</span></h1>
+    <div class="card">
+        <textarea id="ad-output" style="height: 400px; font-family: inherit; font-size: 0.9rem; padding: 15px; border-radius: 8px; border: 1px solid #ddd;" placeholder="L'annonce pro sera générée ici..."></textarea>
+        <button class="btn-orange" onclick="copyAd()" style="margin-top: 15px;">COPIER L'ANNONCE</button>
+    </div>
+</section>
+
+<section id="inventaire" class="view">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h1>Mon Stock <span>Actuel</span></h1>
+        <div id="stock-count-badge" class="pill-btn active" style="background:var(--accent)">0 Véhicule(s)</div>
+    </div>
+
+    <div id="inventory-grid" class="dashboard-grid" style="grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
+    </div>
+</section>
+
+<div id="inventory-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; padding:20px; overflow-y:auto;">
+    <div class="card" style="max-width:800px; margin: 40px auto; position:relative;">
+        <button onclick="closeInventoryModal()" style="position:absolute; right:20px; top:20px; border:none; background:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+        <h2 id="modal-title">Éditer le véhicule</h2>
+        
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:20px;">
+            <div>
+                <label class="input-label">LIEN PHOTO (URL)</label>
+                <input type="text" id="inv-photo" placeholder="Lien image (ex: https://...)">
+                <div id="photo-preview" style="width:100%; height:150px; background:#eee; border-radius:8px; margin-top:10px; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                    <span style="color:#aaa;">Aperçu photo</span>
+                </div>
+            </div>
+            <div>
+                <label class="input-label">LIEN DE L'ANNONCE (Leboncoin/LaCentrale)</label>
+                <input type="text" id="inv-link" placeholder="Lien de l'annonce publiée">
+                
+                <label class="input-label" style="margin-top:15px;">DESCRIPTION COMMERCIALE</label>
+                <textarea id="inv-desc" style="width:100%; height:100px;" placeholder="Points forts, options rares..."></textarea>
+            </div>
+        </div>
+        
+        <div style="margin-top:20px; text-align:right;">
+            <button class="btn-orange" id="save-inv-btn">ENREGISTRER LES DÉTAILS</button>
+        </div>
+    </div>
+</div>
+<div id="inventory-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; padding:20px; overflow-y:auto;">
+    <div class="card" style="max-width:800px; margin: 40px auto; position:relative;">
+        <button onclick="closeInventoryModal()" style="position:absolute; right:20px; top:20px; border:none; background:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+        <h2 id="modal-title">Éditer le véhicule</h2>
+        
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:20px;">
+            <div>
+                <label class="input-label">LIEN PHOTO (URL)</label>
+                <input type="text" id="inv-photo" placeholder="Lien image (ex: https://...)">
+                <div id="photo-preview" style="width:100%; height:150px; background:#eee; border-radius:8px; margin-top:10px; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                    <span style="color:#aaa;">Aperçu photo</span>
+                </div>
+            </div>
+            <div>
+                <label class="input-label">LIEN DE L'ANNONCE (Leboncoin/LaCentrale)</label>
+                <input type="text" id="inv-link" placeholder="Lien de l'annonce publiée">
+                
+                <label class="input-label" style="margin-top:15px;">DESCRIPTION COMMERCIALE</label>
+                <textarea id="inv-desc" style="width:100%; height:100px;" placeholder="Points forts, options rares..."></textarea>
+            </div>
+        </div>
+        
+        <div style="margin-top:20px; text-align:right;">
+            <button class="btn-orange" id="save-inv-btn">ENREGISTRER LES DÉTAILS</button>
+        </div>
+    </div>
+</div>
+          
+          
+
+          <section id="maintenance" class="view">
+    <h1>Suivi <span>Préparation & Travaux</span></h1>
+
+    <div class="dashboard-grid" style="grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px;">
+        <div class="card" style="border-top: 4px solid #f59e0b;">
+            <small class="input-label">EN PRÉPARATION</small>
+            <div id="maint-count-prep" style="font-size:1.8rem; font-weight:900;">0</div>
+        </div>
+        
+        <div class="card" style="border-top: 4px solid #3b82f6;">
+            <small class="input-label">CHEZ LE PRESTATAIRE</small>
+            <div id="maint-count-external" style="font-size:1.8rem; font-weight:900;">0</div>
+        </div>
+        
+        <div class="card" style="border-top: 4px solid var(--success);">
+            <small class="input-label">PRÊT À LA VENTE</small>
+            <div id="maint-count-ready" style="font-size:1.8rem; font-weight:900;">0</div>
+        </div>
+
+        <div class="card" style="border-top: 4px solid var(--accent);">
+            <small class="input-label">TOTAL INVESTI (STOCK)</small>
+            <div id="maint-total-invested" style="font-size:1.8rem; font-weight:900; color: var(--accent);">0 €</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3><i data-lucide="activity"></i> État d'avancement du stock</h3>
+        <div id="maintenance-list" style="margin-top:15px; display:flex; flex-direction:column; gap:12px;">
+            </div>
+    </div>
+</section>
+    
+          
+         <section id="crm" class="view">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+        <h1>CRM <span>Gestion Prospects</span></h1>
+        <button onclick="window.openCustomerModal()" class="btn-ok" style="padding: 12px 24px; border-radius: 8px;">+ Nouveau Prospect</button>
+    </div>
+
+    <div class="dashboard-grid" style="grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px;">
+        <div class="card" style="border-top: 4px solid var(--accent);">
+            <small class="input-label">TOTAL CONTACTS</small>
+            <div id="crm-total" style="font-size:1.8rem; font-weight:900;">0</div>
+        </div>
+        <div class="card" style="border-top: 4px solid #f59e0b;">
+            <small class="input-label">EN NÉGOCIATION</small>
+            <div id="crm-nego" style="font-size:1.8rem; font-weight:900;">0</div>
+        </div>
+        <div class="card" style="border-top: 4px solid var(--success);">
+            <small class="input-label">ACHETEURS ACTIVÉS</small>
+            <div id="crm-buyers" style="font-size:1.8rem; font-weight:900;">0</div>
+        </div>
+        <div class="card" style="border-top: 4px solid #ef4444;">
+            <small class="input-label">APPORTS VENDEURS</small>
+            <div id="crm-sellers" style="font-size:1.8rem; font-weight:900;">0</div>
+        </div>
+    </div>
+
+    <div style="margin-bottom: 40px;">
+        <h2 style="display:flex; align-items:center; gap:10px; color:var(--success); font-size:1.2rem; margin-bottom:15px; border-bottom:1px solid #22c55e33; padding-bottom:10px;">
+            🛒 PORTEFEUILLE ACHETEURS <small style="color:gray; font-weight:normal; font-size:0.8rem;">(Flux sortant / Stock)</small>
+        </h2>
+        <div id="buyer-list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap:20px;">
+            </div>
+    </div>
+
+    <div>
+        <h2 style="display:flex; align-items:center; gap:10px; color:#ef4444; font-size:1.2rem; margin-bottom:15px; border-bottom:1px solid #ef444433; padding-bottom:10px;">
+            📦 ORIGINE APPORTS VENDEURS <small style="color:gray; font-weight:normal; font-size:0.8rem;">(Flux entrant / Rachats)</small>
+        </h2>
+        <div id="seller-list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap:20px;">
+            </div>
+    </div>
+</section>
+
+<div id="contact-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1001; padding:20px;">
+    <div class="card" style="max-width:500px; margin: 40px auto;">
+        <h3>Nouveau Contact</h3>
+        <div style="display:flex; flex-direction:column; gap:12px; margin-top:15px;">
+            <input type="text" id="c-name" placeholder="Nom complet">
+            <input type="tel" id="c-phone" placeholder="Téléphone">
+            <select id="c-interest">
+                <option value="">Véhicule d'intérêt...</option>
+                </select>
+            <select id="c-status">
+                <option value="Chaud">🔥 Prospect Chaud</option>
+                <option value="Froid">❄️ Prospect Froid</option>
+                <option value="Vendu">✅ Client (Vente terminée)</option>
+            </select>
+            <textarea id="c-notes" placeholder="Notes (ex: Propose 12k€, attend son prêt...)"></textarea>
+            <button class="btn-orange" onclick="saveContact()">ENREGISTRER LE CONTACT</button>
+            <button onclick="closeContactModal()" style="background:none; border:none; color:#888; cursor:pointer;">Annuler</button>
+        </div>
+    </div>
+</div>  
+         
+          
+          <section id="finance" class="view">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+        <h1>Pilotage <span>Financier</span></h1>
+        <div id="finance-date-display" style="font-size: 0.9rem; opacity: 0.6;"></div>
+    </div>
+
+    <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 25px;">
+        <div class="card dark-card" style="background: linear-gradient(135deg, #1e293b, #0f172a); border-bottom: 4px solid var(--accent);">
+            <h3 style="color:white;"><i data-lucide="target" style="color:var(--accent)"></i> Point Mort Mensuel</h3>
+            <div id="break-even-display" style="margin-top:20px; text-align:center;">
+                <div style="font-size: 0.8rem; color:#888;">RESTE À GÉNÉRER CE MOIS</div>
+                <div id="finance-missing-marge" style="font-size: 2.2rem; font-weight: 900; color:white;">0 €</div>
+                <div id="finance-expense-total-label" style="font-size: 0.8rem; color:var(--accent); margin-top:5px;">Objectif : 0 € de charges</div>
+            </div>
+            <div class="confidence-bar-bg" style="margin-top:20px; background: #334155;">
+                <div id="break-even-bar" class="confidence-bar-fill" style="width:0%; background: var(--accent);"></div>
+            </div>
+        </div>
+
+        <div class="card" style="border-bottom: 4px solid var(--success);">
+            <h3><i data-lucide="piggy-bank"></i> Fiscalité & Bénéfices</h3>
+            <div style="display:flex; flex-direction:column; gap:12px; margin-top:15px;">
+                <div style="display:flex; justify-content:space-between;">
+                    <span style="color:#666;">Marge Brute (Ventes du mois)</span>
+                    <strong id="finance-brut-marge">0 €</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span style="color:#666;">TVA sur Marge (20%)</span>
+                    <strong id="finance-tva-total" style="color:#ef4444;">0 €</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding-top:10px; border-top:1px dashed #333;">
+                    <span style="font-weight:bold;">Bénéfice NET Estimé</span>
+                    <strong id="finance-net-profit" style="color:var(--success); font-size:1.2rem;">0 €</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <h3><i data-lucide="receipt"></i> Charges Fixes Mensuelles</h3>
+            <div id="total-expenses-badge" style="background:rgba(239, 68, 68, 0.1); color:#ef4444; padding:5px 12px; border-radius:20px; font-weight:bold; font-size:0.9rem;">Total : 0 €</div>
+        </div>
+        
+        <div style="display:grid; grid-template-columns: 2fr 1fr 1fr auto; gap:10px;">
+            <input type="text" id="expense-name" placeholder="Ex: Loyer, Assurance..." style="background:#1a1a1a; border:1px solid #333; color:white; padding:10px; border-radius:5px;">
+            <input type="number" id="expense-amount" placeholder="Montant (€)" style="background:#1a1a1a; border:1px solid #333; color:white; padding:10px; border-radius:5px;">
+            <select id="expense-cat" style="background:#1a1a1a; border:1px solid #333; color:white; padding:10px; border-radius:5px;">
+                <option value="Structure">Structure</option>
+                <option value="Marketing">Marketing</option>
+                <option value="Logiciel">Logiciel</option>
+                <option value="Salaire">Salaire / Prélèvement</option>
+            </select>
+            <button class="btn-ok" onclick="window.addExpense()" style="border-radius:5px; padding:0 20px;">AJOUTER</button>
+        </div>
+
+        <div id="expense-list" style="margin-top:20px; border-top: 1px solid #222;">
+            </div>
+    </div>
+</section>
+          
+          
+          <section id="admin" class="view">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+        <h1>Conformité <span>& Fiscalité</span></h1>
+        <div style="font-size:0.9rem; color:#666;" id="admin-date-display"></div>
+    </div>
+
+    <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; margin-bottom: 25px;">
+        
+        <div class="card dark-card" style="border-left: 4px solid var(--accent);">
+            <h3><i data-lucide="shield-check" style="color:var(--accent)"></i> Registre de Police</h3>
+            <p style="font-size:0.8rem; color:#aaa; margin-bottom:20px;">
+                Export conforme Art. 321-7 (Livre de Police numérique).
+                <br>Comprend : Achats, Ventes, Identités.
+            </p>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-orange" style="flex:1;" onclick="window.exportPoliceCSV()">
+                    <i data-lucide="download"></i> EXPORTER (CSV/EXCEL)
+                </button>
+                <button class="btn-orange" style="background:#334155;" onclick="window.printPoliceBook()">
+                    <i data-lucide="printer"></i> IMPRIMER
+                </button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3><i data-lucide="calculator"></i> Clôture Mensuelle</h3>
+            
+            <div style="display:flex; gap:10px; margin-bottom:15px; margin-top:10px;">
+                <select id="export-month" onchange="window.updateAccountingPreview()" style="flex:1; padding:8px; background:#1a1a1a; color:white; border:1px solid #333; border-radius:5px;">
+                    <option value="0">Janvier</option><option value="1">Février</option><option value="2">Mars</option>
+                    <option value="3">Avril</option><option value="4">Mai</option><option value="5">Juin</option>
+                    <option value="6">Juillet</option><option value="7">Août</option><option value="8">Septembre</option>
+                    <option value="9">Octobre</option><option value="10">Novembre</option><option value="11">Décembre</option>
+                </select>
+                <select id="export-year" onchange="window.updateAccountingPreview()" style="width:100px; padding:8px; background:#1a1a1a; color:white; border:1px solid #333; border-radius:5px;">
+                    <option value="2024">2024</option>
+                    <option value="2025" selected>2025</option>
+                    <option value="2026">2026</option>
+                </select>
+            </div>
+
+            <div style="background:#1a1a1a; padding:15px; border-radius:8px; margin-bottom:15px; font-size:0.9rem;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                    <span style="color:#888;">CA Total :</span>
+                    <strong id="preview-ca" style="color:white;">0 €</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                    <span style="color:#888;">Marge Brute :</span>
+                    <strong id="preview-marge" style="color:var(--success);">0 €</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; border-top:1px dashed #333; padding-top:5px;">
+                    <span style="color:#888;">TVA à reverser (20%) :</span>
+                    <strong id="preview-tva" style="color:#ef4444;">0 €</strong>
+                </div>
+            </div>
+
+            <button class="btn-orange" style="width:100%;" onclick="window.exportAccountingCSV()">
+                <i data-lucide="file-spreadsheet"></i> TÉLÉCHARGER LE RAPPORT
+            </button>
+        </div>
+
+        <div class="card">
+            <h3><i data-lucide="file-text"></i> Documents Rapides</h3>
+            <p style="font-size:0.8rem; color:#666; margin-bottom:15px;">Génération de documents vierges ou types.</p>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <button onclick="window.open('https://www.service-public.fr/simulateur/calcul/15776', '_blank')" style="background:none; border:1px solid #333; color:white; padding:10px; border-radius:5px; text-align:left; cursor:pointer; display:flex; align-items:center; gap:10px;">
+                    <i data-lucide="external-link" size="16"></i> Certificat de Cession (Service-Public)
+                </button>
+                <button onclick="alert('Fonctionnalité : Génère un PDF de facture vierge avec vos infos société.')" style="background:none; border:1px solid #333; color:white; padding:10px; border-radius:5px; text-align:left; cursor:pointer; display:flex; align-items:center; gap:10px;">
+                     <i data-lucide="file"></i> Facture Vierge
+                </button>
+              <button class="btn-orange" style="background:#333; margin-top:15px; width:auto; padding:10px 20px;" onclick="window.addManualPoliceEntry()">
+    + AJOUTER UNE ENTRÉE MANUELLE AU REGISTRE
+</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <h3><i data-lucide="table"></i> Aperçu du Livre de Police</h3>
+            <span style="font-size:0.8rem; color:#666;">Derniers mouvements</span>
+        </div>
+        <div style="overflow-x:auto;">
+            <table style="width:100%; border-collapse: collapse; font-size: 0.8rem; text-align: left;">
+                <thead style="background:#1a1a1a; color:#888;">
+                    <tr>
+                        <th style="padding:12px; border-bottom:1px solid #333;">N° LDP</th>
+                        <th style="padding:12px; border-bottom:1px solid #333;">DATE ACHAT</th>
+                        <th style="padding:12px; border-bottom:1px solid #333;">VÉHICULE</th>
+                        <th style="padding:12px; border-bottom:1px solid #333;">IMMAT / VIN</th>
+                        <th style="padding:12px; border-bottom:1px solid #333;">ORIGINE</th>
+                        <th style="padding:12px; border-bottom:1px solid #333;">DATE VENTE</th>
+                        <th style="padding:12px; border-bottom:1px solid #333;">DESTINATION</th>
+                    </tr>
+                </thead>
+                <tbody id="police-table-body">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+          
+        <section id="dashboard" class="view">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 25px;">
+        <h1>Historique <span>Dossiers</span></h1>
+        <button class="btn-orange" style="background:#ef4444; font-size:0.7rem; padding: 5px 12px;" onclick="window.clearFullHistory()">
+            EFFACER LES RECHERCHES
+        </button>
+    </div>
+
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <button class="tab-btn active" onclick="window.filterHistory('all', this)">TOUT</button>
+        <button class="tab-btn" onclick="window.filterHistory('search', this)">RECHERCHES</button>
+        <button class="tab-btn" onclick="window.filterHistory('buy', this)">ACHATS</button>
+        <button class="tab-btn" onclick="window.filterHistory('sell', this)">VENTES</button>
+    </div>
+
+    <div class="card" style="padding: 0; background: rgba(255,255,255,0.02); border: 1px solid #222;">
+        <div id="history-feed" style="max-height: 65vh; overflow-y: auto;">
+            <div style="text-align:center; padding:40px; color:#555;">
+                Chargement de l'activité...
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .tab-btn {
+        background: #111; 
+        color: #666; 
+        border: 1px solid #222;
+        padding: 8px 15px; 
+        border-radius: 6px; 
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .tab-btn:hover {
+        border-color: #444;
+        color: #eee;
+    }
+
+    .tab-btn.active { 
+        background: var(--accent); 
+        color: white; 
+        border-color: var(--accent); 
+    }
+
+    .history-row {
+        display: flex; 
+        align-items: center; 
+        gap: 15px;
+        padding: 15px; 
+        border-bottom: 1px solid #222;
+        transition: background 0.2s ease;
+    }
+
+    .history-row:hover {
+        background: rgba(255, 255, 255, 0.03);
+    }
+</style>
+          
+          
+          <section id="options" class="view">
+    <div class="card" style="background: var(--accent); color: white; margin-bottom: 20px;">
+        <label style="font-weight: 800; font-size: 0.8rem; display: block; margin-bottom: 5px;">MON OBJECTIF DE MARGE NETTE (€)</label>
+        <input type="number" id="target-profit" value="2000" onchange="runCalculations()" style="background: white; color: black; border: none; font-size: 1.2rem; font-weight: 800; width: 100%; padding: 5px; border-radius: 4px;">
+    </div>
+
+    <h1>Réglages <span>IA & Business</span></h1>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px;">
+        
+        <div class="card">
+            <h3 style="margin-bottom:15px; font-size:1rem;"><i data-lucide="cog"></i> Frais Automatiques</h3>
+            <label class="input-label">FRAIS DE PRÉPARATION TYPE (€)</label>
+            <input type="number" id="default-prep" value="500" style="width:100%; margin-bottom:15px;" placeholder="Ex: Nettoyage, révision...">
+            
+            <label class="input-label">FRAIS DE DOSSIER CLIENT (€)</label>
+            <input type="number" id="default-admin" value="290" style="width:100%;" placeholder="Frais de carte grise/gestion...">
+            <p style="font-size:0.7rem; color:#666; margin-top:10px;">Ces frais seront ajoutés par défaut à chaque nouveau dossier d'expertise.</p>
+        </div>
+
+        <div class="card">
+            <h3 style="margin-bottom:15px; font-size:1rem;"><i data-lucide="percent"></i> Fiscalité</h3>
+            <label class="input-label">RÉGIME DE TVA</label>
+            <select id="tva-regime" style="width:100%; padding:10px; background:#111; color:white; border:1px solid #333; border-radius:8px; margin-bottom:15px;">
+                <option value="margin">TVA sur marge (Véhicules d'occasion)</option>
+                <option value="classic">TVA Classique (20%)</option>
+                <option value="none">Auto-entrepreneur (Pas de TVA)</option>
+            </select>
+            <label class="input-label">TAXE DE GESTION ÉTAT (€)</label>
+            <input type="number" id="state-tax" value="11" style="width:100%;">
+        </div>
+    </div>
+
+    <div class="card">
+        <h3 style="margin-bottom:15px; font-size:1rem;"><i data-lucide="table"></i> Grille de Tarification IA</h3>
+        <div id="price-settings-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px;"></div>
+        <button class="btn-orange" onclick="window.saveAllOptions()">💾 ENREGISTRER TOUS LES RÉGLAGES</button>
+    </div>
+
+    <div class="card" style="margin-top:20px; border: 1px dashed #444; background: transparent;">
+        <h3 style="margin-bottom:15px; font-size:1rem; color:#ef4444;">Maintenance du Système</h3>
+        <div style="display:flex; gap:10px;">
+            <button onclick="exportDatabase()" style="flex:1; background:#222; color:white; border:none; padding:10px; border-radius:5px; cursor:pointer;">📥 EXPORTER LES DONNÉES (JSON)</button>
+            <button onclick="resetApp()" style="flex:1; background:rgba(239, 68, 68, 0.1); color:#ef4444; border:1px solid #ef4444; padding:10px; border-radius:5px; cursor:pointer;">⚠️ RÉINITIALISER TOUT</button>
+        </div>
+    </div>
+</section>
+
+           <section id="profil" class="view">
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 25px;">
+        <h1>Mon Compte <span>Business</span></h1>
+        <div style="text-align:right;">
+            <span class="h-badge" style="background:#22c55e20; color:#22c55e; border:1px solid #22c55e40;">Compte Actif</span>
+            <p style="font-size:0.7rem; color:#666; margin-top:5px;">Client depuis le 12/2025</p>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 25px;">
+        
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            
+            <div class="card" style="text-align: center;">
+                <div style="position: relative; width: 100px; height: 100px; margin: 0 auto 15px;">
+                    <img id="user-logo-preview" src="https://via.placeholder.com/100" style="width:100%; height:100%; border-radius:12px; object-fit:cover; border: 2px solid #333;">
+                    <label for="logo-upload" style="position: absolute; bottom:-5px; right:-5px; background:var(--accent); width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; border:3px solid #111;">
+                        <i data-lucide="upload-cloud" style="width:14px; color:white;"></i>
+                    </label>
+                    <input type="file" id="logo-upload" hidden onchange="window.handleLogoUpload(event)">
+                </div>
+                <h3 id="display-biz-name" style="margin:0;">Nom de l'enseigne</h3>
+                <p style="font-size:0.8rem; color:#666;">ID Client: #OX-8829</p>
+            </div>
+
+            <div class="card">
+                <h3><i data-lucide="lock"></i> Accès & Sécurité</h3>
+                <div style="margin-top:15px; display:flex; flex-direction:column; gap:12px;">
+                    <div>
+                        <label class="input-label">E-MAIL DE CONNEXION</label>
+                        <input type="email" id="login-email" value="user@garage.fr" readonly style="background:#000; color:#555; cursor:not-allowed;">
+                    </div>
+                    <div>
+                        <label class="input-label">MOT DE PASSE</label>
+                        <button class="btn-orange" style="width:100%; background:#222; border:1px solid #333;" onclick="window.changePassword()">MODIFIER LE MOT DE PASSE</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="border-left: 4px solid var(--accent);">
+                <h3><i data-lucide="credit-card"></i> Abonnement</h3>
+                <div style="margin-top:15px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                        <span style="font-size:0.8rem; color:#666;">Offre actuelle :</span>
+                        <strong style="font-size:0.8rem;">PRO MARCHAND</strong>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                        <span style="font-size:0.8rem; color:#666;">Prochain prélèvement :</span>
+                        <strong style="font-size:0.8rem;">49.00€ HT</strong>
+                    </div>
+                    <button class="tab-btn" style="width:100%; font-size:0.7rem;" onclick="window.manageBilling()">GÉRER MA FACTURATION</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid #222; padding-bottom:15px;">
+                <h3 style="margin:0;"><i data-lucide="briefcase"></i> Détails de l'entreprise</h3>
+                <button class="btn-orange" onclick="window.saveProfile()">ENREGISTRER LES MODIFICATIONS</button>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                <div style="grid-column: span 2;">
+                    <label class="input-label">RAISON SOCIALE</label>
+                    <input type="text" id="biz-name" placeholder="Ex: Garage du Centre SAS">
+                </div>
+                <div>
+                    <label class="input-label">SIRET</label>
+                    <input type="text" id="biz-siret" placeholder="88390239000012">
+                </div>
+                <div>
+                    <label class="input-label">N° TVA INTRA</label>
+                    <input type="text" id="biz-tva" placeholder="FR 12 883902390">
+                </div>
+                <div>
+                    <label class="input-label">TÉLÉPHONE PRO</label>
+                    <input type="tel" id="biz-phone" placeholder="01 23 45 67 89">
+                </div>
+                <div>
+                    <label class="input-label">SITE WEB</label>
+                    <input type="text" id="biz-web" placeholder="www.votre-garage.fr">
+                </div>
+                <div style="grid-column: span 2;">
+                    <label class="input-label">ADRESSE DU SIÈGE</label>
+                    <input type="text" id="biz-address" placeholder="Rue de la Paix, 75000 Paris">
+                </div>
+            </div>
+
+            <div style="margin-top:25px; background:rgba(255,255,255,0.02); padding:15px; border-radius:8px;">
+                <label class="input-label" style="display:flex; align-items:center; gap:8px;">
+                    <i data-lucide="file-text" style="width:14px;"></i> MENTION LÉGALE BAS DE PAGE
+                </label>
+                <textarea id="biz-footer" style="width:100%; height:80px; margin-top:10px; font-size:0.8rem;" placeholder="Mention obligatoire sur vos documents (Capital social, RCS...)"></textarea>
+            </div>
+        </div>
+    </div>
+</section>
+          
+        </main>
+        
+        <footer class="ia-status-bar">
+            <div class="stat-group">
+                <small>BÉNÉFICE ESTIMÉ</small>
+                <div style="color: var(--success); font-weight: 800; font-size: 1.4rem;">+ <span id="marge-val">0</span> €</div>
+            </div>
+            <div class="ia-central-brain">
+                <div id="ia-verdict">ANALYSE EN COURS...</div>
+                <div class="confidence-bar-bg"><div id="confidence-level" class="confidence-bar-fill"></div></div>
+            </div>
+            <div class="stat-group" style="text-align: right;">
+                <small>ACHAT MAX CONSEILLÉ</small>
+                <div style="color: var(--orange); font-weight: 800; font-size: 1.4rem;"><span id="ia-advice">0</span> €</div>
+            </div>
+        </footer>
+    </div>
+
+    <div id="recap-overlay" class="modal-overlay" onclick="closeRecap()"></div>
+    <div id="recap-modal">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2 id="recap-model" style="font-weight: 800; margin: 0; font-size: 1.5rem;">Détails</h2>
+            <button onclick="closeRecap()" style="background:none; border:none; font-size: 2rem; cursor:pointer;">&times;</button>
+        </div>
+        <div id="recap-content-detail" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            </div>
+        <button id="delete-btn" class="btn-orange" style="margin-top: 25px; background: var(--danger);">SUPPRIMER</button>
+    </div>
+
+    <script src="script.js"></script>
+    <script>lucide.createIcons();</script>
+</body>
+</html>

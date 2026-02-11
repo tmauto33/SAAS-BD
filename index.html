@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OX PRO - Expert en Rentabilité</title>
+    <link rel="stylesheet" href="vitrine.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <header class="v-header">
+        <div class="v-logo"><i data-lucide="zap"></i> OX PRO</div>
+        <button class="v-btn-login" onclick="showLogin()">Connexion</button>
+    </header>
+
+    <main class="v-container" id="view-paywall">
+        <h1>Votre rentabilité sans limites.</h1>
+        
+        <div class="payment-methods">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" alt="PayPal">
+        </div>
+
+        <p class="subtitle">Accédez à l'expertise IA et l'historique illimité.</p>
+
+        <div class="v-grid">
+            <div class="v-card">
+                <span class="v-badge">0€ pour 1 mois</span>
+                <h2>Essai Découverte</h2>
+                <span class="price-sub">Gratuit pendant 7 jours</span>
+                <hr>
+                <ul>
+                    <li><i data-lucide="check"></i> 1er dossier complet offert</li>
+                    <li><i data-lucide="check"></i> Rapport PDF exportable</li>
+                    <li><i data-lucide="check"></i> Accès IA standard</li>
+                </ul>
+                <button onclick="showLogin()">Essayer gratuitement</button>
+            </div>
+
+            <div class="v-card pro">
+                <span class="v-badge pro">Professionnel</span>
+                <h2>Pack OX PRO</h2>
+                <span class="price-sub">29€ / mois sans engagement</span>
+                <hr>
+                <ul>
+                    <li><i data-lucide="check"></i> Historique illimité</li>
+                    <li><i data-lucide="check"></i> Expertise IA avancée</li>
+                    <li><i data-lucide="check"></i> Support prioritaire 24/7</li>
+                    <li><i data-lucide="check"></i> Analyses prédictives</li>
+                </ul>
+                <button onclick="showLogin()">S'abonner maintenant</button>
+            </div>
+        </div>
+    </main>
+
+    <div class="v-container" id="view-login" style="display:none;">
+        <div class="v-login-box">
+            <i data-lucide="zap" class="login-icon"></i>
+            <h1>Bon retour parmi nous</h1>
+            
+            <div class="form-group">
+                <label>Email ou nom d'utilisateur</label>
+                <input type="email" id="email" placeholder="i@gmail.com">
+            </div>
+
+            <div class="form-group">
+                <label>Mot de passe</label>
+                <input type="password" id="pass" placeholder="1234">
+            </div>
+
+            <button class="v-btn-auth" onclick="handleAuth()">Continuer</button>
+
+            <div class="social-divider">ou</div>
+            
+            <button class="social-btn">Continuer avec Google</button>
+            <button class="social-btn">Continuer avec Facebook</button>
+
+            <p onclick="showPaywall()" style="cursor:pointer; margin-top:25px; color:#b3b3b3; font-size:0.9rem;">
+                ← Retour aux tarifs
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Initialisation des icônes
+        lucide.createIcons();
+        
+        // Navigation interne
+        function showLogin() {
+            document.getElementById('view-paywall').style.display = 'none';
+            document.getElementById('view-login').style.display = 'flex';
+        }
+        function showPaywall() {
+            document.getElementById('view-login').style.display = 'none';
+            document.getElementById('view-paywall').style.display = 'block';
+        }
+
+        // Logique de connexion
+        function handleAuth() {
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('pass').value;
+            if(email === "i@gmail.com" && pass === "1234") {
+                localStorage.setItem('ox_authenticated', 'true');
+                window.location.href = 'app.html';
+            } else {
+                alert("Identifiants incorrects (Indice: i@gmail.com / 1234)");
+            }
+        }
+
+        // Rediriger si déjà connecté
+        if(localStorage.getItem('ox_authenticated') === 'true') {
+            window.location.href = 'app.html';
+        }
+    </script>
+</body>
+</html>
+
