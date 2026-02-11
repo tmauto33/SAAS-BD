@@ -299,5 +299,11 @@ ul li i {
     cursor: pointer;
     transition: background 0.2s;
 }
+button, .v-btn-auth, .v-btn-login {
+    position: relative !important;
+    z-index: 10000 !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
 
 .social-btn:hover { background: rgba(255,255,255,0.05); }
