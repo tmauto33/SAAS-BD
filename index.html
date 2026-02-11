@@ -10,12 +10,12 @@
 </head>
 <body>
     <header class="v-header">
-        <div class="v-logo"><i data-lucide="zap"></i> OX PRO</div>
-        <button class="v-btn-login" onclick="showLogin()">Connexion</button>
-        <button class="v-btn-auth" onclick="window.location.href='signup.html'" style="background: transparent; border: 1px solid #ffcc00; margin-top: 10px;">
-    Créer un compte
-</button>
-    </header>
+    <div class="v-logo"><i data-lucide="zap"></i> OX PRO</div>
+    <div class="header-auth-group">
+        <button class="v-btn-login-outline" onclick="showLogin()">Connexion</button>
+        <button class="v-btn-signup-solid" onclick="window.location.href='signup.html'">S'inscrire</button>
+    </div>
+</header>
 
     <main class="v-container" id="view-paywall">
         <h1>Votre rentabilité sans limites.</h1>
@@ -65,6 +65,11 @@
             <h1>Bienvenue parmi nous</h1>
             <p class="subtitle">Connectez-vous pour piloter votre rentabilité.</p>
         </div>
+        <button class="v-btn-auth" id="btn-login" onclick="handleAuth('LOGIN')">Se connecter</button>
+
+<p class="signup-prompt">
+    Nouveau sur OX PRO ? <span onclick="window.location.href='signup.html'">Créer un compte</span>
+</p>
         
         <div class="form-group">
             <label>Email professionnel</label>
@@ -173,6 +178,7 @@
 </script>
 </body>
 </html>
+
 
 
 
