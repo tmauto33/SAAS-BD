@@ -61,21 +61,23 @@
             <h1>Bon retour parmi nous</h1>
             
             <div class="form-group">
-                <label>Email ou nom d'utilisateur</label>
-                <input type="email" id="email" placeholder="i@gmail.com">
+                <label>Email</label>
+                <input type="email" id="email" placeholder="votre@email.com">
             </div>
 
             <div class="form-group">
                 <label>Mot de passe</label>
-                <input type="password" id="pass" placeholder="1234">
+                <input type="password" id="pass" placeholder="******">
             </div>
 
-            <button class="v-btn-auth" onclick="handleAuth()">Continuer</button>
+            <div id="auth-error-msg" style="color: #ff4444; font-size: 0.85rem; margin-bottom: 10px; display: none;"></div>
+
+            <button class="v-btn-auth" id="btn-login" onclick="handleAuth('LOGIN')">Se connecter</button>
+            <button class="v-btn-auth" id="btn-signup" onclick="handleAuth('SIGNUP')" style="background: transparent; border: 1px solid var(--accent); margin-top: 10px;">Créer un compte</button>
 
             <div class="social-divider">ou</div>
             
             <button class="social-btn">Continuer avec Google</button>
-            <button class="social-btn">Continuer avec Facebook</button>
 
             <p onclick="showPaywall()" style="cursor:pointer; margin-top:25px; color:#b3b3b3; font-size:0.9rem;">
                 ← Retour aux tarifs
@@ -84,6 +86,12 @@
     </div>
 
     <script>
+        // 1. INITIALISATION SUPABASE
+        // REMPLACE BIEN CES DEUX LIGNES PAR TES INFOS SUPABASE (eyJ...)
+        const SUPABASE_URL = 'https://rayyxgqgiwjytesoykgd.supabase.co';
+        const SUPABASE_KEY = 'TON_ID_ANON_PUBLIC_ICI'; 
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
         // Initialisation des icônes
         lucide.createIcons();
         
@@ -97,24 +105,53 @@
             document.getElementById('view-paywall').style.display = 'block';
         }
 
-        // Logique de connexion
-        function handleAuth() {
+        // 2. LOGIQUE D'AUTHENTIFICATION RÉELLE
+        async function handleAuth(mode) {
             const email = document.getElementById('email').value;
-            const pass = document.getElementById('pass').value;
-            if(email === "i@gmail.com" && pass === "1234") {
-                localStorage.setItem('ox_authenticated', 'true');
-                window.location.href = 'app.html';
+            const password = document.getElementById('pass').value;
+            const errorDiv = document.getElementById('auth-error-msg');
+            
+            errorDiv.style.display = 'none';
+
+            if (!email || !password) {
+                errorDiv.innerText = "Veuillez remplir tous les champs.";
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            let result;
+
+            if (mode === 'SIGNUP') {
+                // INSCRIPTION
+                result = await supabase.auth.signUp({ email, password });
+                if (result.error) {
+                    errorDiv.innerText = "Erreur d'inscription : " + result.error.message;
+                    errorDiv.style.display = 'block';
+                } else {
+                    alert("Inscription réussie ! Vérifiez vos emails pour confirmer.");
+                }
             } else {
-                alert("Identifiants incorrects (Indice: i@gmail.com / 1234)");
+                // CONNEXION
+                result = await supabase.auth.signInWithPassword({ email, password });
+                if (result.error) {
+                    errorDiv.innerText = "Email ou mot de passe incorrect.";
+                    errorDiv.style.display = 'block';
+                } else {
+                    // Succès : redirection vers l'app
+                    window.location.href = 'app.html';
+                }
             }
         }
 
-        // Rediriger si déjà connecté
-        if(localStorage.getItem('ox_authenticated') === 'true') {
-            window.location.href = 'app.html';
+        // 3. VÉRIFICATION DE SESSION AU CHARGEMENT
+        async function checkSession() {
+            const { data } = await supabase.auth.getSession();
+            if (data.session) {
+                window.location.href = 'app.html';
+            }
         }
+        checkSession();
+
     </script>
 </body>
 </html>
-
-
