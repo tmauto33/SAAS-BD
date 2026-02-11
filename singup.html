@@ -2,60 +2,51 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>OX PRO - Création de compte</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OX PRO - Inscription</title>
     <link rel="stylesheet" href="vitrine.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <div class="v-container">
-        <div class="v-login-box">
-            <h1>Rejoindre OX PRO</h1>
-            <p style="color: #b3b3b3; margin-bottom: 20px;">Accédez à la rentabilité pilotée par l'IA.</p>
+    <div class="auth-container">
+        <div class="auth-card">
+            <h2>Créer un profil</h2>
+            <p>Rejoignez OX PRO pour piloter votre rentabilité.</p>
             
-            <div class="form-group">
-                <label>Nom complet</label>
-                <input type="text" id="full_name" placeholder="Jean Dupont">
-            </div>
-            <div class="form-group">
-                <label>Email professionnel</label>
-                <input type="email" id="email" placeholder="nom@entreprise.com">
-            </div>
-            <div class="form-group">
-                <label>Mot de passe (6 car. min)</label>
-                <input type="password" id="pass" placeholder="******">
-            </div>
+            <form id="signup-form">
+                <input type="email" id="email" placeholder="Email professionnel" required>
+                <input type="password" id="password" placeholder="Mot de passe (6 caractères min.)" required>
+                
+                <button type="submit" class="auth-btn">S'inscrire</button>
+            </form>
 
-            <div id="error-msg" style="color:red; display:none; margin-bottom:10px;"></div>
-            
-            <button class="v-btn-auth" onclick="handleSignUp()">Finaliser l'inscription</button>
-            <p style="margin-top:20px;"><a href="index.html" style="color:white; text-decoration:none;">← Déjà un compte ?</a></p>
+            <p>Déjà un compte ? <a href="login.html">Se connecter</a></p>
         </div>
     </div>
 
     <script>
+        // Configuration identique à ton script.js
         const SB_URL = 'https://rayyxgqgiwjytesoykgd.supabase.co';
-        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJheXl4Z3FnaXdqeXRlc295a2dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MjgxMTQsImV4cCI6MjA4NjQwNDExNH0.KTGP8Kj9ueLBzasriq4sHJyNDK6nSryvZjc6NCsWRSM';
-        const client = supabase.createClient(SB_URL, SB_KEY);
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // Ta clé complète
+        const oxClient = supabase.createClient(SB_URL, SB_KEY);
 
-        async function handleSignUp() {
+        document.getElementById('signup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
             const email = document.getElementById('email').value;
-            const password = document.getElementById('pass').value;
-            const fullName = document.getElementById('full_name').value;
-            const errorDiv = document.getElementById('error-msg');
+            const password = document.getElementById('password').value;
 
-            const { data, error } = await client.auth.signUp({
+            const { data, error } = await oxClient.auth.signUp({
                 email: email,
                 password: password,
-                options: { data: { full_name: fullName } }
             });
 
             if (error) {
-                errorDiv.innerText = error.message;
-                errorDiv.style.display = 'block';
+                alert("Erreur : " + error.message);
             } else {
+                // Redirection vers la page de succès
                 window.location.href = 'merci.html';
             }
-        }
+        });
     </script>
 </body>
 </html>
