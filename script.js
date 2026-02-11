@@ -1667,6 +1667,21 @@ async function handleLogout() {
 
 document.addEventListener('DOMContentLoaded', initApp);
 
+// Fonction de déconnexion globale
+window.handleLogout = async function() {
+    const confirmation = confirm("Voulez-vous vraiment vous déconnecter ?");
+    if (confirmation) {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            console.error("Erreur lors de la déconnexion:", error.message);
+        } else {
+            // Nettoyage et redirection
+            localStorage.removeItem('ox_authenticated');
+            window.location.href = 'index.html';
+        }
+    }
+};
+
 // ==========================================================================
 // 9. INITIALISATION
 // ==========================================================================
@@ -1680,4 +1695,5 @@ window.initApp = function() {
 
 
 window.onload = window.initApp;
+
 
