@@ -2,9 +2,11 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connexion - OX PRO</title>
     <link rel="stylesheet" href="vitrine.css">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="login-body">
     <div class="login-container">
@@ -12,35 +14,78 @@
         <h1>Bon retour parmi nous</h1>
 
         <div class="form-group">
-            <label>Email ou nom d'utilisateur</label>
-            <input type="email" id="user-email" placeholder="i@gmail.com">
+            <label>Email professionnel</label>
+            <input type="email" id="user-email" placeholder="nom@entreprise.com">
         </div>
 
         <div class="form-group">
             <label>Mot de passe</label>
-            <input type="password" id="user-pass" placeholder="1234">
+            <input type="password" id="user-pass" placeholder="••••••••">
         </div>
+
+        <div id="error-msg" style="color: #ff4d4d; font-size: 0.9rem; margin-bottom: 15px; display: none;"></div>
 
         <button class="btn-continue" onclick="checkAuth()">Continuer</button>
 
         <div class="divider">ou</div>
 
-        <button class="social-btn">Continuer avec Google</button>
+        <button class="social-btn">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" style="margin-right: 10px;">
+            Continuer avec Google
+        </button>
+        
         <p class="foot-link">Pas de compte ? <a href="index.html">S'inscrire</a></p>
     </div>
 
     <script>
+        // 1. Initialisation Supabase (Mêmes clés que ton index.html)
+        const SB_URL = 'https://rayyxgqgiwjytesoykgd.supabase.co';
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJheXl4Z3FnaXdqeXRlc295a2dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MjgxMTQsImV4cCI6MjA4NjQwNDExNH0.KTGP8Kj9ueLBzasriq4sHJyNDK6nSryvZjc6NCsWRSM'; 
+        const oxClient = supabase.createClient(SB_URL, SB_KEY);
+
         lucide.createIcons();
-        function checkAuth() {
-            const email = document.getElementById('user-email').value;
-            const pass = document.getElementById('user-pass').value;
-            if (email === "i@gmail.com" && pass === "1234") {
+
+        // 2. Logique de connexion réelle
+        async function checkAuth() {
+            const email = document.getElementById('user-email').value.trim();
+            const pass = document.getElementById('user-pass').value.trim();
+            const errorDiv = document.getElementById('error-msg');
+
+            errorDiv.style.display = 'none';
+
+            if (!email || !pass) {
+                errorDiv.innerText = "Veuillez remplir tous les champs.";
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const { data, error } = await oxClient.auth.signInWithPassword({
+                    email: email,
+                    password: pass
+                });
+
+                if (error) throw error;
+
+                // Si succès, on stocke la session et on redirige
                 localStorage.setItem('ox_authenticated', 'true');
-                window.location.href = '../app/app.html';
-            } else {
-                alert("Erreur: i@gmail.com / 1234");
+                window.location.href = 'app.html'; // Vérifie bien le chemin vers ton app
+
+            } catch (err) {
+                console.error("Erreur connexion:", err.message);
+                errorDiv.innerText = "Identifiants invalides ou erreur réseau.";
+                errorDiv.style.display = 'block';
             }
         }
+
+        // 3. Vérifier si l'utilisateur est déjà connecté
+        async function checkSession() {
+            const { data } = await oxClient.auth.getSession();
+            if (data?.session) {
+                window.location.href = 'app.html';
+            }
+        }
+        checkSession();
     </script>
 </body>
 </html>
