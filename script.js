@@ -1,11 +1,19 @@
 // ==========================================================================
-// 1. ÉTAT GLOBAL ET CONFIGURATION
+// 1. CONFIGURATION SUPABASE & ÉTAT GLOBAL
 // ==========================================================================
-window.configExpertise = JSON.parse(localStorage.getItem('ox_config')) || {};
-window.savedDeals = JSON.parse(localStorage.getItem('ox_history')) || [];
-window.expenses = JSON.parse(localStorage.getItem('ox_expenses')) || [];
-window.contacts = JSON.parse(localStorage.getItem('ox_contacts')) || [];
-window.checks = {}; // État temporaire de la checklist en cours
+
+// --- CONFIGURATION ---
+const SUPABASE_URL = 'https://rayyxgqgiwjytesoykgd.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJheXl4Z3FnaXdqeXRlc295a2dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MjgxMTQsImV4cCI6MjA4NjQwNDExNH0.KTGP8Kj9ueLBzasriq4sHJyNDK6nSryvZjc6NCsWRSM'; // <-- À CHANGER
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// --- ÉTAT GLOBAL ---
+// On garde une copie locale pour la réactivité, mais on synchronisera avec Supabase
+window.configExpertise = {}; 
+window.savedDeals = [];
+window.expenses = [];
+window.contacts = [];
+window.checks = {}; 
 
 const inspectionConfig = [
     { name: "Carte Grise", defVal: 0, defType: "price", cat: "Admin" },
@@ -37,7 +45,7 @@ const inspectionConfig = [
     { name: "Ralenti stable", defVal: 15, defType: "points", cat: "Essai" }
 ];
 
-// Initialisation auto des prix si non définis
+// Initialisation par défaut
 inspectionConfig.forEach(pt => {
     if (!window.configExpertise[pt.name]) {
         window.configExpertise[pt.name] = { val: pt.defVal, type: pt.defType };
@@ -45,9 +53,19 @@ inspectionConfig.forEach(pt => {
 });
 
 // ==========================================================================
-// 2. MODULE NAVIGATION
+// 2. MODULE NAVIGATION & AUTH-CHECK
 // ==========================================================================
-window.switchTab = function(id, btn) {
+
+window.switchTab = async function(id, btn) {
+    // SÉCURITÉ : Vérifier si l'utilisateur est connecté avant de changer d'onglet
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session && id !== 'login-screen') {
+        console.warn("Accès refusé : Connexion requise");
+        window.showLoginScreen(); // On force l'écran de login
+        return;
+    }
+
     // 1. Cacher toutes les vues
     document.querySelectorAll('.view').forEach(v => {
         v.classList.remove('active');
@@ -59,11 +77,17 @@ window.switchTab = function(id, btn) {
     if (target) {
         target.classList.add('active');
         target.style.display = 'block';
-}
+        
+        // Actions spécifiques selon l'onglet
+        if (id === 'negociation') {
+            if (window.updateNegoLogic) window.updateNegoLogic();
+        }
+    }
 
-    // 3. Gérer l'état visuel des boutons de navigation
+    // 3. Gérer l'état visuel des boutons
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     if (btn) btn.classList.add('active');
+};
 
     // 4. Rafraîchissement intelligent (un seul appel par onglet)
    // 4. Rafraîchissement intelligent
@@ -1612,5 +1636,6 @@ window.initApp = function() {
     window.runCalculations(); 
     window.switchTab('pilotage');
 };
+
 
 window.onload = window.initApp;
