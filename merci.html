@@ -2,16 +2,51 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Merci - OX PRO</title>
     <link rel="stylesheet" href="vitrine.css">
 </head>
-<body>
-    <div class="v-container" style="margin-top: 100px;">
-        <h1 style="color: #1ed760;">✓ Inscription validée</h1>
-        <p class="subtitle">Bienvenue chez OX PRO ! Votre compte a été créé avec succès.</p>
-        <p>Un email de confirmation vous a été envoyé (vérifiez vos spams).</p>
-        <br>
-        <button class="v-btn-login" onclick="window.location.href='index.html'">Retourner à la connexion</button>
+<body class="login-body">
+    <div class="v-container" style="display: flex; justify-content: center; align-items: center; min-height: 100vh; text-align: center;">
+        <div class="v-login-box" style="padding: 3rem; border: 1px solid #333; border-radius: 15px; background: #111;">
+            
+            <h1 style="color: #22c55e; font-size: 2.5rem; margin-bottom: 1rem;">✓ Merci !</h1>
+            
+            <p class="subtitle" style="color: white; font-size: 1.2rem; margin-bottom: 1rem;">
+                Votre compte **OX PRO** a été créé avec succès.
+            </p>
+            
+            <p style="color: #888; margin-bottom: 2rem;">
+                Un email de confirmation vous a été envoyé.<br>
+                Pensez à vérifier vos **courriers indésirables (spams)**.
+            </p>
+
+            <hr style="border: 0; border-top: 1px solid #333; margin-bottom: 2rem;">
+
+            <p style="color: #666; font-size: 0.9rem; margin-bottom: 1.5rem;">
+                Redirection automatique vers la connexion dans <span id="timer" style="color: #22c55e; font-weight: bold;">10</span> secondes...
+            </p>
+
+            <button class="v-btn-auth" onclick="window.location.href='login.html'" style="background: transparent; border: 1px solid #22c55e; color: #22c55e;">
+                Se connecter maintenant
+            </button>
+        </div>
     </div>
+
+    <script>
+        // Système de compte à rebours pour la redirection
+        let seconds = 10;
+        const display = document.getElementById('timer');
+
+        const countdown = setInterval(() => {
+            seconds--;
+            display.innerText = seconds;
+
+            if (seconds <= 0) {
+                clearInterval(countdown);
+                window.location.href = 'login.html'; // Redirige vers ta page de login
+            }
+        }, 1000); // Mise à jour toutes les 1000ms (1 seconde)
+    </script>
 </body>
 </html>
