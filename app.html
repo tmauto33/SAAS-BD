@@ -37,6 +37,11 @@
     <i data-lucide="landmark"></i> <span>Trésorerie</span></button>
               <button class="nav-item" onclick="switchTab('admin', this)">
     <i data-lucide="file-text"></i> <span>Admin & Légal</span></button>
+            <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid #333;"></div>
+
+<button class="nav-item logout-item" onclick="handleLogout()" style="color: #ff4d4d;">
+    <i data-lucide="log-out"></i> <span>Déconnexion</span>
+</button>
               
               <button class="nav-item" onclick="switchTab('dashboard', this)"><i data-lucide="database"></i> <span>Historique</span></button>  
               <button class="nav-item" onclick="switchTab('options', this)"><i data-lucide="settings"></i> <span>Options</span></button>
@@ -794,4 +799,5 @@
     <script src="script.js"></script>
     <script>lucide.createIcons();</script>
 </body>
+
 </html>
