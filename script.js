@@ -1648,7 +1648,7 @@ async function initApp() {
 async function handleLogin() {
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
-    const { error } = await .auth.signInWithPassword({ email, password });
+    const { error } = await oxClient.auth.signInWithPassword({ email, password });
     if (error) alert(error.message); else location.reload();
 }
 
@@ -1694,3 +1694,4 @@ window.initApp = function() {
 
 
 window.onload = window.initApp;
+
