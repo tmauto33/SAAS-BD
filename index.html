@@ -105,33 +105,67 @@
     }
 
     // 3. AUTHENTIFICATION
-    async function handleAuth(mode) {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('pass').value;
-        const errorDiv = document.getElementById('auth-error-msg');
-        errorDiv.style.display = 'none';
+   async function handleAuth(mode) {
+    // 1. Récupération propre des valeurs
+    const emailInput = document.getElementById('email');
+    const passInput = document.getElementById('pass');
+    const errorDiv = document.getElementById('auth-error-msg');
 
-        if (mode === 'SIGNUP') {
-            const { error } = await supabaseClient.auth.signUp({ email, password });
-            if (error) { errorDiv.innerText = error.message; errorDiv.style.display = 'block'; }
-            else { alert("Inscription réussie !"); }
+    const email = emailInput.value.trim();
+    const password = passInput.value.trim();
+
+    errorDiv.style.display = 'none';
+
+    // 2. Vérification locale avant d'appeler Supabase
+    if (!email || !password) {
+        errorDiv.innerText = "L'email et le mot de passe sont obligatoires.";
+        errorDiv.style.display = 'block';
+        return;
+    }
+
+    if (password.length < 6) {
+        errorDiv.innerText = "Le mot de passe doit faire au moins 6 caractères.";
+        errorDiv.style.display = 'block';
+        return;
+    }
+
+    // 3. Appel à Supabase
+    if (mode === 'SIGNUP') {
+        const { data, error } = await supabaseClient.auth.signUp({
+            email: email,
+            password: password
+        });
+
+        if (error) {
+            errorDiv.innerText = "Erreur d'inscription : " + error.message;
+            errorDiv.style.display = 'block';
         } else {
-            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            if (error) { errorDiv.innerText = "Erreur de connexion"; errorDiv.style.display = 'block'; }
-            else { window.location.href = 'app.html'; }
+            // Si l'inscription réussit mais qu'une confirmation mail est requise
+            if (data.user && data.session === null) {
+                alert("Compte créé ! Vérifie tes emails pour confirmer ton adresse avant de te connecter.");
+            } else {
+                alert("Inscription réussie !");
+                window.location.href = 'app.html';
+            }
+        }
+    } else {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+            email: email,
+            password: password
+        });
+
+        if (error) {
+            errorDiv.innerText = "Erreur : Identifiants incorrects ou email non confirmé.";
+            errorDiv.style.display = 'block';
+        } else {
+            window.location.href = 'app.html';
         }
     }
-
-    // 4. VERIF SESSION
-    async function checkSession() {
-        const { data } = await supabaseClient.auth.getSession();
-        if (data?.session) { window.location.href = 'app.html'; }
-    }
-    checkSession();
-</script>
+}
     
 </body>
 </html>
+
 
 
 
