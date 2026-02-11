@@ -1,29 +1,37 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-    // Configuration identique à l'index
-    const SUPABASE_URL = 'https://rayyxgqgiwjytesoykgd.supabase.co';
-    const SUPABASE_KEY = 'TON_ID_ANON_PUBLIC_ICI'; 
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    // Verrou de sécurité
-    async function checkAccess() {
-        const { data } = await supabase.auth.getSession();
-        if (!data.session) {
-            // Si pas de session, retour immédiat à la vitrine
-            window.location.href = 'index.html';
-        }
-    }
-    checkAccess();
-</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>OptimizeX PRO</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script>
+        // 1. CONFIGURATION (Utilisation de 'oxClient' pour éviter le crash)
+        const SUPABASE_URL = 'https://rayyxgqgiwjytesoykgd.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJheXl4Z3FnaXdqeXRlc295a2dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MjgxMTQsImV4cCI6MjA4NjQwNDExNH0.KTGP8Kj9ueLBzasriq4sHJyNDK6nSryvZjc6NCsWRSM'; 
+        
+        // On change le nom ici !
+        const oxClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // 2. VERROU DE SÉCURITÉ
+        async function checkAccess() {
+            try {
+                const { data } = await oxClient.auth.getSession();
+                if (!data || !data.session) {
+                    window.location.href = 'index.html';
+                }
+            } catch (e) {
+                window.location.href = 'index.html';
+            }
+        }
+        checkAccess();
+    </script>
+
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 </main>
     </div> <script src="script.js"></script>
@@ -815,3 +823,4 @@
 </body>
 
 </html>
+
