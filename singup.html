@@ -7,44 +7,72 @@
     <link rel="stylesheet" href="vitrine.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body>
-    <div class="auth-container">
-        <div class="auth-card">
-            <h2>Créer un profil</h2>
-            <p>Rejoignez OX PRO pour piloter votre rentabilité.</p>
+<body class="login-body">
+    <div class="auth-container" style="display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+        <div class="auth-card" style="background: #111; padding: 2.5rem; border-radius: 12px; border: 1px solid #333; width: 100%; max-width: 400px; text-align: center;">
+            <h2 style="color: white; margin-bottom: 0.5rem;">Créer un profil</h2>
+            <p style="color: #888; margin-bottom: 2rem;">Rejoignez OX PRO pour piloter votre rentabilité.</p>
             
             <form id="signup-form">
-                <input type="email" id="email" placeholder="Email professionnel" required>
-                <input type="password" id="password" placeholder="Mot de passe (6 caractères min.)" required>
+                <div style="text-align: left; margin-bottom: 1rem;">
+                    <label style="color: #eee; font-size: 0.9rem; display: block; margin-bottom: 0.5rem;">Email professionnel</label>
+                    <input type="email" id="email" placeholder="nom@entreprise.com" required 
+                        style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #000; color: white;">
+                </div>
+
+                <div style="text-align: left; margin-bottom: 2rem;">
+                    <label style="color: #eee; font-size: 0.9rem; display: block; margin-bottom: 0.5rem;">Mot de passe</label>
+                    <input type="password" id="password" placeholder="6 caractères min." required 
+                        style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #000; color: white;">
+                </div>
                 
-                <button type="submit" class="auth-btn">S'inscrire</button>
+                <button type="submit" class="auth-btn" 
+                    style="width: 100%; padding: 14px; background: #22c55e; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">
+                    S'inscrire gratuitement
+                </button>
             </form>
 
-            <p>Déjà un compte ? <a href="login.html">Se connecter</a></p>
+            <p style="margin-top: 1.5rem; color: #888;">
+                Déjà un compte ? <a href="login.html" style="color: #22c55e; text-decoration: none;">Se connecter</a>
+            </p>
         </div>
     </div>
 
     <script>
-        // Configuration identique à ton script.js
+        // 1. CONFIGURATION SUPABASE
         const SB_URL = 'https://rayyxgqgiwjytesoykgd.supabase.co';
-        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // Ta clé complète
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJheXl4Z3FnaXdqeXRlc295a2dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MjgxMTQsImV4cCI6MjA4NjQwNDExNH0.KTGP8Kj9ueLBzasriq4sHJyNDK6nSryvZjc6NCsWRSM'; 
         const oxClient = supabase.createClient(SB_URL, SB_KEY);
 
+        // 2. GESTION DE L'INSCRIPTION
         document.getElementById('signup-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
+            
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const submitBtn = e.target.querySelector('button');
 
-            const { data, error } = await oxClient.auth.signUp({
-                email: email,
-                password: password,
-            });
+            // Désactive le bouton pendant le chargement
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Création du compte...";
 
-            if (error) {
-                alert("Erreur : " + error.message);
-            } else {
-                // Redirection vers la page de succès
-                window.location.href = 'merci.html';
+            try {
+                const { data, error } = await oxClient.auth.signUp({
+                    email: email,
+                    password: password,
+                });
+
+                if (error) {
+                    alert("Erreur : " + error.message);
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = "S'inscrire gratuitement";
+                } else {
+                    // REDIRECTION DIRECTE VERS MERCI.HTML
+                    window.location.href = 'merci.html';
+                }
+            } catch (err) {
+                alert("Une erreur est survenue lors de l'inscription.");
+                submitBtn.disabled = false;
             }
         });
     </script>
