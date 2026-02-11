@@ -86,77 +86,83 @@
     </div>
 
     <script>
-    // 1. INITIALISATION - On utilise 'supabaseClient' pour éviter le conflit
-    const SUPABASE_URL = 'https://rayyxgqgiwjytesoykgd.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJheXl4Z3FnaXdqeXRlc295a2dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MjgxMTQsImV4cCI6MjA4NjQwNDExNH0.KTGP8Kj9ueLBzasriq4sHJyNDK6nSryvZjc6NCsWRSM'; // <-- Assure-toi que c'est bien la clé anon
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // 1. CONFIGURATION DIRECTE
+    const SB_URL = 'https://rayyxgqgiwjytesoykgd.supabase.co';
+    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJheXl4Z3FnaXdqeXRlc295a2dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MjgxMTQsImV4cCI6MjA4NjQwNDExNH0.KTGP8Kj9ueLBzasriq4sHJyNDK6nSryvZjc6NCsWRSM'; 
+    
+    // Initialisation du client avec un nom unique pour éviter les conflits
+    const oxClient = supabase.createClient(SB_URL, SB_KEY);
 
     // Initialisation des icônes
     lucide.createIcons();
     
-    // 2. NAVIGATION
-    function showLogin() {
+    // 2. FONCTIONS DE NAVIGATION (window. pour garantir l'accès)
+    window.showLogin = function() {
         document.getElementById('view-paywall').style.display = 'none';
         document.getElementById('view-login').style.display = 'flex';
-    }
-    function showPaywall() {
+    };
+
+    window.showPaywall = function() {
         document.getElementById('view-login').style.display = 'none';
         document.getElementById('view-paywall').style.display = 'block';
-    }
+    };
 
-    // 3. AUTHENTIFICATION
-   async function handleAuth(mode) {
-    // 1. Récupération propre des valeurs
-    const emailInput = document.getElementById('email');
-    const passInput = document.getElementById('pass');
-    const errorDiv = document.getElementById('auth-error-msg');
+    // 3. LOGIQUE D'AUTHENTIFICATION
+    window.handleAuth = async function(mode) {
+        const email = document.getElementById('email').value.trim();
+        const pass = document.getElementById('pass').value.trim();
+        const errorDiv = document.getElementById('auth-error-msg');
 
-    const email = emailInput.value.trim();
-    const password = passInput.value.trim();
+        errorDiv.style.display = 'none';
 
-    errorDiv.style.display = 'none';
-
-    // 2. Vérification locale avant d'appeler Supabase
-    if (!email || !password) {
-        errorDiv.innerText = "L'email et le mot de passe sont obligatoires.";
-        errorDiv.style.display = 'block';
-        return;
-    }
-
-    if (password.length < 6) {
-        errorDiv.innerText = "Le mot de passe doit faire au moins 6 caractères.";
-        errorDiv.style.display = 'block';
-        return;
-    }
-
-    // 3. Appel à Supabase
-    if (mode === 'SIGNUP') {
-        const { data, error } = await supabaseClient.auth.signUp({
-            email: email,
-            password: password
-        });
-
-        if (error) {
-            errorDiv.innerText = "Erreur d'inscription : " + error.message;
+        if (!email || !pass) {
+            errorDiv.innerText = "Email et mot de passe requis.";
             errorDiv.style.display = 'block';
-        } else {
-            // Si l'inscription réussit mais qu'une confirmation mail est requise
-            if (data.user && data.session === null) {
-                alert("Compte créé ! Vérifie tes emails pour confirmer ton adresse avant de te connecter.");
+            return;
+        }
+
+        try {
+            if (mode === 'SIGNUP') {
+                const { data, error } = await oxClient.auth.signUp({ 
+                    email: email, 
+                    password: pass 
+                });
+                if (error) throw error;
+                alert("Inscription réussie ! Vérifie tes emails si la confirmation est activée.");
             } else {
-                alert("Inscription réussie !");
+                const { data, error } = await oxClient.auth.signInWithPassword({ 
+                    email: email, 
+                    password: pass 
+                });
+                if (error) throw error;
+                // Si ça marche, on va sur l'app
                 window.location.href = 'app.html';
             }
+        } catch (err) {
+            console.error("Erreur Auth:", err.message);
+            errorDiv.innerText = "Erreur : " + err.message;
+            errorDiv.style.display = 'block';
         }
-    } else {
-        const { data, error } = await supabaseClient.auth.signInWithPassword({
-            email: email,
-            password: password
-        });
+    };
 
+    // 4. VÉRIFICATION DE SESSION AU CHARGEMENT
+    async function checkSession() {
+        try {
+            const { data } = await oxClient.auth.getSession();
+            if (data?.session) {
+                window.location.href = 'app.html';
+            }
+        } catch (e) {
+            console.log("Pas de session active");
+        }
+    }
     
+    // Lancement de la vérif
+    checkSession();
+</script>
 </body>
 </html>
+
 
 
 
