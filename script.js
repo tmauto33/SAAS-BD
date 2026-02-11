@@ -1625,10 +1625,12 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-// --- CONFIGURATION ---
-const SUPABASE_URL = 'https://rayyxgqgiwjytesoykgd.supabase.co';
-const SUPABASE_KEY = 'TON_ID_EYJ...'; // Mets ta clé anon ici
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// --- CONFIGURATION CORRIGÉE ---
+const SB_URL = 'https://rayyxgqgiwjytesoykgd.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJheXl4Z3FnaXdqeXRlc295a2dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MjgxMTQsImV4cCI6MjA4NjQwNDExNH0.KTGP8Kj9ueLBzasriq4sHJyNDK6nSryvZjc6NCsWRSM'; 
+
+// On utilise oxClient partout pour être tranquille
+const oxClient = supabase.createClient(SB_URL, SB_KEY);
 
 // --- VÉRIFICATION INITIALE ---
 async function initApp() {
@@ -1645,19 +1647,19 @@ async function initApp() {
 }
 
 // --- FONCTIONS D'AUTH ---
-async function handleLogin() {
+window.handleLogin = async function() {
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
     const { error } = await oxClient.auth.signInWithPassword({ email, password });
     if (error) alert(error.message); else location.reload();
-}
+};
 
-async function handleSignup() {
+window.handleSignup = async function() {
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
     const { error } = await oxClient.auth.signUp({ email, password });
     if (error) alert(error.message); else alert("Vérifie tes emails !");
-}
+};
 
 async function handleLogout() {
     await oxClient.auth.signOut();
@@ -1694,4 +1696,5 @@ window.initApp = function() {
 
 
 window.onload = window.initApp;
+
 
