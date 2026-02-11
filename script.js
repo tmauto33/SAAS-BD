@@ -3,9 +3,11 @@
 // ==========================================================================
 
 // --- CONFIGURATION ---
-const SUPABASE_URL = 'https://rayyxgqgiwjytesoykgd.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJheXl4Z3FnaXdqeXRlc295a2dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MjgxMTQsImV4cCI6MjA4NjQwNDExNH0.KTGP8Kj9ueLBzasriq4sHJyNDK6nSryvZjc6NCsWRSM'; // <-- À CHANGER
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SB_URL = 'https://rayyxgqgiwjytesoykgd.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJheXl4Z3FnaXdqeXRlc295a2dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MjgxMTQsImV4cCI6MjA4NjQwNDExNH0.KTGP8Kj9ueLBzasriq4sHJyNDK6nSryvZjc6NCsWRSM';
+
+// On utilise "oxClient" pour ne plus jamais avoir de conflit de nom
+const oxClient = supabase.createClient(SB_URL, SB_KEY);
 
 // --- ÉTAT GLOBAL ---
 // On garde une copie locale pour la réactivité, mais on synchronisera avec Supabase
@@ -58,7 +60,7 @@ inspectionConfig.forEach(pt => {
 
 window.switchTab = async function(id, btn) {
     // SÉCURITÉ : Vérifier si l'utilisateur est connecté avant de changer d'onglet
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await oxClient.auth.getSession();
     
     if (!session && id !== 'login-screen') {
         console.warn("Accès refusé : Connexion requise");
@@ -1695,5 +1697,6 @@ window.initApp = function() {
 
 
 window.onload = window.initApp;
+
 
 
