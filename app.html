@@ -1,13 +1,29 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+    // Configuration identique à l'index
+    const SUPABASE_URL = 'https://rayyxgqgiwjytesoykgd.supabase.co';
+    const SUPABASE_KEY = 'TON_ID_ANON_PUBLIC_ICI'; 
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Verrou de sécurité
+    async function checkAccess() {
+        const { data } = await supabase.auth.getSession();
+        if (!data.session) {
+            // Si pas de session, retour immédiat à la vitrine
+            window.location.href = 'index.html';
+        }
+    }
+    checkAccess();
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>OptimizeX PRO</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 </main>
     </div> <script src="script.js"></script>
@@ -37,6 +53,9 @@
     <i data-lucide="landmark"></i> <span>Trésorerie</span></button>
               <button class="nav-item" onclick="switchTab('admin', this)">
     <i data-lucide="file-text"></i> <span>Admin & Légal</span></button>
+            <button onclick="handleLogout()" class="nav-item btn-logout" style="background: rgba(255, 68, 68, 0.1); color: #ff4444; border: 1px solid #ff4444;">
+    <i data-lucide="log-out"></i> Déconnexion
+</button>
               
               <button class="nav-item" onclick="switchTab('dashboard', this)"><i data-lucide="database"></i> <span>Historique</span></button>  
               <button class="nav-item" onclick="switchTab('options', this)"><i data-lucide="settings"></i> <span>Options</span></button>
@@ -794,4 +813,5 @@
     <script src="script.js"></script>
     <script>lucide.createIcons();</script>
 </body>
+
 </html>
