@@ -58,39 +58,55 @@ inspectionConfig.forEach(pt => {
 // 2. MODULE NAVIGATION & AUTH-CHECK
 // ==========================================================================
 
+/**
+ * Change l'onglet actif et rafraîchit les données correspondantes.
+ * @param {string} id - L'ID de la vue à afficher.
+ * @param {HTMLElement} btn - Le bouton cliqué pour l'état actif.
+ */
 window.switchTab = async function(id, btn) {
-    // SÉCURITÉ : Vérifier si l'utilisateur est connecté avant de changer d'onglet
-    const { data: { session } } = await oxClient.auth.getSession();
-    
-    if (!session && id !== 'login-screen') {
-        console.warn("Accès refusé : Connexion requise");
-        if (window.showLoginScreen) window.showLoginScreen(); 
+    console.log("Navigation vers :", id);
+
+    // 1. SÉCURITÉ : Vérifier la session via oxClient
+    try {
+        const { data: { session }, error } = await oxClient.auth.getSession();
+        
+        if (error || !session) {
+            console.warn("Accès refusé : Session invalide ou expirée.");
+            if (window.showLoginScreen) {
+                window.showLoginScreen();
+            } else {
+                window.location.href = 'index.html';
+            }
+            return;
+        }
+    } catch (err) {
+        console.error("Erreur lors de la vérification de session :", err);
         return;
     }
 
-    // 1. Cacher toutes les vues
-    document.querySelectorAll('.view').forEach(v => {
+    // 2. UI : Gestion de l'affichage des vues
+    const allViews = document.querySelectorAll('.view');
+    allViews.forEach(v => {
         v.classList.remove('active');
         v.style.display = 'none';
     });
 
-    // 2. Afficher la vue cible
-    const target = document.getElementById(id);
-    if (target) {
-        target.classList.add('active');
-        target.style.display = 'block';
-        
-        // Actions spécifiques selon l'onglet
-        if (id === 'negociation') {
-            if (window.updateNegoLogic) window.updateNegoLogic();
-        }
+    const targetView = document.getElementById(id);
+    if (targetView) {
+        targetView.classList.add('active');
+        targetView.style.display = 'block';
+    } else {
+        console.error(`Vue avec l'ID "${id}" introuvable.`);
     }
 
-    // 3. Gérer l'état visuel des boutons
+    // 3. UI : État actif des boutons du menu
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    if (btn) btn.classList.add('active');
+    if (btn) {
+        btn.classList.add('active');
+    }
 
-    // 4. Rafraîchissement intelligent (Inclus DANS la fonction maintenant)
+    // 4. LOGIQUE : Rafraîchissement des modules spécifiques
+    // On utilise des vérifications "if (window.fonction)" pour éviter les crashs si une fonction manque
     switch(id) {
         case 'pilotage':
             if (window.updatePilotage) window.updatePilotage();
@@ -103,11 +119,17 @@ window.switchTab = async function(id, btn) {
             if (window.renderMaintenance) window.renderMaintenance();
             break;
         case 'finance':
-            if (window.updateFinance) window.updateFinance();
-            else if (window.updateFinanceUI) window.updateFinanceUI();
+            if (window.updateFinance) {
+                window.updateFinance();
+            } else if (window.updateFinanceUI) {
+                window.updateFinanceUI();
+            }
             break;
         case 'crm':
             if (window.renderCRM) window.renderCRM();
+            break;
+        case 'negociation':
+            if (window.updateNegoLogic) window.updateNegoLogic();
             break;
         case 'admin':
             if (window.updateAdmin) window.updateAdmin();
@@ -120,9 +142,11 @@ window.switchTab = async function(id, btn) {
             break;
     }
 
-    // 5. Relancer les icônes si Lucide est utilisé
-    if (window.lucide) lucide.createIcons();
-}; // UNE SEULE FERMETURE ICI A LA FIN
+    // 5. UI : Mise à jour des icônes Lucide
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+};
 
 // ==========================================================================
 // 3. MODULE EXPERTISE & CALCULS
@@ -1696,5 +1720,6 @@ window.initApp = function() {
 
 
 window.onload = window.initApp;
+
 
 
