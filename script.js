@@ -96,6 +96,10 @@ window.switchTab = function(id, btn) {
         case 'options':
             if (window.renderConfigEditor) window.renderConfigEditor();
             break;
+            case 'expertise':
+        console.log("Chargement de la checklist...");
+        if (window.renderExpertise) window.renderExpertise();
+        break;
     }
 
     // 5. Relancer les icônes si Lucide est utilisé
@@ -1633,22 +1637,31 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.updateProfileStats) window.updateProfileStats();
 });
 
+// Déclaration globale pour être sûr que le HTML la trouve
 window.handleLogout = async function() {
-    if (confirm("Voulez-vous vraiment vous déconnecter ?")) {
-        try {
-            // Déconnexion de Supabase
+    console.log("Tentative de déconnexion..."); // Pour vérifier dans la console (F12)
+    
+    const confirmation = confirm("Voulez-vous vraiment vous déconnecter ?");
+    if (!confirmation) return;
+
+    try {
+        // 1. Déconnexion Supabase
+        if (window.oxClient) {
             await window.oxClient.auth.signOut();
-            
-            // Nettoyage du stockage local
-            localStorage.removeItem('ox_authenticated');
-            
-            // Retour à la page de connexion
-            window.location.href = 'index.html';
-        } catch (error) {
-            console.error("Erreur déconnexion:", error);
-            // Par sécurité, on redirige quand même
-            window.location.href = 'index.html';
         }
+        
+        // 2. Nettoyage local
+        localStorage.removeItem('ox_authenticated');
+        localStorage.clear(); // Optionnel : vide tout le cache pour plus de sécurité
+        
+        // 3. Redirection
+        console.log("Déconnexion réussie, redirection...");
+        window.location.replace('index.html'); 
+        
+    } catch (error) {
+        console.error("Erreur lors de la déconnexion:", error);
+        // En cas d'erreur, on force quand même le retour à l'accueil
+        window.location.href = 'index.html';
     }
 };
 
