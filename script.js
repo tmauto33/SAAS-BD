@@ -105,26 +105,27 @@ window.switchTab = function(id, btn) {
 // 3. MODULE EXPERTISE & CALCULS
 // ==========================================================================
 window.renderExpertise = function() {
-    const container = document.getElementById('checklist-render');
+    const container = document.getElementById('expertise-grid'); // Vérifie que l'ID correspond à ton HTML
     if (!container) return;
 
-    container.innerHTML = inspectionConfig.map(pt => {
-        const conf = window.configExpertise[pt.name];
-        return `
-        <div class="card check-item">
-            <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-                <span>
-                    <small style="color:var(--accent); font-weight:700;">${pt.cat}</small><br>
-                    <strong>${pt.name}</strong><br>
-                    <small style="opacity:0.6">${conf.val} ${conf.type === 'price' ? '€' : 'pts'}</small>
-                </span>
-                <div class="pill-group">
-                    <button class="pill-btn btn-ok ${window.checks[pt.name] === 1 ? 'active' : ''}" onclick="window.handleCheck('${pt.name}', 1, this)">OK</button>
-                    <button class="pill-btn btn-ko ${window.checks[pt.name] === 0 ? 'active' : ''}" onclick="window.handleCheck('${pt.name}', 0, this)">KO</button>
-                </div>
+    container.innerHTML = ''; // On vide le conteneur
+
+    // On boucle sur la configuration pour créer chaque ligne
+    inspectionConfig.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'checklist-item';
+        div.innerHTML = `
+            <div class="item-info">
+                <span class="item-name">${item.name}</span>
+                <span class="item-cat">${item.cat}</span>
             </div>
-        </div>`;
-    }).join('');
+            <div class="item-actions">
+                <button onclick="toggleCheck('${item.name}', 'ok')" class="btn-check ok">OK</button>
+                <button onclick="toggleCheck('${item.name}', 'ko')" class="btn-check ko">À prévoir</button>
+            </div>
+        `;
+        container.appendChild(div);
+    });
 };
 
 window.handleCheck = function(name, val, btn) {
@@ -1631,3 +1632,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.loadProfile) window.loadProfile();
     if (window.updateProfileStats) window.updateProfileStats();
 });
+
+window.handleLogout = async function() {
+    const confirmLogout = confirm("Voulez-vous vraiment vous déconnecter ?");
+    if (confirmLogout) {
+        await oxClient.auth.signOut();
+        localStorage.removeItem('ox_authenticated');
+        window.location.href = 'index.html';
+    }
+};
+
