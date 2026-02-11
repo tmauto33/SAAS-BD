@@ -86,72 +86,67 @@
     </div>
 
     <script>
-        // 1. INITIALISATION SUPABASE (Corrigée)
-        const SUPABASE_URL = 'https://rayyxgqgiwjytesoykgd.supabase.co';
-        // REMPLACE BIEN LA CLÉ CI-DESSOUS
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJheXl4Z3FnaXdqeXRlc295a2dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MjgxMTQsImV4cCI6MjA4NjQwNDExNH0.KTGP8Kj9ueLBzasriq4sHJyNDK6nSryvZjc6NCsWRSM'; 
+    // 1. INITIALISATION (On change le nom de la variable ici)
+    const SUPABASE_URL = 'https://rayyxgqgiwjytesoykgd.supabase.co';
+    const SUPABASE_KEY = 'TON_ID_ANON_PUBLIC_ICI'; // <-- METS TA CLÉ ICI
+    
+    // On utilise supabaseClient pour ne pas entrer en conflit avec la librairie
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Initialisation des icônes
+    lucide.createIcons();
+    
+    // 2. NAVIGATION (Ces fonctions vont enfin fonctionner)
+    function showLogin() {
+        console.log("Clic Connexion"); // Pour vérifier dans la console (F12)
+        document.getElementById('view-paywall').style.display = 'none';
+        document.getElementById('view-login').style.display = 'flex';
+    }
+    
+    function showPaywall() {
+        document.getElementById('view-login').style.display = 'none';
+        document.getElementById('view-paywall').style.display = 'block';
+    }
+
+    // 3. AUTHENTIFICATION
+    async function handleAuth(mode) {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('pass').value;
+        const errorDiv = document.getElementById('auth-error-msg');
         
-        // On nomme la variable 'sb' pour éviter le conflit avec l'objet global 'supabase'
-        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        errorDiv.style.display = 'none';
 
-        // Initialisation des icônes
-        if (window.lucide) lucide.createIcons();
-        
-        // Navigation interne
-        function showLogin() {
-            document.getElementById('view-paywall').style.display = 'none';
-            document.getElementById('view-login').style.display = 'flex';
-        }
-        function showPaywall() {
-            document.getElementById('view-login').style.display = 'none';
-            document.getElementById('view-paywall').style.display = 'block';
+        if (!email || !password) {
+            errorDiv.innerText = "Champs vides.";
+            errorDiv.style.display = 'block';
+            return;
         }
 
-        // 2. LOGIQUE D'AUTHENTIFICATION
-        async function handleAuth(mode) {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('pass').value;
-            const errorDiv = document.getElementById('auth-error-msg');
-            
-            errorDiv.style.display = 'none';
-
-            if (!email || !password) {
-                errorDiv.innerText = "Veuillez remplir tous les champs.";
+        if (mode === 'SIGNUP') {
+            const { error } = await supabaseClient.auth.signUp({ email, password });
+            if (error) { alert(error.message); } 
+            else { alert("Vérifie tes emails !"); }
+        } else {
+            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error) { 
+                errorDiv.innerText = "Erreur : " + error.message;
                 errorDiv.style.display = 'block';
-                return;
-            }
-
-            let result;
-
-            if (mode === 'SIGNUP') {
-                result = await sb.auth.signUp({ email, password });
-                if (result.error) {
-                    errorDiv.innerText = "Erreur : " + result.error.message;
-                    errorDiv.style.display = 'block';
-                } else {
-                    alert("Inscription réussie ! Vérifiez vos emails.");
-                }
             } else {
-                result = await sb.auth.signInWithPassword({ email, password });
-                if (result.error) {
-                    errorDiv.innerText = "Email ou mot de passe incorrect.";
-                    errorDiv.style.display = 'block';
-                } else {
-                    window.location.href = 'app.html';
-                }
-            }
-        }
-
-        // 3. VÉRIFICATION DE SESSION
-        async function checkSession() {
-            const { data } = await sb.auth.getSession();
-            if (data && data.session) {
                 window.location.href = 'app.html';
             }
         }
-        checkSession();
+    }
 
-    </script>
+    // 4. VERIF SESSION
+    async function checkSession() {
+        const { data } = await supabaseClient.auth.getSession();
+        if (data?.session) {
+            window.location.href = 'app.html';
+        }
+    }
+    checkSession();
+</script>
 </body>
 </html>
+
 
