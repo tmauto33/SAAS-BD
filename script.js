@@ -64,7 +64,7 @@ window.switchTab = async function(id, btn) {
     
     if (!session && id !== 'login-screen') {
         console.warn("Accès refusé : Connexion requise");
-        window.showLoginScreen(); // On force l'écran de login
+        if (window.showLoginScreen) window.showLoginScreen(); 
         return;
     }
 
@@ -89,43 +89,40 @@ window.switchTab = async function(id, btn) {
     // 3. Gérer l'état visuel des boutons
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     if (btn) btn.classList.add('active');
-};
 
-    // 4. Rafraîchissement intelligent (un seul appel par onglet)
-   // 4. Rafraîchissement intelligent
+    // 4. Rafraîchissement intelligent (Inclus DANS la fonction maintenant)
     switch(id) {
         case 'pilotage':
-            window.updatePilotage();
+            if (window.updatePilotage) window.updatePilotage();
             break;
         case 'inventaire':
-            window.renderInventory();
+            if (window.renderInventory) window.renderInventory();
             break;
         case 'maintenance':
         case 'logistique':
-            window.renderMaintenance();
+            if (window.renderMaintenance) window.renderMaintenance();
             break;
         case 'finance':
-            // On appelle la fonction de calcul ET de mise à jour UI
             if (window.updateFinance) window.updateFinance();
             else if (window.updateFinanceUI) window.updateFinanceUI();
             break;
         case 'crm':
-            window.renderCRM();
+            if (window.renderCRM) window.renderCRM();
             break;
         case 'admin':
             if (window.updateAdmin) window.updateAdmin();
             break;
-        case 'dashboard': // C'est ici que l'Historique se déclenche !
+        case 'dashboard':
             if (window.updateHistory) window.updateHistory();
             break;
         case 'options':
-            window.renderConfigEditor();
+            if (window.renderConfigEditor) window.renderConfigEditor();
             break;
     }
 
     // 5. Relancer les icônes si Lucide est utilisé
     if (window.lucide) lucide.createIcons();
-};
+}; // UNE SEULE FERMETURE ICI A LA FIN
 
 // ==========================================================================
 // 3. MODULE EXPERTISE & CALCULS
@@ -1635,7 +1632,7 @@ const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // --- VÉRIFICATION INITIALE ---
 async function initApp() {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await oxClient.auth.getSession();
     
     if (session) {
         document.getElementById('auth-screen').style.display = 'none';
@@ -1651,19 +1648,19 @@ async function initApp() {
 async function handleLogin() {
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await .auth.signInWithPassword({ email, password });
     if (error) alert(error.message); else location.reload();
 }
 
 async function handleSignup() {
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await oxClient.auth.signUp({ email, password });
     if (error) alert(error.message); else alert("Vérifie tes emails !");
 }
 
 async function handleLogout() {
-    await supabase.auth.signOut();
+    await oxClient.auth.signOut();
     location.reload();
 }
 
@@ -1673,7 +1670,7 @@ document.addEventListener('DOMContentLoaded', initApp);
 window.handleLogout = async function() {
     const confirmation = confirm("Voulez-vous vraiment vous déconnecter ?");
     if (confirmation) {
-        const { error } = await supabase.auth.signOut();
+        const { error } = await oxClient.auth.signOut();
         if (error) {
             console.error("Erreur lors de la déconnexion:", error.message);
         } else {
@@ -1697,6 +1694,3 @@ window.initApp = function() {
 
 
 window.onload = window.initApp;
-
-
-
