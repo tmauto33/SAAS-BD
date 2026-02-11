@@ -86,23 +86,19 @@
     </div>
 
     <script>
-    // 1. INITIALISATION (On change le nom de la variable ici)
+    // 1. INITIALISATION - On utilise 'supabaseClient' pour éviter le conflit
     const SUPABASE_URL = 'https://rayyxgqgiwjytesoykgd.supabase.co';
-    const SUPABASE_KEY = 'TON_ID_ANON_PUBLIC_ICI'; // <-- METS TA CLÉ ICI
-    
-    // On utilise supabaseClient pour ne pas entrer en conflit avec la librairie
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJheXl4Z3FnaXdqeXRlc295a2dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MjgxMTQsImV4cCI6MjA4NjQwNDExNH0.KTGP8Kj9ueLBzasriq4sHJyNDK6nSryvZjc6NCsWRSM'; // <-- Assure-toi que c'est bien la clé anon
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     // Initialisation des icônes
     lucide.createIcons();
     
-    // 2. NAVIGATION (Ces fonctions vont enfin fonctionner)
+    // 2. NAVIGATION
     function showLogin() {
-        console.log("Clic Connexion"); // Pour vérifier dans la console (F12)
         document.getElementById('view-paywall').style.display = 'none';
         document.getElementById('view-login').style.display = 'flex';
     }
-    
     function showPaywall() {
         document.getElementById('view-login').style.display = 'none';
         document.getElementById('view-paywall').style.display = 'block';
@@ -113,40 +109,29 @@
         const email = document.getElementById('email').value;
         const password = document.getElementById('pass').value;
         const errorDiv = document.getElementById('auth-error-msg');
-        
         errorDiv.style.display = 'none';
-
-        if (!email || !password) {
-            errorDiv.innerText = "Champs vides.";
-            errorDiv.style.display = 'block';
-            return;
-        }
 
         if (mode === 'SIGNUP') {
             const { error } = await supabaseClient.auth.signUp({ email, password });
-            if (error) { alert(error.message); } 
-            else { alert("Vérifie tes emails !"); }
+            if (error) { errorDiv.innerText = error.message; errorDiv.style.display = 'block'; }
+            else { alert("Inscription réussie !"); }
         } else {
             const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            if (error) { 
-                errorDiv.innerText = "Erreur : " + error.message;
-                errorDiv.style.display = 'block';
-            } else {
-                window.location.href = 'app.html';
-            }
+            if (error) { errorDiv.innerText = "Erreur de connexion"; errorDiv.style.display = 'block'; }
+            else { window.location.href = 'app.html'; }
         }
     }
 
     // 4. VERIF SESSION
     async function checkSession() {
         const { data } = await supabaseClient.auth.getSession();
-        if (data?.session) {
-            window.location.href = 'app.html';
-        }
+        if (data?.session) { window.location.href = 'app.html'; }
     }
     checkSession();
 </script>
+    
 </body>
 </html>
+
 
 
