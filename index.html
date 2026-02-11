@@ -73,7 +73,7 @@
             <div id="auth-error-msg" style="color: #ff4444; font-size: 0.85rem; margin-bottom: 10px; display: none;"></div>
 
             <button class="v-btn-auth" id="btn-login" onclick="handleAuth('LOGIN')">Se connecter</button>
-            <button class="v-btn-auth" id="btn-signup" onclick="handleAuth('SIGNUP')" style="background: transparent; border: 1px solid var(--accent); margin-top: 10px;">Créer un compte</button>
+            <button class="v-btn-auth" id="btn-signup" onclick="handleAuth('SIGNUP')" style="background: transparent; border: 1px solid #ffcc00; margin-top: 10px;">Créer un compte</button>
 
             <div class="social-divider">ou</div>
             
@@ -86,14 +86,16 @@
     </div>
 
     <script>
-        // 1. INITIALISATION SUPABASE
-        // REMPLACE BIEN CES DEUX LIGNES PAR TES INFOS SUPABASE (eyJ...)
+        // 1. INITIALISATION SUPABASE (Corrigée)
         const SUPABASE_URL = 'https://rayyxgqgiwjytesoykgd.supabase.co';
+        // REMPLACE BIEN LA CLÉ CI-DESSOUS
         const SUPABASE_KEY = 'TON_ID_ANON_PUBLIC_ICI'; 
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        // On nomme la variable 'sb' pour éviter le conflit avec l'objet global 'supabase'
+        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         // Initialisation des icônes
-        lucide.createIcons();
+        if (window.lucide) lucide.createIcons();
         
         // Navigation interne
         function showLogin() {
@@ -105,7 +107,7 @@
             document.getElementById('view-paywall').style.display = 'block';
         }
 
-        // 2. LOGIQUE D'AUTHENTIFICATION RÉELLE
+        // 2. LOGIQUE D'AUTHENTIFICATION
         async function handleAuth(mode) {
             const email = document.getElementById('email').value;
             const password = document.getElementById('pass').value;
@@ -122,31 +124,28 @@
             let result;
 
             if (mode === 'SIGNUP') {
-                // INSCRIPTION
-                result = await supabase.auth.signUp({ email, password });
+                result = await sb.auth.signUp({ email, password });
                 if (result.error) {
-                    errorDiv.innerText = "Erreur d'inscription : " + result.error.message;
+                    errorDiv.innerText = "Erreur : " + result.error.message;
                     errorDiv.style.display = 'block';
                 } else {
-                    alert("Inscription réussie ! Vérifiez vos emails pour confirmer.");
+                    alert("Inscription réussie ! Vérifiez vos emails.");
                 }
             } else {
-                // CONNEXION
-                result = await supabase.auth.signInWithPassword({ email, password });
+                result = await sb.auth.signInWithPassword({ email, password });
                 if (result.error) {
                     errorDiv.innerText = "Email ou mot de passe incorrect.";
                     errorDiv.style.display = 'block';
                 } else {
-                    // Succès : redirection vers l'app
                     window.location.href = 'app.html';
                 }
             }
         }
 
-        // 3. VÉRIFICATION DE SESSION AU CHARGEMENT
+        // 3. VÉRIFICATION DE SESSION
         async function checkSession() {
-            const { data } = await supabase.auth.getSession();
-            if (data.session) {
+            const { data } = await sb.auth.getSession();
+            if (data && data.session) {
                 window.location.href = 'app.html';
             }
         }
