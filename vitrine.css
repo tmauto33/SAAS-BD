@@ -306,4 +306,60 @@ button, .v-btn-auth, .v-btn-login {
     cursor: pointer !important;
 }
 
+/* --- HEADER AUTH GROUP --- */
+.header-auth-group {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.v-btn-login-outline {
+    background: transparent;
+    color: white;
+    border: 1px solid #333;
+    padding: 10px 20px;
+    border-radius: 500px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.v-btn-login-outline:hover {
+    border-color: white;
+}
+
+.v-btn-signup-solid {
+    background-color: var(--sp-green);
+    color: black;
+    padding: 10px 20px;
+    border-radius: 500px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.v-btn-signup-solid:hover {
+    transform: scale(1.05);
+}
+
+/* --- PROMPT INSCRIPTION DANS LOGIN --- */
+.signup-prompt {
+    margin-top: 20px;
+    color: var(--sp-text-muted);
+    font-size: 0.9rem;
+}
+
+.signup-prompt span {
+    color: var(--sp-green);
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: underline;
+    margin-left: 5px;
+}
+
+.signup-prompt span:hover {
+    color: white;
+}
 .social-btn:hover { background: rgba(255,255,255,0.05); }
+
