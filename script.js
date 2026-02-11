@@ -1626,6 +1626,47 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
+// --- CONFIGURATION ---
+const SUPABASE_URL = 'https://rayyxgqgiwjytesoykgd.supabase.co';
+const SUPABASE_KEY = 'TON_ID_EYJ...'; // Mets ta clé anon ici
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// --- VÉRIFICATION INITIALE ---
+async function initApp() {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (session) {
+        document.getElementById('auth-screen').style.display = 'none';
+        document.getElementById('main-app').style.display = 'block';
+        console.log("Bienvenue", session.user.email);
+    } else {
+        document.getElementById('auth-screen').style.display = 'flex';
+        document.getElementById('main-app').style.display = 'none';
+    }
+}
+
+// --- FONCTIONS D'AUTH ---
+async function handleLogin() {
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) alert(error.message); else location.reload();
+}
+
+async function handleSignup() {
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    const { error } = await supabase.auth.signUp({ email, password });
+    if (error) alert(error.message); else alert("Vérifie tes emails !");
+}
+
+async function handleLogout() {
+    await supabase.auth.signOut();
+    location.reload();
+}
+
+document.addEventListener('DOMContentLoaded', initApp);
+
 // ==========================================================================
 // 9. INITIALISATION
 // ==========================================================================
@@ -1639,3 +1680,4 @@ window.initApp = function() {
 
 
 window.onload = window.initApp;
+
