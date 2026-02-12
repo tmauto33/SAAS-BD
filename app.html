@@ -24,30 +24,21 @@
     <i data-lucide="search"></i> <span>Analyse</span>
 </button>
              
-                <button class="nav-item" onclick="switchTab('expertise', this)"><i data-lucide="clipboard-check"></i> <span>Expertise</span></button>
-                <button class="nav-item" onclick="switchTab('nego', this)"><i data-lucide="trending-down"></i> <span>Négo</span></button>
-                <button class="nav-item" onclick="switchTab('annonce', this)"><i data-lucide="megaphone"></i> <span>Annonce</span></button>
-              <button class="nav-item" onclick="switchTab('inventaire', this)">
-    <i data-lucide="car"></i> <span>Inventaire</span></button>
-              <button class="nav-item" onclick="switchTab('maintenance', this)">
-    <i data-lucide="wrench"></i> <span>Logistique</span></button>
-              <button class="nav-item" onclick="switchTab('crm', this)">
-    <i data-lucide="users"></i> <span>CRM Clients</span></button>
-              <button class="nav-item" onclick="switchTab('finance', this)">
-    <i data-lucide="landmark"></i> <span>Trésorerie</span></button>
-              <button class="nav-item" onclick="switchTab('admin', this)">
-    <i data-lucide="file-text"></i> <span>Admin & Légal</span></button>
-            <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid #333;"></div>
+                <button class="nav-item" onclick="switchTab('admin', this)">
+    <i data-lucide="file-text"></i> <span>Admin & Légal</span>
+</button>
 
-<button id="logout-btn-side" class="nav-item" style="color: #ff4d4d; margin-top: auto; border-top: 1px solid #333; width: 100%;">
+<div style="margin-top: auto; padding-top: 10px; border-top: 1px solid #333;"></div>
+
+<button id="logout-btn-side" class="nav-item" 
+        onclick="if(confirm('Se déconnecter ?')) { localStorage.clear(); window.location.href='index.html'; }" 
+        style="color: #ff4d4d; width: 100%; cursor: pointer;">
     <i data-lucide="log-out"></i> <span>Déconnexion</span>
 </button>
-              
-              <button class="nav-item" onclick="switchTab('dashboard', this)"><i data-lucide="database"></i> <span>Historique</span></button>  
-              <button class="nav-item" onclick="switchTab('options', this)"><i data-lucide="settings"></i> <span>Options</span></button>
-                <button class="nav-item" onclick="switchTab('profil', this)"><i data-lucide="user-circle"></i> <span>Profil</span></button>
-            </nav>
-        </aside>
+
+<button class="nav-item" onclick="switchTab('dashboard', this)"><i data-lucide="database"></i> <span>Historique</span></button>  
+<button class="nav-item" onclick="switchTab('options', this)"><i data-lucide="settings"></i> <span>Options</span></button>
+<button class="nav-item" onclick="switchTab('profil', this)"><i data-lucide="user-circle"></i> <span>Profil</span></button>
 
         <main class="main-content">
           
@@ -801,4 +792,5 @@
 </body>
 
 </html>
+
 
