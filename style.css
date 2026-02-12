@@ -383,19 +383,23 @@ input:focus {
 
 }
 
-/* Le conteneur principal doit être aligné en haut, pas au centre vertical */
+/* Supprime le vide noir et remonte le contenu */
 main.v-main {
     display: flex;
     flex-direction: column;
-    justify-content: flex-start; /* Aligne le contenu en haut */
-    align-items: center;        /* Centre horizontalement */
-    padding-top: 20px;
+    justify-content: flex-start !important; /* Force l'alignement en haut */
+    align-items: center;
+    padding-top: 10px !important; /* Réduit l'espace en haut */
     min-height: 100vh;
+    background: #0a0a0a; /* Assure un fond uni */
 }
 
+/* Ajuste les conteneurs de vue */
 .view {
-    width: 95%;
+    width: 100%;
     max-width: 1400px;
-    margin: 0 auto; /* Centre la section dans la page */
+    margin: 0 auto;
+    padding: 20px;
 }
+
 
