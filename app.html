@@ -790,28 +790,55 @@
     <script src="script.js"></script>
     <script>lucide.createIcons();</script>
 
-       <script>
-    // 1. Force l'affichage et le rendu des données au clic
+    
+<script>
+    // 1. Gestionnaire de navigation complet pour toutes les sections
     const originalSwitchTab = window.switchTab;
     window.switchTab = function(id, btn) {
         console.log("Navigation forcée vers :", id);
         
-        // Exécution de la navigation de base
+        // Cacher toutes les vues
         document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+        
+        // Afficher la vue demandée
         const target = document.getElementById(id);
         if(target) target.style.display = 'block';
 
-        // Mise à jour visuelle des boutons
+        // Gérer l'état visuel du menu (Sidebar)
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         if (btn) btn.classList.add('active');
 
-        // FORCE LE RENDU DES MODULES
+        // --- DÉCLENCHEMENT DES MISES À JOUR PAR SECTION ---
         if (id === 'expertise' && typeof window.renderExpertise === 'function') {
             window.renderExpertise();
-        }
-        if (id === 'pilotage' && typeof window.updatePilotage === 'function') {
+        } 
+        else if (id === 'pilotage' && typeof window.updatePilotage === 'function') {
             window.updatePilotage();
         }
+        else if (id === 'inventaire' && typeof window.renderInventory === 'function') {
+            window.renderInventory();
+        }
+        else if ((id === 'maintenance' || id === 'logistique') && typeof window.renderMaintenance === 'function') {
+            window.renderMaintenance();
+        }
+        else if (id === 'crm' && typeof window.renderCRM === 'function') {
+            window.renderCRM();
+        }
+        else if (id === 'finance' && typeof window.updateFinance === 'function') {
+            window.updateFinance();
+        }
+        else if (id === 'admin' && typeof window.updateAdmin === 'function') {
+            window.updateAdmin();
+        }
+        else if (id === 'dashboard' && typeof window.updateHistory === 'function') {
+            window.updateHistory();
+        }
+        else if (id === 'options' && typeof window.renderConfigEditor === 'function') {
+            window.renderConfigEditor();
+        }
+
+        // Relancer les icônes pour la nouvelle page affichée
+        if (window.lucide) lucide.createIcons();
     };
 
     // 2. Déconnexion Infaillible
@@ -826,16 +853,18 @@
         }
     });
 
-    // 3. Initialisation automatique au chargement
+    // 3. Lancement au démarrage
     window.addEventListener('load', () => {
         if (window.lucide) lucide.createIcons();
-        // On affiche le pilotage par défaut
+        // Affiche le pilotage par défaut au chargement
         window.switchTab('pilotage', document.querySelector('.nav-item'));
     });
-</script>
+</script>   
+
 </body>
 
 </html>
+
 
 
 
