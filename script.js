@@ -1,4 +1,12 @@
 // ==========================================================================
+// 0. CONFIGURATION BASE DE DONNÉES (NOUVEAU)
+// ==========================================================================
+const SB_URL = "https://rayyxgqgiwjytesoykgd.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJheXl4Z3FnaXdqeXRlc295a2dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MjgxMTQsImV4cCI6MjA4NjQwNDExNH0.KTGP8Kj9ueLBzasriq4sHJyNDK6nSryvZjc6NCsWRSM";
+
+// Initialisation corrigée : on utilise 'supabase' directement
+const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+// ==========================================================================
 // 1. ÉTAT GLOBAL ET CONFIGURATION
 // ==========================================================================
 window.configExpertise = JSON.parse(localStorage.getItem('ox_config')) || {};
@@ -47,9 +55,6 @@ inspectionConfig.forEach(pt => {
 // ==========================================================================
 // 2. MODULE NAVIGATION
 // ==========================================================================
-// ==========================================================================
-// 2. MODULE NAVIGATION
-// ==========================================================================
 window.switchTab = function(id, btn) {
     // 1. Cacher toutes les vues
     document.querySelectorAll('.view').forEach(v => {
@@ -62,80 +67,72 @@ window.switchTab = function(id, btn) {
     if (target) {
         target.classList.add('active');
         target.style.display = 'block';
-    }
+}
 
-    // 3. Gérer l'état visuel des boutons de navigation (Sidebar)
+    // 3. Gérer l'état visuel des boutons de navigation
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     if (btn) btn.classList.add('active');
 
-    // 4. Rafraîchissement intelligent des modules
-    console.log("Navigation vers :", id);
+    // 4. Rafraîchissement intelligent (un seul appel par onglet)
+   // 4. Rafraîchissement intelligent
     switch(id) {
-        /
-case 'expertise':
-    console.log("Chargement manuel de la checklist...");
-    if (window.renderExpertise) {
-        window.renderExpertise();
-    } else {
-        console.error("La fonction renderExpertise est introuvable !");
-    }
-    break;
         case 'pilotage':
-            if (window.updatePilotage) window.updatePilotage();
+            window.updatePilotage();
             break;
         case 'inventaire':
-            if (window.renderInventory) window.renderInventory();
+            window.renderInventory();
             break;
         case 'maintenance':
         case 'logistique':
-            if (window.renderMaintenance) window.renderMaintenance();
+            window.renderMaintenance();
             break;
         case 'finance':
+            // On appelle la fonction de calcul ET de mise à jour UI
             if (window.updateFinance) window.updateFinance();
             else if (window.updateFinanceUI) window.updateFinanceUI();
             break;
         case 'crm':
-            if (window.renderCRM) window.renderCRM();
+            window.renderCRM();
             break;
         case 'admin':
             if (window.updateAdmin) window.updateAdmin();
             break;
-        case 'dashboard':
+        case 'dashboard': // C'est ici que l'Historique se déclenche !
             if (window.updateHistory) window.updateHistory();
             break;
         case 'options':
-            if (window.renderConfigEditor) window.renderConfigEditor();
+            window.renderConfigEditor();
             break;
     }
 
-    // 5. Relancer les icônes Lucide pour les nouveaux éléments affichés
+    // 5. Relancer les icônes si Lucide est utilisé
     if (window.lucide) lucide.createIcons();
 };
+
 // ==========================================================================
 // 3. MODULE EXPERTISE & CALCULS
 // ==========================================================================
 window.renderExpertise = function() {
-    const container = document.getElementById('expertise-grid'); // Vérifie que l'ID correspond à ton HTML
+    const container = document.getElementById('checklist-render');
     if (!container) return;
 
-    container.innerHTML = ''; // On vide le conteneur
-
-    // On boucle sur la configuration pour créer chaque ligne
-    inspectionConfig.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'checklist-item';
-        div.innerHTML = `
-            <div class="item-info">
-                <span class="item-name">${item.name}</span>
-                <span class="item-cat">${item.cat}</span>
+    container.innerHTML = inspectionConfig.map(pt => {
+        const conf = window.configExpertise[pt.name];
+        return `
+        <div class="card check-item">
+            <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                <span>
+                    <small style="color:var(--accent); font-weight:700;">${pt.cat}</small><br>
+                    <strong>${pt.name}</strong><br>
+                    <small style="opacity:0.6">${conf.val} ${conf.type === 'price' ? '€' : 'pts'}</small>
+                </span>
+                <div class="pill-group">
+                    <button class="pill-btn btn-ok ${window.checks[pt.name] === 1 ? 'active' : ''}" onclick="window.handleCheck('${pt.name}', 1, this)">OK</button>
+                    <button class="pill-btn btn-ko ${window.checks[pt.name] === 0 ? 'active' : ''}" onclick="window.handleCheck('${pt.name}', 0, this)">KO</button>
+                </div>
             </div>
-            <div class="item-actions">
-                <button onclick="toggleCheck('${item.name}', 'ok')" class="btn-check ok">OK</button>
-                <button onclick="toggleCheck('${item.name}', 'ko')" class="btn-check ko">À prévoir</button>
-            </div>
-        `;
-        container.appendChild(div);
-    });
+        </div>`;
+    }).join('');
 };
 
 window.handleCheck = function(name, val, btn) {
@@ -1134,6 +1131,7 @@ window.updatePoliceTable = function() {
 };
 
 // Exporte tout le registre en CSV (Format Excel)
+// 1. Fonction d'export CSV (inchangée)
 window.exportPoliceCSV = function() {
     const deals = window.savedDeals || [];
     let csv = "ID;DATE_ENTREE;MARQUE;MODELE;IMMAT;VIN;VENDEUR_NOM;PRIX_ACHAT;DATE_SORTIE;ACHETEUR_NOM;PRIX_VENTE\n";
@@ -1154,56 +1152,77 @@ window.exportPoliceCSV = function() {
         ];
         csv += row.join(";") + "\n";
     });
-
     window.downloadCSV(csv, "Livre_Police_Export.csv");
 };
 
-// Fonction simple pour imprimer
+// 2. Fonction d'impression
 window.printPoliceBook = function() {
-    window.print(); // Ouvre la boite de dialogue système
+    window.print();
 };
 
-// Fonction pour modifier
+// 3. Fonction de modification (avec Supabase si tu veux plus tard)
 window.editPoliceEntry = function(dealId) {
-    // On trouve le véhicule dans la base
     const dealIndex = window.savedDeals.findIndex(d => d.id == dealId);
     if (dealIndex === -1) return;
 
     const deal = window.savedDeals[dealIndex];
-
-    // On demande les corrections (Exemple simplifié par prompt)
     const newVin = prompt("Modifier le numéro VIN :", deal.vin || "");
     const newSeller = prompt("Modifier le nom du vendeur :", deal.sellerName || "");
     
     if (newVin !== null) window.savedDeals[dealIndex].vin = newVin;
     if (newSeller !== null) window.savedDeals[dealIndex].sellerName = newSeller;
 
-    // Sauvegarde et mise à jour
     localStorage.setItem('ox_deals', JSON.stringify(window.savedDeals));
     window.updatePoliceTable();
     alert("Registre mis à jour !");
 };
 
-window.addManualPoliceEntry = function() {
-    const brand = prompt("Marque / Modèle :");
-    if(!brand) return;
+// 4. SAUVEGARDE SUR SUPABASE (SÉPARÉE ET CORRIGÉE)
+window.saveEntryToCloud = async function(manualEntry) {
+    console.log("Tentative d'envoi vers Supabase...");
+    const { data, error } = await supabaseClient
+        .from('expertise_history')
+        .insert([{
+            model: manualEntry.model || manualEntry.brand,
+            price_buy: manualEntry.purchase || 0,
+            price_sell: manualEntry.soldPrice || 0,
+            margin: (manualEntry.soldPrice || 0) - (manualEntry.purchase || 0),
+            details: manualEntry 
+        }]);
+
+    if (error) {
+        console.error("Erreur Supabase :", error.message);
+    } else {
+        console.log("Données sauvegardées avec succès dans le Cloud !");
+    }
+};
+
+// 5. AJOUT MANUEL (CORRIGÉ)
+window.addManualPoliceEntry = async function() {
+    const brandInput = prompt("Marque / Modèle :");
+    if(!brandInput) return;
 
     const manualEntry = {
         id: Date.now(),
-        brand: brand.split(' ')[0] || "Inconnu",
-        model: brand.split(' ')[1] || "",
+        brand: brandInput.split(' ')[0] || "Inconnu",
+        model: brandInput.split(' ').slice(1).join(' ') || "",
         date: new Date().toLocaleDateString('fr-FR'),
-        immat: prompt("Immatriculation :"),
-        sellerName: prompt("Nom du Vendeur :"),
-        status: "STOCK", // Par défaut
-        price: 0
+        immat: prompt("Immatriculation :") || "N/A",
+        sellerName: prompt("Nom du Vendeur :") || "Inconnu",
+        status: "STOCK",
+        purchase: 0
     };
 
+    // Sauvegarde locale
     window.savedDeals.push(manualEntry);
     localStorage.setItem('ox_deals', JSON.stringify(window.savedDeals));
+    
+    // Appel de la sauvegarde Cloud
+    await window.saveEntryToCloud(manualEntry);
+
+    // Mise à jour visuelle
     window.updatePoliceTable();
 };
-
 
 // --- 2. GESTION DE LA CLÔTURE COMPTABLE ---
 
@@ -1614,60 +1633,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // ==========================================================================
-// 9. INITIALISATION ET AUTHENTIFICATION
+// 9. INITIALISATION
 // ==========================================================================
-
-// Utilisation de window. pour éviter l'erreur "Identifier has already been declared"
-window.SB_URL = 'https://rayyxgqgiwjytesoykgd.supabase.co';
-window.SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJheXl4Z3FnaXdqeXRlc295a2dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MjgxMTQsImV4cCI6MjA4NjQwNDExNH0.KTGP8Kj9ueLBzasriq4sHJyNDK6nSryvZjc6NCsWRSM';
-
-// Initialisation unique du client
-if (!window.oxClient) {
-    window.oxClient = supabase.createClient(window.SB_URL, window.SB_KEY);
-}
-
 window.initApp = function() {
-    console.log("Démarrage de l'application OX PRO...");
-    if (window.renderExpertise) window.renderExpertise();
-    if (window.updatePilotage) window.updatePilotage();
-    if (window.runCalculations) window.runCalculations(); 
-    
-    // On lance la vue par défaut
-    window.switchTab('pilotage', document.querySelector('.nav-item.active'));
+    window.renderExpertise();
+    window.updatePilotage();
+    // On s'assure que si on est sur l'onglet négo, les calculs sont faits
+    window.runCalculations(); 
+    window.switchTab('pilotage');
 };
 
-// On s'assure que le DOM est chargé avant de lancer l'app
-// On attend que la page soit totalement chargée
-// Utilisation de la délégation d'événement pour parer à tout problème de chargement
-document.addEventListener('click', async (e) => {
-    // On cherche si l'élément cliqué (ou son parent) est le bouton de déconnexion
-    const logoutBtn = e.target.closest('#logout-btn-side');
-    
-    if (logoutBtn) {
-        e.preventDefault();
-        console.log("Action de déconnexion détectée...");
-
-        if (confirm("Voulez-vous retourner à la page de connexion ?")) {
-            try {
-                // 1. Déconnexion Supabase (si disponible)
-                if (window.oxClient && window.oxClient.auth) {
-                    await window.oxClient.auth.signOut();
-                }
-            } catch (err) {
-                console.warn("Échec signOut Supabase, nettoyage local uniquement.");
-            } finally {
-                // 2. Nettoyage local radical
-                localStorage.clear();
-                sessionStorage.clear();
-                
-                // 3. Redirection immédiate
-                console.log("Redirection forcée.");
-                window.location.href = 'index.html'; 
-            }
-        }
-    }
-});
-
-
-
-
+window.onload = window.initApp;
