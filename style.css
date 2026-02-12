@@ -380,4 +380,21 @@ input:focus {
     transform: translateY(-5px);
     transition: all 0.3s ease;
     box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+
+}
+
+/* Force le contenu à remplir l'écran et à se centrer */
+main.v-main {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding: 20px;
+    justify-content: flex-start; /* Aligne le contenu en haut si besoin */
+}
+
+.view {
+    width: 100%;
+    max-width: 1200px; /* Optionnel : pour ne pas que ce soit trop large */
+    margin: 0 auto;    /* Centre horizontalement */
 }
