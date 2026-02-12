@@ -789,11 +789,64 @@
 
     <script src="script.js"></script>
     <script>lucide.createIcons();</script>
+            <script>
+    window.switchTab = function(id, btn) {
+        console.log("Navigation vers :", id);
+        
+        // 1. Masquer toutes les sections
+        document.querySelectorAll('.view').forEach(v => {
+            v.style.display = 'none';
+            v.classList.remove('active');
+        });
+
+        // 2. Afficher la section demandée
+        const target = document.getElementById(id);
+        if (target) {
+            target.style.display = 'block';
+            target.classList.add('active');
+        }
+
+        // 3. Style des boutons du menu
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+
+        // 4. Lancement des fonctions de chaque module
+        try {
+            if (id === 'pilotage' && window.updatePilotage) window.updatePilotage();
+            if (id === 'expertise' && window.renderExpertise) window.renderExpertise();
+            if (id === 'inventaire' && window.renderInventory) window.renderInventory();
+            if (id === 'maintenance' && window.renderMaintenance) window.renderMaintenance();
+            if (id === 'crm' && window.renderCRM) window.renderCRM();
+            if (id === 'finance' && window.updateFinance) window.updateFinance();
+            if (id === 'admin' && window.updateAdmin) window.updateAdmin();
+            if (id === 'dashboard' && window.updateHistory) window.updateHistory();
+            if (id === 'options' && window.renderConfigEditor) window.renderConfigEditor();
+            if (id === 'profil' && window.updateProfileStats) window.updateProfileStats();
+        } catch (e) { console.error("Erreur de mise à jour module:", e); }
+
+        if (window.lucide) lucide.createIcons();
+    };
+
+    // Gestion de la déconnexion
+    document.addEventListener('click', function(e) {
+        const logoutBtn = e.target.closest('#logout-btn-side');
+        if (logoutBtn) {
+            e.preventDefault();
+            if (confirm("Se déconnecter ?")) {
+                localStorage.clear();
+                window.location.replace('index.html');
+            }
+        }
+    });
+
+    window.onload = () => window.switchTab('pilotage', document.querySelector('.nav-item'));
+</script>
 
 
 </body>
 
 </html>
+
 
 
 
