@@ -790,62 +790,77 @@
     <script src="script.js"></script>
     <script>lucide.createIcons();</script>
             <script>
+    // Navigation robuste pour TOUTES les sections
     window.switchTab = function(id, btn) {
-        console.log("Navigation vers :", id);
+        console.log("Navigation forcée vers :", id);
         
-        // 1. Masquer toutes les sections
+        // 1. Masquer absolument toutes les vues
         document.querySelectorAll('.view').forEach(v => {
             v.style.display = 'none';
             v.classList.remove('active');
         });
 
-        // 2. Afficher la section demandée
+        // 2. Afficher la vue cible
         const target = document.getElementById(id);
         if (target) {
             target.style.display = 'block';
             target.classList.add('active');
         }
 
-        // 3. Style des boutons du menu
+        // 3. Gérer l'état visuel des boutons
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         if (btn) btn.classList.add('active');
 
-        // 4. Lancement des fonctions de chaque module
+        // 4. Lancer les mises à jour des données par module
         try {
             if (id === 'pilotage' && window.updatePilotage) window.updatePilotage();
             if (id === 'expertise' && window.renderExpertise) window.renderExpertise();
             if (id === 'inventaire' && window.renderInventory) window.renderInventory();
-            if (id === 'maintenance' && window.renderMaintenance) window.renderMaintenance();
+            if (id === 'maintenance' || id === 'logistique') {
+                if (window.renderMaintenance) window.renderMaintenance();
+            }
             if (id === 'crm' && window.renderCRM) window.renderCRM();
-            if (id === 'finance' && window.updateFinance) window.updateFinance();
+            if (id === 'finance' || id === 'tresorerie') {
+                if (window.updateFinance) window.updateFinance();
+            }
             if (id === 'admin' && window.updateAdmin) window.updateAdmin();
-            if (id === 'dashboard' && window.updateHistory) window.updateHistory();
+            if (id === 'dashboard' || id === 'historique') {
+                if (window.updateHistory) window.updateHistory();
+            }
             if (id === 'options' && window.renderConfigEditor) window.renderConfigEditor();
-            if (id === 'profil' && window.updateProfileStats) window.updateProfileStats();
-        } catch (e) { console.error("Erreur de mise à jour module:", e); }
+            if (id === 'nego' && window.renderNego) window.renderNego(); // Si tu as une fonction nego
+            if (id === 'annonce' && window.renderAnnonce) window.renderAnnonce(); // Si tu as une fonction annonce
+        } catch (e) {
+            console.error("Erreur lors de la mise à jour du module " + id, e);
+        }
 
+        // Relancer les icônes Lucide
         if (window.lucide) lucide.createIcons();
     };
 
-    // Gestion de la déconnexion
+    // Gestion de la déconnexion par délégation (Infaillible)
     document.addEventListener('click', function(e) {
         const logoutBtn = e.target.closest('#logout-btn-side');
         if (logoutBtn) {
             e.preventDefault();
-            if (confirm("Se déconnecter ?")) {
+            if (confirm("Voulez-vous vraiment vous déconnecter ?")) {
                 localStorage.clear();
                 window.location.replace('index.html');
             }
         }
     });
 
-    window.onload = () => window.switchTab('pilotage', document.querySelector('.nav-item'));
+    // Chargement par défaut au démarrage
+    window.onload = () => {
+        const firstBtn = document.querySelector('.nav-item');
+        window.switchTab('pilotage', firstBtn);
+    };
 </script>
-
 
 </body>
 
 </html>
+
 
 
 
