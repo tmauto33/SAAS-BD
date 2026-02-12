@@ -71,10 +71,15 @@ window.switchTab = function(id, btn) {
     // 4. Rafraîchissement intelligent des modules
     console.log("Navigation vers :", id);
     switch(id) {
-        case 'expertise':
-            console.log("Initialisation de la checklist...");
-            if (window.renderExpertise) window.renderExpertise();
-            break;
+        /
+case 'expertise':
+    console.log("Chargement manuel de la checklist...");
+    if (window.renderExpertise) {
+        window.renderExpertise();
+    } else {
+        console.error("La fonction renderExpertise est introuvable !");
+    }
+    break;
         case 'pilotage':
             if (window.updatePilotage) window.updatePilotage();
             break;
@@ -1662,6 +1667,7 @@ document.addEventListener('click', async (e) => {
         }
     }
 });
+
 
 
 
