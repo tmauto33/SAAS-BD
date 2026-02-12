@@ -790,27 +790,31 @@
     <script src="script.js"></script>
     <script>lucide.createIcons();</script>
 
-            <script>
-    // 1. Force l'affichage de la checklist dès que l'onglet est cliqué
+       <script>
+    // 1. Force l'affichage et le rendu des données au clic
     const originalSwitchTab = window.switchTab;
     window.switchTab = function(id, btn) {
-        if (typeof originalSwitchTab === 'function') {
-            originalSwitchTab(id, btn);
-        } else {
-            // Secours si switchTab est cassé dans script.js
-            document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
-            const target = document.getElementById(id);
-            if(target) target.style.display = 'block';
-        }
+        console.log("Navigation forcée vers :", id);
+        
+        // Exécution de la navigation de base
+        document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+        const target = document.getElementById(id);
+        if(target) target.style.display = 'block';
 
-        // Si on clique sur Expertise, on force le rendu
-        if (id === 'expertise' && window.renderExpertise) {
-            console.log("Forçage du rendu Expertise...");
+        // Mise à jour visuelle des boutons
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+
+        // FORCE LE RENDU DES MODULES
+        if (id === 'expertise' && typeof window.renderExpertise === 'function') {
             window.renderExpertise();
+        }
+        if (id === 'pilotage' && typeof window.updatePilotage === 'function') {
+            window.updatePilotage();
         }
     };
 
-    // 2. Activation du bouton déconnexion par délégation (Infaillible)
+    // 2. Déconnexion Infaillible
     document.addEventListener('click', function(e) {
         const logoutBtn = e.target.closest('#logout-btn-side');
         if (logoutBtn) {
@@ -822,14 +826,17 @@
         }
     });
 
-    // 3. Correction automatique des icônes manquantes
-    setTimeout(() => {
+    // 3. Initialisation automatique au chargement
+    window.addEventListener('load', () => {
         if (window.lucide) lucide.createIcons();
-    }, 500);
+        // On affiche le pilotage par défaut
+        window.switchTab('pilotage', document.querySelector('.nav-item'));
+    });
 </script>
 </body>
 
 </html>
+
 
 
 
