@@ -1631,38 +1631,39 @@ window.initApp = function() {
 };
 
 // On s'assure que le DOM est chargé avant de lancer l'app
+// On attend que la page soit totalement chargée
 document.addEventListener('DOMContentLoaded', () => {
-    window.initApp();
-    if (window.loadProfile) window.loadProfile();
-    if (window.updateProfileStats) window.updateProfileStats();
+    // On cherche le bouton par son ID (vérifie bien que ton bouton a id="logout-btn-side")
+    const logoutBtn = document.getElementById('logout-btn-side');
+    
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async (e) => {
+            e.preventDefault(); // Empêche tout comportement par défaut
+            
+            const confirmation = confirm("Voulez-vous retourner à la page de connexion ?");
+            if (!confirmation) return;
+
+            try {
+                // 1. Déconnexion Supabase
+                if (window.oxClient) {
+                    await window.oxClient.auth.signOut();
+                }
+            } catch (err) {
+                console.log("Erreur Supabase (on continue quand même) :", err);
+            } finally {
+                // 2. Nettoyage local total
+                localStorage.removeItem('ox_authenticated');
+                localStorage.clear();
+                
+                // 3. Redirection forcée
+                console.log("Redirection vers l'accueil...");
+                window.location.assign('index.html'); 
+            }
+        });
+    } else {
+        console.error("Bouton déconnexion introuvable. Vérifiez l'ID dans votre HTML.");
+    }
 });
 
-// Déclaration globale pour être sûr que le HTML la trouve
-window.handleLogout = async function() {
-    console.log("Tentative de déconnexion..."); // Pour vérifier dans la console (F12)
-    
-    const confirmation = confirm("Voulez-vous vraiment vous déconnecter ?");
-    if (!confirmation) return;
-
-    try {
-        // 1. Déconnexion Supabase
-        if (window.oxClient) {
-            await window.oxClient.auth.signOut();
-        }
-        
-        // 2. Nettoyage local
-        localStorage.removeItem('ox_authenticated');
-        localStorage.clear(); // Optionnel : vide tout le cache pour plus de sécurité
-        
-        // 3. Redirection
-        console.log("Déconnexion réussie, redirection...");
-        window.location.replace('index.html'); 
-        
-    } catch (error) {
-        console.error("Erreur lors de la déconnexion:", error);
-        // En cas d'erreur, on force quand même le retour à l'accueil
-        window.location.href = 'index.html';
-    }
-};
 
 
