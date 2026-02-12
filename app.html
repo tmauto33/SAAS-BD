@@ -789,8 +789,47 @@
 
     <script src="script.js"></script>
     <script>lucide.createIcons();</script>
+
+            <script>
+    // 1. Force l'affichage de la checklist dès que l'onglet est cliqué
+    const originalSwitchTab = window.switchTab;
+    window.switchTab = function(id, btn) {
+        if (typeof originalSwitchTab === 'function') {
+            originalSwitchTab(id, btn);
+        } else {
+            // Secours si switchTab est cassé dans script.js
+            document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+            const target = document.getElementById(id);
+            if(target) target.style.display = 'block';
+        }
+
+        // Si on clique sur Expertise, on force le rendu
+        if (id === 'expertise' && window.renderExpertise) {
+            console.log("Forçage du rendu Expertise...");
+            window.renderExpertise();
+        }
+    };
+
+    // 2. Activation du bouton déconnexion par délégation (Infaillible)
+    document.addEventListener('click', function(e) {
+        const logoutBtn = e.target.closest('#logout-btn-side');
+        if (logoutBtn) {
+            e.preventDefault();
+            if (confirm("Voulez-vous vraiment vous déconnecter ?")) {
+                localStorage.clear();
+                window.location.replace('index.html');
+            }
+        }
+    });
+
+    // 3. Correction automatique des icônes manquantes
+    setTimeout(() => {
+        if (window.lucide) lucide.createIcons();
+    }, 500);
+</script>
 </body>
 
 </html>
+
 
 
