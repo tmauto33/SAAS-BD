@@ -383,18 +383,19 @@ input:focus {
 
 }
 
-/* Force le contenu à remplir l'écran et à se centrer */
+/* Le conteneur principal doit être aligné en haut, pas au centre vertical */
 main.v-main {
-    height: 100vh;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
-    padding: 20px;
-    justify-content: flex-start; /* Aligne le contenu en haut si besoin */
+    justify-content: flex-start; /* Aligne le contenu en haut */
+    align-items: center;        /* Centre horizontalement */
+    padding-top: 20px;
+    min-height: 100vh;
 }
 
 .view {
-    width: 100%;
-    max-width: 1200px; /* Optionnel : pour ne pas que ce soit trop large */
-    margin: 0 auto;    /* Centre horizontalement */
+    width: 95%;
+    max-width: 1400px;
+    margin: 0 auto; /* Centre la section dans la page */
 }
+
