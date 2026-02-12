@@ -1179,21 +1179,26 @@ window.editPoliceEntry = function(dealId) {
 
 // 4. SAUVEGARDE SUR SUPABASE (SÉPARÉE ET CORRIGÉE)
 window.saveEntryToCloud = async function(manualEntry) {
-    console.log("Tentative d'envoi vers Supabase...");
+    console.log("Données brutes à envoyer :", manualEntry);
+    
+    // On prépare l'objet proprement pour Supabase
+    const dataToInsert = {
+        model: (manualEntry.brand || "") + " " + (manualEntry.model || ""),
+        price_buy: parseInt(manualEntry.purchase) || 0,
+        price_sell: parseInt(manualEntry.soldPrice) || 0,
+        margin: (parseInt(manualEntry.soldPrice) || 0) - (parseInt(manualEntry.purchase) || 0),
+        details: manualEntry // L'objet complet va dans la colonne jsonb
+    };
+
     const { data, error } = await supabaseClient
         .from('expertise_history')
-        .insert([{
-            model: manualEntry.model || manualEntry.brand,
-            price_buy: manualEntry.purchase || 0,
-            price_sell: manualEntry.soldPrice || 0,
-            margin: (manualEntry.soldPrice || 0) - (manualEntry.purchase || 0),
-            details: manualEntry 
-        }]);
+        .insert([dataToInsert]);
 
     if (error) {
-        console.error("Erreur Supabase :", error.message);
+        console.error("❌ Erreur Supabase :", error.message);
+        alert("Erreur Cloud : " + error.message);
     } else {
-        console.log("Données sauvegardées avec succès dans le Cloud !");
+        console.log("✅ Succès ! Donnée enregistrée dans expertise_history.");
     }
 };
 
