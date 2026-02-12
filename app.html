@@ -6,88 +6,50 @@
     <title>OptimizeX PRO</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
-</body>
+<body>
     <div class="app-container">
     <aside class="sidebar">
         <div class="logo"><i data-lucide="zap"></i> OX<span>PRO</span></div>
-        
         <nav>
-             <button class="nav-item active" onclick="switchTab('pilotage', this)">
+              <button class="nav-item active" onclick="switchTab('pilotage',this)">
     <i data-lucide="layout-grid"></i> <span>Pilotage</span>
 </button>
-<button class="nav-item" onclick="switchTab('expertise', this)">
-    <i data-lucide="clipboard-check"></i> <span>Expertise</span>
+<button class="nav-item" onclick="switchTab('analyse', this)">
+    <i data-lucide="search"></i> <span>Analyse</span>
 </button>
-<button class="nav-item" onclick="switchTab('inventaire', this)">
-    <i data-lucide="car"></i> <span>Inventaire</span>
-</button>
-<button class="nav-item" onclick="switchTab('maintenance', this)">
-    <i data-lucide="wrench"></i> <span>Logistique</span>
-</button>
-<button class="nav-item" onclick="switchTab('crm', this)">
-    <i data-lucide="users"></i> <span>CRM Clients</span>
-</button>
-<button class="nav-item" onclick="switchTab('finance', this)">
-    <i data-lucide="landmark"></i> <span>Trésorerie</span>
-</button>
-<button class="nav-item" onclick="switchTab('admin', this)">
-    <i data-lucide="file-text"></i> <span>Admin & Légal</span>
-</button>
+             
+                <button class="nav-item" onclick="switchTab('expertise', this)"><i data-lucide="clipboard-check"></i> <span>Expertise</span></button>
+                <button class="nav-item" onclick="switchTab('nego', this)"><i data-lucide="trending-down"></i> <span>Négo</span></button>
+                <button class="nav-item" onclick="switchTab('annonce', this)"><i data-lucide="megaphone"></i> <span>Annonce</span></button>
+              <button class="nav-item" onclick="switchTab('inventaire', this)">
+    <i data-lucide="car"></i> <span>Inventaire</span></button>
+              <button class="nav-item" onclick="switchTab('maintenance', this)">
+    <i data-lucide="wrench"></i> <span>Logistique</span></button>
+              <button class="nav-item" onclick="switchTab('crm', this)">
+    <i data-lucide="users"></i> <span>CRM Clients</span></button>
+              <button class="nav-item" onclick="switchTab('finance', this)">
+    <i data-lucide="landmark"></i> <span>Trésorerie</span></button>
+              <button class="nav-item" onclick="switchTab('admin', this)">
+    <i data-lucide="file-text"></i> <span>Admin & Légal</span></button>
+              
+              <button class="nav-item" onclick="switchTab('dashboard', this)"><i data-lucide="database"></i> <span>Historique</span></button>  
+              <button class="nav-item" onclick="switchTab('options', this)"><i data-lucide="settings"></i> <span>Options</span></button>
+                <button class="nav-item" onclick="switchTab('profil', this)"><i data-lucide="user-circle"></i> <span>Profil</span></button>
+          <div style="margin-top: auto; padding-top: 10px; border-top: 1px solid #333; margin-bottom: 10px;"></div>
 
-<div style="margin-top: auto; padding-top: 10px; border-top: 1px solid #333;"></div>
-
-<button id="logout-btn-side" class="nav-item" style="color: #ff4d4d;">
+<button id="logout-btn-side" class="nav-item" style="color: #ff4d4d; width: 100%; border: none; background: none; cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 12px;">
     <i data-lucide="log-out"></i> <span>Déconnexion</span>
-</button>
-
-<button class="nav-item" onclick="switchTab('dashboard', this)">
-    <i data-lucide="database"></i> <span>Historique</span>
-</button>  
-<button class="nav-item" onclick="switchTab('options', this)">
-    <i data-lucide="settings"></i> <span>Options</span>
-</button>
-<button class="nav-item" onclick="switchTab('profil', this)">
-    <i data-lucide="user-circle"></i> <span>Profil</span>
 </button>
             </nav>
         </aside>
-<main class="main-content" style="flex:1; padding:20px; display:flex; flex-direction:column; justify-content:flex-start;">
-    
-    <div id="pilotage" class="view active">
-        <h2>Tableau de Bord</h2>
-        <div id="stats-container"></div>
-        <canvas id="financeChart"></canvas>
-    </div>
 
-    <div id="analyse" class="view" style="display:none;">
-        <h2>Analyse de Marché</h2>
-        <div id="ia-analysis-content"></div>
-    </div>
-
-    <div id="expertise" class="view" style="display:none;">
-        <h2>Checklist Expertise</h2>
-        <div id="expertise-grid"></div>
-    </div>
-
-    <div id="nego" class="view" style="display:none;">
-        <h2>Calculateur Négo</h2>
-        <div id="nego-content"></div>
-    </div>
-
-    <div id="inventaire" class="view" style="display:none;">
-        <h2>Stock Véhicules</h2>
-        <div id="inventory-list"></div>
-    </div>
-
-    <div id="crm" class="view" style="display:none;"><h2>CRM Clients</h2><div id="crm-list"></div></div>
-    <div id="finance" class="view" style="display:none;"><h2>Trésorerie</h2><div id="finance-stats"></div></div>
-    <div id="admin" class="view" style="display:none;"><h2>Admin & Légal</h2><div id="admin-panel"></div></div>
-    <div id="options" class="view" style="display:none;"><h2>Options</h2><div id="price-settings-list"></div></div>
-
-</main>
+        <main class="main-content">
           
          <section id="pilotage" class="view active">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 25px;">
@@ -409,7 +371,7 @@
         <div id="seller-list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap:20px;">
             </div>
     </div>
-
+</section>
 
 <div id="contact-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1001; padding:20px;">
     <div class="card" style="max-width:500px; margin: 40px auto;">
@@ -431,7 +393,7 @@
         </div>
     </div>
 </div>  
-</section>         
+         
           
           <section id="finance" class="view">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
@@ -807,75 +769,46 @@
           
         </main>
         
-        <div id="expertise" class="view" style="display:none;">
-        <div id="expertise-grid"></div>
-    </div>
-    <div id="inventaire" class="view" style="display:none;">
-        <div id="inventory-list"></div>
-    </div>
-    </main> <footer class="ia-status-bar">
+        <footer class="ia-status-bar">
+            <div class="stat-group">
+                <small>BÉNÉFICE ESTIMÉ</small>
+                <div style="color: var(--success); font-weight: 800; font-size: 1.4rem;">+ <span id="marge-val">0</span> €</div>
+            </div>
+            <div class="ia-central-brain">
+                <div id="ia-verdict">ANALYSE EN COURS...</div>
+                <div class="confidence-bar-bg"><div id="confidence-level" class="confidence-bar-fill"></div></div>
+            </div>
+            <div class="stat-group" style="text-align: right;">
+                <small>ACHAT MAX CONSEILLÉ</small>
+                <div style="color: var(--orange); font-weight: 800; font-size: 1.4rem;"><span id="ia-advice">0</span> €</div>
+            </div>
         </footer>
-</div> <div id="recap-overlay" class="modal-overlay" onclick="closeRecap()"></div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="script.js"></script>
-<script>
-    // CETTE FONCTION ACTIVE LES BOUTONS
-    window.switchTab = function(id, btn) {
-        // Cache toutes les sections
-        document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
-        // Affiche la bonne
-        const target = document.getElementById(id);
-        if(target) target.style.display = 'block';
-        
-        // Change le style du bouton
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        if(btn) btn.classList.add('active');
-        
-        // Relance les calculs si besoin
-        if(id === 'expertise' && window.renderExpertise) window.renderExpertise();
-        if(window.lucide) lucide.createIcons();
-    };
+    </div>
 
-    // LOGIQUE DÉCONNEXION
-    document.getElementById('logout-btn-side').addEventListener('click', function() {
-        if(confirm('Se déconnecter ?')) {
-            localStorage.clear();
-            window.location.href = 'index.html';
-        }
-    });
+    <div id="recap-overlay" class="modal-overlay" onclick="closeRecap()"></div>
+    <div id="recap-modal">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2 id="recap-model" style="font-weight: 800; margin: 0; font-size: 1.5rem;">Détails</h2>
+            <button onclick="closeRecap()" style="background:none; border:none; font-size: 2rem; cursor:pointer;">&times;</button>
+        </div>
+        <div id="recap-content-detail" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            </div>
+        <button id="delete-btn" class="btn-orange" style="margin-top: 25px; background: var(--danger);">SUPPRIMER</button>
+    </div>
 
-    lucide.createIcons();
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script src="script.js"></script>
 
-<script>
-    window.switchTab = function(id, btn) {
-        // 1. On cache TOUTES les vues
-        document.querySelectorAll('.view').forEach(v => {
-            v.style.display = 'none';
+    <script>lucide.createIcons();</script>
+    <script>
+        // Gestion du clic sur déconnexion
+        document.getElementById('logout-btn-side').addEventListener('click', function() {
+            if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
+                localStorage.clear();
+                window.location.href = 'login.html';
+            }
         });
-
-        // 2. On affiche la vue demandée
-        const target = document.getElementById(id);
-        if (target) {
-            target.style.display = 'block';
-        }
-
-        // 3. On gère l'apparence des boutons
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        if (btn) btn.classList.add('active');
-
-        // 4. On relance les fonctions de script.js pour remplir les données
-        if (id === 'expertise' && window.renderExpertise) window.renderExpertise();
-        if (id === 'pilotage' && window.updatePilotage) window.updatePilotage();
-        if (id === 'inventaire' && window.renderInventory) window.renderInventory();
-        
-        lucide.createIcons();
-    };
-</script>
     </script>
 </body>
 </html>
-
-
-
