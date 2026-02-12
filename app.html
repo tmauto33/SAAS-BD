@@ -9,41 +9,98 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
-</main>
-    </div> <script src="script.js"></script>
+<body style="margin:0; overflow:hidden; background:#0a0a0a;">
+    <div class="app-container">
 </body>
     <div class="app-container">
     <aside class="sidebar">
         <div class="logo"><i data-lucide="zap"></i> OX<span>PRO</span></div>
+        
         <nav>
-              <button class="nav-item active" onclick="switchTab('pilotage',this)">
+             <button class="nav-item active" onclick="switchTab('pilotage', this)">
     <i data-lucide="layout-grid"></i> <span>Pilotage</span>
 </button>
-<button class="nav-item" onclick="switchTab('analyse', this)">
-    <i data-lucide="search"></i> <span>Analyse</span>
+<button class="nav-item" onclick="switchTab('expertise', this)">
+    <i data-lucide="clipboard-check"></i> <span>Expertise</span>
 </button>
-             
-                <button class="nav-item" onclick="switchTab('expertise', this)"><i data-lucide="clipboard-check"></i> <span>Expertise</span></button>
-                <button class="nav-item" onclick="switchTab('nego', this)"><i data-lucide="trending-down"></i> <span>Négo</span></button>
-                <button class="nav-item" onclick="switchTab('annonce', this)"><i data-lucide="megaphone"></i> <span>Annonce</span></button>
-              <button class="nav-item" onclick="switchTab('inventaire', this)">
-    <i data-lucide="car"></i> <span>Inventaire</span></button>
-              <button class="nav-item" onclick="switchTab('maintenance', this)">
-    <i data-lucide="wrench"></i> <span>Logistique</span></button>
-              <button class="nav-item" onclick="switchTab('crm', this)">
-    <i data-lucide="users"></i> <span>CRM Clients</span></button>
-              <button class="nav-item" onclick="switchTab('finance', this)">
-    <i data-lucide="landmark"></i> <span>Trésorerie</span></button>
-              <button class="nav-item" onclick="switchTab('admin', this)">
-    <i data-lucide="file-text"></i> <span>Admin & Légal</span></button>
-              
-              <button class="nav-item" onclick="switchTab('dashboard', this)"><i data-lucide="database"></i> <span>Historique</span></button>  
-              <button class="nav-item" onclick="switchTab('options', this)"><i data-lucide="settings"></i> <span>Options</span></button>
-                <button class="nav-item" onclick="switchTab('profil', this)"><i data-lucide="user-circle"></i> <span>Profil</span></button>
+<button class="nav-item" onclick="switchTab('inventaire', this)">
+    <i data-lucide="car"></i> <span>Inventaire</span>
+</button>
+<button class="nav-item" onclick="switchTab('maintenance', this)">
+    <i data-lucide="wrench"></i> <span>Logistique</span>
+</button>
+<button class="nav-item" onclick="switchTab('crm', this)">
+    <i data-lucide="users"></i> <span>CRM Clients</span>
+</button>
+<button class="nav-item" onclick="switchTab('finance', this)">
+    <i data-lucide="landmark"></i> <span>Trésorerie</span>
+</button>
+<button class="nav-item" onclick="switchTab('admin', this)">
+    <i data-lucide="file-text"></i> <span>Admin & Légal</span>
+</button>
+
+<div style="margin-top: auto; padding-top: 10px; border-top: 1px solid #333;"></div>
+
+<button id="logout-btn-side" class="nav-item" style="color: #ff4d4d;">
+    <i data-lucide="log-out"></i> <span>Déconnexion</span>
+</button>
+
+<button class="nav-item" onclick="switchTab('dashboard', this)">
+    <i data-lucide="database"></i> <span>Historique</span>
+</button>  
+<button class="nav-item" onclick="switchTab('options', this)">
+    <i data-lucide="settings"></i> <span>Options</span>
+</button>
+<button class="nav-item" onclick="switchTab('profil', this)">
+    <i data-lucide="user-circle"></i> <span>Profil</span>
+</button>
             </nav>
         </aside>
+<main class="v-main" style="flex:1; display:flex; flex-direction:column; justify-content:flex-start; padding:20px; overflow-y:auto;">
+    
+    <div id="pilotage" class="view active">
+        <h2>Tableau de Bord</h2>
+        <div id="stats-container"></div>
+    </div>
 
-        <main class="main-content">
+    <div id="expertise" class="view">
+        <div style="display:flex; justify-content:space-between;">
+            <h2>Checklist Expertise</h2>
+            <button onclick="window.renderExpertise()" style="background:#333; color:white; padding:5px 10px;">Rafraîchir</button>
+        </div>
+        <div id="expertise-grid"></div>
+    </div>
+
+    <div id="inventaire" class="view">
+        <h2>Stock Véhicules</h2>
+        <div id="inventory-list"></div>
+    </div>
+
+    <div id="maintenance" class="view">
+        <h2>Logistique & Frais</h2>
+        <div id="maintenance-list"></div>
+    </div>
+
+    <div id="crm" class="view">
+        <h2>Clients</h2>
+        <div id="crm-list"></div>
+    </div>
+
+    <div id="finance" class="view">
+        <h2>Trésorerie</h2>
+        <div id="finance-stats"></div>
+    </div>
+
+    <div id="admin" class="view">
+        <h2>Admin</h2>
+        <div id="admin-panel"></div>
+    </div>
+
+    <div id="dashboard" class="view"><div id="history-list"></div></div>
+    <div id="options" class="view"><div id="price-settings-list"></div></div>
+    <div id="profil" class="view"><div id="profile-stats"></div></div>
+
+</main>
           
          <section id="pilotage" class="view active">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 25px;">
@@ -794,3 +851,4 @@
     <script>lucide.createIcons();</script>
 </body>
 </html>
+
