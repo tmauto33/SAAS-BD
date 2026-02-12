@@ -9,8 +9,6 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
-<body style="margin:0; overflow:hidden; background:#0a0a0a;">
-    <div class="app-container">
 </body>
     <div class="app-container">
     <aside class="sidebar">
@@ -820,35 +818,79 @@
           
         </main>
         
-        <footer class="ia-status-bar">
-            <div class="stat-group">
-                <small>BÉNÉFICE ESTIMÉ</small>
-                <div style="color: var(--success); font-weight: 800; font-size: 1.4rem;">+ <span id="marge-val">0</span> €</div>
-            </div>
-            <div class="ia-central-brain">
-                <div id="ia-verdict">ANALYSE EN COURS...</div>
-                <div class="confidence-bar-bg"><div id="confidence-level" class="confidence-bar-fill"></div></div>
-            </div>
-            <div class="stat-group" style="text-align: right;">
-                <small>ACHAT MAX CONSEILLÉ</small>
-                <div style="color: var(--orange); font-weight: 800; font-size: 1.4rem;"><span id="ia-advice">0</span> €</div>
-            </div>
+        <div id="expertise" class="view" style="display:none;">
+        <div id="expertise-grid"></div>
+    </div>
+    <div id="inventaire" class="view" style="display:none;">
+        <div id="inventory-list"></div>
+    </div>
+    </main> <footer class="ia-status-bar">
         </footer>
-    </div>
+</div> <div id="recap-overlay" class="modal-overlay" onclick="closeRecap()"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="script.js"></script>
+<script>
+    // CETTE FONCTION ACTIVE LES BOUTONS
+    window.switchTab = function(id, btn) {
+        // Cache toutes les sections
+        document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+        // Affiche la bonne
+        const target = document.getElementById(id);
+        if(target) target.style.display = 'block';
+        
+        // Change le style du bouton
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        if(btn) btn.classList.add('active');
+        
+        // Relance les calculs si besoin
+        if(id === 'expertise' && window.renderExpertise) window.renderExpertise();
+        if(window.lucide) lucide.createIcons();
+    };
 
-    <div id="recap-overlay" class="modal-overlay" onclick="closeRecap()"></div>
-    <div id="recap-modal">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h2 id="recap-model" style="font-weight: 800; margin: 0; font-size: 1.5rem;">Détails</h2>
-            <button onclick="closeRecap()" style="background:none; border:none; font-size: 2rem; cursor:pointer;">&times;</button>
-        </div>
-        <div id="recap-content-detail" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            </div>
-        <button id="delete-btn" class="btn-orange" style="margin-top: 25px; background: var(--danger);">SUPPRIMER</button>
-    </div>
+    // LOGIQUE DÉCONNEXION
+    document.getElementById('logout-btn-side').addEventListener('click', function() {
+        if(confirm('Se déconnecter ?')) {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+    });
 
+    lucide.createIcons();
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>
-    <script>lucide.createIcons();</script>
+
+    <script>
+        // CETTE FONCTION REND TOUS TES BOUTONS CLIQUABLES
+        window.switchTab = function(id, btn) {
+            console.log("Changement vers :", id);
+            
+            // 1. On cache toutes les sections (views)
+            document.querySelectorAll('.view').forEach(v => {
+                v.style.display = 'none';
+            });
+
+            // 2. On affiche celle sur laquelle on a cliqué
+            const target = document.getElementById(id);
+            if(target) {
+                target.style.display = 'block';
+            } else {
+                console.warn("La section '" + id + "' n'existe pas encore dans ton <main>");
+            }
+
+            // 3. On met en surbrillance le bouton cliqué
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            if(btn) btn.classList.add('active');
+
+            // 4. On rafraîchit les icônes
+            if(window.lucide) lucide.createIcons();
+        };
+
+        // Initialisation au chargement
+        document.addEventListener('DOMContentLoaded', () => {
+            if(window.lucide) lucide.createIcons();
+        });
+    </script>
 </body>
 </html>
+
 
