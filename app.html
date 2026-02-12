@@ -54,49 +54,38 @@
 </button>
             </nav>
         </aside>
-<main class="v-main" style="flex:1; display:flex; flex-direction:column; justify-content:flex-start; padding:20px; overflow-y:auto;">
+<main class="main-content" style="flex:1; padding:20px; display:flex; flex-direction:column; justify-content:flex-start;">
     
     <div id="pilotage" class="view active">
         <h2>Tableau de Bord</h2>
         <div id="stats-container"></div>
+        <canvas id="financeChart"></canvas>
     </div>
 
-    <div id="expertise" class="view">
-        <div style="display:flex; justify-content:space-between;">
-            <h2>Checklist Expertise</h2>
-            <button onclick="window.renderExpertise()" style="background:#333; color:white; padding:5px 10px;">Rafraîchir</button>
-        </div>
+    <div id="analyse" class="view" style="display:none;">
+        <h2>Analyse de Marché</h2>
+        <div id="ia-analysis-content"></div>
+    </div>
+
+    <div id="expertise" class="view" style="display:none;">
+        <h2>Checklist Expertise</h2>
         <div id="expertise-grid"></div>
     </div>
 
-    <div id="inventaire" class="view">
+    <div id="nego" class="view" style="display:none;">
+        <h2>Calculateur Négo</h2>
+        <div id="nego-content"></div>
+    </div>
+
+    <div id="inventaire" class="view" style="display:none;">
         <h2>Stock Véhicules</h2>
         <div id="inventory-list"></div>
     </div>
 
-    <div id="maintenance" class="view">
-        <h2>Logistique & Frais</h2>
-        <div id="maintenance-list"></div>
-    </div>
-
-    <div id="crm" class="view">
-        <h2>Clients</h2>
-        <div id="crm-list"></div>
-    </div>
-
-    <div id="finance" class="view">
-        <h2>Trésorerie</h2>
-        <div id="finance-stats"></div>
-    </div>
-
-    <div id="admin" class="view">
-        <h2>Admin</h2>
-        <div id="admin-panel"></div>
-    </div>
-
-    <div id="dashboard" class="view"><div id="history-list"></div></div>
-    <div id="options" class="view"><div id="price-settings-list"></div></div>
-    <div id="profil" class="view"><div id="profile-stats"></div></div>
+    <div id="crm" class="view" style="display:none;"><h2>CRM Clients</h2><div id="crm-list"></div></div>
+    <div id="finance" class="view" style="display:none;"><h2>Trésorerie</h2><div id="finance-stats"></div></div>
+    <div id="admin" class="view" style="display:none;"><h2>Admin & Légal</h2><div id="admin-panel"></div></div>
+    <div id="options" class="view" style="display:none;"><h2>Options</h2><div id="price-settings-list"></div></div>
 
 </main>
           
@@ -420,7 +409,7 @@
         <div id="seller-list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap:20px;">
             </div>
     </div>
-</section>
+
 
 <div id="contact-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1001; padding:20px;">
     <div class="card" style="max-width:500px; margin: 40px auto;">
@@ -442,7 +431,7 @@
         </div>
     </div>
 </div>  
-         
+</section>         
           
           <section id="finance" class="view">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
@@ -859,38 +848,34 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>
 
-    <script>
-        // CETTE FONCTION REND TOUS TES BOUTONS CLIQUABLES
-        window.switchTab = function(id, btn) {
-            console.log("Changement vers :", id);
-            
-            // 1. On cache toutes les sections (views)
-            document.querySelectorAll('.view').forEach(v => {
-                v.style.display = 'none';
-            });
-
-            // 2. On affiche celle sur laquelle on a cliqué
-            const target = document.getElementById(id);
-            if(target) {
-                target.style.display = 'block';
-            } else {
-                console.warn("La section '" + id + "' n'existe pas encore dans ton <main>");
-            }
-
-            // 3. On met en surbrillance le bouton cliqué
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            if(btn) btn.classList.add('active');
-
-            // 4. On rafraîchit les icônes
-            if(window.lucide) lucide.createIcons();
-        };
-
-        // Initialisation au chargement
-        document.addEventListener('DOMContentLoaded', () => {
-            if(window.lucide) lucide.createIcons();
+<script>
+    window.switchTab = function(id, btn) {
+        // 1. On cache TOUTES les vues
+        document.querySelectorAll('.view').forEach(v => {
+            v.style.display = 'none';
         });
+
+        // 2. On affiche la vue demandée
+        const target = document.getElementById(id);
+        if (target) {
+            target.style.display = 'block';
+        }
+
+        // 3. On gère l'apparence des boutons
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+
+        // 4. On relance les fonctions de script.js pour remplir les données
+        if (id === 'expertise' && window.renderExpertise) window.renderExpertise();
+        if (id === 'pilotage' && window.updatePilotage) window.updatePilotage();
+        if (id === 'inventaire' && window.renderInventory) window.renderInventory();
+        
+        lucide.createIcons();
+    };
+</script>
     </script>
 </body>
 </html>
+
 
 
