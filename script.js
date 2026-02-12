@@ -64,12 +64,17 @@ window.switchTab = function(id, btn) {
         target.style.display = 'block';
     }
 
-    // 3. Gérer l'état visuel des boutons de navigation
+    // 3. Gérer l'état visuel des boutons de navigation (Sidebar)
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     if (btn) btn.classList.add('active');
 
-    // 4. Rafraîchissement intelligent
+    // 4. Rafraîchissement intelligent des modules
+    console.log("Navigation vers :", id);
     switch(id) {
+        case 'expertise':
+            console.log("Initialisation de la checklist...");
+            if (window.renderExpertise) window.renderExpertise();
+            break;
         case 'pilotage':
             if (window.updatePilotage) window.updatePilotage();
             break;
@@ -96,15 +101,11 @@ window.switchTab = function(id, btn) {
         case 'options':
             if (window.renderConfigEditor) window.renderConfigEditor();
             break;
-            case 'expertise':
-        console.log("Chargement de la checklist...");
-        if (window.renderExpertise) window.renderExpertise();
-        break;
     }
 
-    // 5. Relancer les icônes si Lucide est utilisé
+    // 5. Relancer les icônes Lucide pour les nouveaux éléments affichés
     if (window.lucide) lucide.createIcons();
-}; // <--- L'accolade était absente ou mal placée ici
+};
 // ==========================================================================
 // 3. MODULE EXPERTISE & CALCULS
 // ==========================================================================
@@ -1632,36 +1633,33 @@ window.initApp = function() {
 
 // On s'assure que le DOM est chargé avant de lancer l'app
 // On attend que la page soit totalement chargée
-document.addEventListener('DOMContentLoaded', () => {
-    // On cherche le bouton par son ID (vérifie bien que ton bouton a id="logout-btn-side")
-    const logoutBtn = document.getElementById('logout-btn-side');
+// Utilisation de la délégation d'événement pour parer à tout problème de chargement
+document.addEventListener('click', async (e) => {
+    // On cherche si l'élément cliqué (ou son parent) est le bouton de déconnexion
+    const logoutBtn = e.target.closest('#logout-btn-side');
     
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', async (e) => {
-            e.preventDefault(); // Empêche tout comportement par défaut
-            
-            const confirmation = confirm("Voulez-vous retourner à la page de connexion ?");
-            if (!confirmation) return;
+        e.preventDefault();
+        console.log("Action de déconnexion détectée...");
 
+        if (confirm("Voulez-vous retourner à la page de connexion ?")) {
             try {
-                // 1. Déconnexion Supabase
-                if (window.oxClient) {
+                // 1. Déconnexion Supabase (si disponible)
+                if (window.oxClient && window.oxClient.auth) {
                     await window.oxClient.auth.signOut();
                 }
             } catch (err) {
-                console.log("Erreur Supabase (on continue quand même) :", err);
+                console.warn("Échec signOut Supabase, nettoyage local uniquement.");
             } finally {
-                // 2. Nettoyage local total
-                localStorage.removeItem('ox_authenticated');
+                // 2. Nettoyage local radical
                 localStorage.clear();
+                sessionStorage.clear();
                 
-                // 3. Redirection forcée
-                console.log("Redirection vers l'accueil...");
-                window.location.assign('index.html'); 
+                // 3. Redirection immédiate
+                console.log("Redirection forcée.");
+                window.location.href = 'index.html'; 
             }
-        });
-    } else {
-        console.error("Bouton déconnexion introuvable. Vérifiez l'ID dans votre HTML.");
+        }
     }
 });
 
