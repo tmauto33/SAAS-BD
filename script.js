@@ -1660,16 +1660,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Fonction pour synchroniser n'importe quel changement vers le Cloud
-window.syncDealToCloud = async function(deal) {
-    // 1. On vérifie qui est connecté
-    const { data: { user } } = await supabaseClient.auth.getUser();
-
-    if (!user) {
-        console.error("Action impossible : aucun utilisateur connecté.");
-        return;
-    }
-
-    console.log("Synchronisation Cloud pour :", deal.model || deal.brand);
+ 
 
     // 2. On envoie les données (Upsert = Update or Insert)
     const { error } = await supabaseClient
@@ -1691,9 +1682,6 @@ window.syncDealToCloud = async function(deal) {
     }
 };
 
-window.validerVente = function(dealId, prixFinal) {
-    const index = window.savedDeals.findIndex(d => d.id === dealId);
-    if (index === -1) return;
 
     // Mise à jour locale
     window.savedDeals[index].status = "VENDU";
