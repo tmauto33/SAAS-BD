@@ -1705,20 +1705,6 @@ window.validerVente = function(dealId, prixFinal) {
     window.updatePoliceTable();
 };
 
-window.deleteEntry = async function(dealId) {
-    if (!confirm("Supprimer définitivement ce véhicule ?")) return;
-
-    const { error } = await supabaseClient
-        .from('expertise_history')
-        .delete()
-        .eq('id', dealId);
-
-    if (!error) {
-        window.savedDeals = window.savedDeals.filter(d => d.id !== dealId);
-        localStorage.setItem('ox_deals', JSON.stringify(window.savedDeals));
-        window.updatePoliceTable();
-    }
-};
 
 
 // ==========================================================================
