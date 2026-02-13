@@ -1223,7 +1223,30 @@ window.addManualPoliceEntry = async function() {
     localStorage.setItem('ox_deals', JSON.stringify(window.savedDeals));
     
     // Appel de la sauvegarde Cloud
-    await window.saveEntryToCloud(manualEntry);
+window.saveEntryToCloud = async function(manualEntry) {
+    // On récupère l'utilisateur actuellement connecté via le login
+    const { data: { user } } = await supabaseClient.auth.getUser();
+
+    if (!user) {
+        alert("Session expirée. Veuillez vous reconnecter.");
+        window.location.href = "index.html";
+        return;
+    }
+
+    const { error } = await supabaseClient
+        .from('expertise_history')
+        .insert([{
+            user_id: user.id, // On lie la donnée à cet utilisateur précis
+            model: manualEntry.brand + " " + (manualEntry.model || ""),
+            price_buy: parseInt(manualEntry.purchase) || 0,
+            price_sell: parseInt(manualEntry.soldPrice) || 0,
+            margin: (parseInt(manualEntry.soldPrice) || 0) - (parseInt(manualEntry.purchase) || 0),
+            details: manualEntry 
+        }]);
+
+    if (error) console.error("Erreur:", error.message);
+    else console.log("Sauvegarde réussie pour l'utilisateur :", user.email);
+};
 
     // Mise à jour visuelle
     window.updatePoliceTable();
@@ -1634,6 +1657,79 @@ window.updateProfileStats = function() {
 document.addEventListener('DOMContentLoaded', () => {
     window.loadProfile();
     window.updateProfileStats();
+});
+
+// Fonction pour synchroniser n'importe quel changement vers le Cloud
+window.syncDealToCloud = async function(deal) {
+    // 1. On vérifie qui est connecté
+    const { data: { user } } = await supabaseClient.auth.getUser();
+
+    if (!user) {
+        console.error("Action impossible : aucun utilisateur connecté.");
+        return;
+    }
+
+    console.log("Synchronisation Cloud pour :", deal.model || deal.brand);
+
+    // 2. On envoie les données (Upsert = Update or Insert)
+    const { error } = await supabaseClient
+        .from('expertise_history')
+        .upsert([{
+            id: deal.id, // Très important pour que Supabase sache quelle ligne modifier
+            user_id: user.id,
+            model: (deal.brand || "") + " " + (deal.model || ""),
+            price_buy: parseInt(deal.purchase) || 0,
+            price_sell: parseInt(deal.soldPrice) || 0,
+            details: deal, // On stocke l'objet complet ici pour ne rien perdre
+            updated_at: new Date()
+        }]);
+
+    if (error) {
+        console.error("Erreur de synchronisation :", error.message);
+    } else {
+        console.log("✅ Synchronisation réussie pour cet utilisateur.");
+    }
+};
+
+window.validerVente = function(dealId, prixFinal) {
+    const index = window.savedDeals.findIndex(d => d.id === dealId);
+    if (index === -1) return;
+
+    // Mise à jour locale
+    window.savedDeals[index].status = "VENDU";
+    window.savedDeals[index].soldPrice = prixFinal;
+
+    // ACTION CLOUD : On envoie la mise à jour
+    window.syncDealToCloud(window.savedDeals[index]);
+
+    window.updatePoliceTable();
+};
+
+window.deleteEntry = async function(dealId) {
+    if (!confirm("Supprimer définitivement ce véhicule ?")) return;
+
+    const { error } = await supabaseClient
+        .from('expertise_history')
+        .delete()
+        .eq('id', dealId);
+
+    if (!error) {
+        window.savedDeals = window.savedDeals.filter(d => d.id !== dealId);
+        localStorage.setItem('ox_deals', JSON.stringify(window.savedDeals));
+        window.updatePoliceTable();
+    }
+};
+
+document.addEventListener('DOMContentLoaded', async () => {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    
+    if (user) {
+        // On vide le local et on charge le Cloud pour être sûr d'avoir les vraies infos
+        await window.loadDataFromCloud(); 
+    } else {
+        // Si pas de session, retour au login
+        window.location.href = "index.html";
+    }
 });
 
 
