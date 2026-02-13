@@ -1131,7 +1131,6 @@ window.updatePoliceTable = function() {
 };
 
 // Exporte tout le registre en CSV (Format Excel)
-// 1. Fonction d'export CSV (inchangée)
 window.exportPoliceCSV = function() {
     const deals = window.savedDeals || [];
     let csv = "ID;DATE_ENTREE;MARQUE;MODELE;IMMAT;VIN;VENDEUR_NOM;PRIX_ACHAT;DATE_SORTIE;ACHETEUR_NOM;PRIX_VENTE\n";
@@ -1152,105 +1151,56 @@ window.exportPoliceCSV = function() {
         ];
         csv += row.join(";") + "\n";
     });
+
     window.downloadCSV(csv, "Livre_Police_Export.csv");
 };
 
-// 2. Fonction d'impression
+// Fonction simple pour imprimer
 window.printPoliceBook = function() {
-    window.print();
+    window.print(); // Ouvre la boite de dialogue système
 };
 
-// 3. Fonction de modification (avec Supabase si tu veux plus tard)
+// Fonction pour modifier
 window.editPoliceEntry = function(dealId) {
+    // On trouve le véhicule dans la base
     const dealIndex = window.savedDeals.findIndex(d => d.id == dealId);
     if (dealIndex === -1) return;
 
     const deal = window.savedDeals[dealIndex];
+
+    // On demande les corrections (Exemple simplifié par prompt)
     const newVin = prompt("Modifier le numéro VIN :", deal.vin || "");
     const newSeller = prompt("Modifier le nom du vendeur :", deal.sellerName || "");
     
     if (newVin !== null) window.savedDeals[dealIndex].vin = newVin;
     if (newSeller !== null) window.savedDeals[dealIndex].sellerName = newSeller;
 
+    // Sauvegarde et mise à jour
     localStorage.setItem('ox_deals', JSON.stringify(window.savedDeals));
     window.updatePoliceTable();
     alert("Registre mis à jour !");
 };
 
-// 4. SAUVEGARDE SUR SUPABASE (SÉPARÉE ET CORRIGÉE)
-window.saveEntryToCloud = async function(manualEntry) {
-    console.log("Données brutes à envoyer :", manualEntry);
-    
-    // On prépare l'objet proprement pour Supabase
-    const dataToInsert = {
-        model: (manualEntry.brand || "") + " " + (manualEntry.model || ""),
-        price_buy: parseInt(manualEntry.purchase) || 0,
-        price_sell: parseInt(manualEntry.soldPrice) || 0,
-        margin: (parseInt(manualEntry.soldPrice) || 0) - (parseInt(manualEntry.purchase) || 0),
-        details: manualEntry // L'objet complet va dans la colonne jsonb
-    };
-
-    const { data, error } = await supabaseClient
-        .from('expertise_history')
-        .insert([dataToInsert]);
-
-    if (error) {
-        console.error("❌ Erreur Supabase :", error.message);
-        alert("Erreur Cloud : " + error.message);
-    } else {
-        console.log("✅ Succès ! Donnée enregistrée dans expertise_history.");
-    }
-};
-
-// 5. AJOUT MANUEL (CORRIGÉ)
-window.addManualPoliceEntry = async function() {
-    const brandInput = prompt("Marque / Modèle :");
-    if(!brandInput) return;
+window.addManualPoliceEntry = function() {
+    const brand = prompt("Marque / Modèle :");
+    if(!brand) return;
 
     const manualEntry = {
         id: Date.now(),
-        brand: brandInput.split(' ')[0] || "Inconnu",
-        model: brandInput.split(' ').slice(1).join(' ') || "",
+        brand: brand.split(' ')[0] || "Inconnu",
+        model: brand.split(' ')[1] || "",
         date: new Date().toLocaleDateString('fr-FR'),
-        immat: prompt("Immatriculation :") || "N/A",
-        sellerName: prompt("Nom du Vendeur :") || "Inconnu",
-        status: "STOCK",
-        purchase: 0
+        immat: prompt("Immatriculation :"),
+        sellerName: prompt("Nom du Vendeur :"),
+        status: "STOCK", // Par défaut
+        price: 0
     };
 
-    // Sauvegarde locale
     window.savedDeals.push(manualEntry);
     localStorage.setItem('ox_deals', JSON.stringify(window.savedDeals));
-    
-    // Appel de la sauvegarde Cloud
-window.saveEntryToCloud = async function(manualEntry) {
-    // On récupère l'utilisateur actuellement connecté via le login
-    const { data: { user } } = await supabaseClient.auth.getUser();
-
-    if (!user) {
-        alert("Session expirée. Veuillez vous reconnecter.");
-        window.location.href = "index.html";
-        return;
-    }
-
-    const { error } = await supabaseClient
-        .from('expertise_history')
-        .insert([{
-            user_id: user.id, // On lie la donnée à cet utilisateur précis
-            model: manualEntry.brand + " " + (manualEntry.model || ""),
-            price_buy: parseInt(manualEntry.purchase) || 0,
-            price_sell: parseInt(manualEntry.soldPrice) || 0,
-            margin: (parseInt(manualEntry.soldPrice) || 0) - (parseInt(manualEntry.purchase) || 0),
-            details: manualEntry 
-        }]);
-
-    if (error) console.error("Erreur:", error.message);
-    else console.log("Sauvegarde réussie pour l'utilisateur :", user.email);
-};
-
-    // Mise à jour visuelle
     window.updatePoliceTable();
 };
+
 
 // --- 2. GESTION DE LA CLÔTURE COMPTABLE ---
 
@@ -1658,41 +1608,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.loadProfile();
     window.updateProfileStats();
 });
-
-// Fonction pour synchroniser n'importe quel changement vers le Cloud
- 
-
-    // 2. On envoie les données (Upsert = Update or Insert)
-    const { error } = await supabaseClient
-        .from('expertise_history')
-        .upsert([{
-            id: deal.id, // Très important pour que Supabase sache quelle ligne modifier
-            user_id: user.id,
-            model: (deal.brand || "") + " " + (deal.model || ""),
-            price_buy: parseInt(deal.purchase) || 0,
-            price_sell: parseInt(deal.soldPrice) || 0,
-            details: deal, // On stocke l'objet complet ici pour ne rien perdre
-            updated_at: new Date()
-        }]);
-
-    if (error) {
-        console.error("Erreur de synchronisation :", error.message);
-    } else {
-        console.log("✅ Synchronisation réussie pour cet utilisateur.");
-    }
-};
-
-
-    // Mise à jour locale
-    window.savedDeals[index].status = "VENDU";
-    window.savedDeals[index].soldPrice = prixFinal;
-
-    // ACTION CLOUD : On envoie la mise à jour
-    window.syncDealToCloud(window.savedDeals[index]);
-
-    window.updatePoliceTable();
-};
-
 
 
 // ==========================================================================
