@@ -1720,18 +1720,6 @@ window.deleteEntry = async function(dealId) {
     }
 };
 
-document.addEventListener('DOMContentLoaded', async () => {
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    
-    if (user) {
-        // On vide le local et on charge le Cloud pour être sûr d'avoir les vraies infos
-        await window.loadDataFromCloud(); 
-    } else {
-        // Si pas de session, retour au login
-        window.location.href = "index.html";
-    }
-});
-
 
 // ==========================================================================
 // 9. INITIALISATION
