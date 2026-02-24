@@ -402,4 +402,56 @@ main.v-main {
     padding: 20px;
 }
 
+/* Style compact pour la section Analyse */
+.analysis-input {
+    width: 100%;
+    padding: 8px 12px; /* Plus petit */
+    margin-bottom: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: white;
+    font-size: 0.9rem;
+}
 
+.btn-analysis {
+    width: 100%;
+    padding: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.contact-card .analysis-input {
+    height: 32px; /* Très compact */
+    font-size: 12px;
+    padding: 0 10px;
+    margin-bottom: 5px;
+}
+
+.profile-btn-container {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    z-index: 1000;
+}
+
+#btn-profil {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+#btn-profil:hover {
+    border-color: #f97316;
+}
+
+.sidebar .logo:hover {
+    transform: scale(1.05);
+    transition: transform 0.2s ease;
+    filter: brightness(1.2);
+}
