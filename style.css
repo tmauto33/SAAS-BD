@@ -32,20 +32,21 @@ body {
 }
 
 /* --- 3. SIDEBAR (Placement d'origine préservé) --- */
+
+/* --- SIDEBAR CORRIGÉE --- */
 .sidebar { 
     width: var(--sidebar-width); 
     background: var(--primary); 
     padding: 30px 20px; 
     display: flex;
     flex-direction: column;
-    flex-shrink: 0;
     height: 100vh;
-    position: fixed; /* CHANGEMENT : Fixed au lieu de sticky */
+    position: fixed; 
     top: 0;
     left: 0;
-    z-index: 9999 !important;
-    position: fixed;
-    pointer-events: auto !important; /* Force la réactivité des clics */
+    /* On baisse le z-index pour qu'il ne couvre pas les modales mais reste au-dessus du contenu */
+    z-index: 1000; 
+    pointer-events: auto;
 }
 
 .logo { 
@@ -454,4 +455,258 @@ main.v-main {
     transform: scale(1.05);
     transition: transform 0.2s ease;
     filter: brightness(1.2);
+}
+
+#marge-val, #ia-verdict {
+    transition: all 0.3s ease;
+}
+
+.ia-status-bar {
+    font-family: 'Inter', sans-serif;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stat-group {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+#ia-verdict {
+    text-shadow: 0 0 10px rgba(255,255,255,0.2);
+}
+
+/* Animation de la jauge */
+#confidence-level {
+    box-shadow: 0 0 15px currentColor;
+    border-radius: 4px;
+}
+
+.ia-status-bar {
+    position: fixed;
+    bottom: 20px; /* Décollé du bas comme sur l'image */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 95%;
+    max-width: 1200px;
+    height: 75px;
+    background: rgba(10, 10, 15, 0.95);
+    backdrop-filter: blur(20px);
+    border: 2.5px solid #7c4dff; /* Bordure violette néon */
+    border-radius: 50px; /* Forme capsule */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px;
+    z-index: 9999;
+    box-shadow: 0 0 30px rgba(124, 77, 255, 0.3);
+    color: white;
+    font-family: 'Inter', sans-serif;
+}
+
+.stat-group { display: flex; flex-direction: column; min-width: 160px; }
+.stat-group.align-right { text-align: right; }
+
+.stat-group small {
+    letter-spacing: 1px;
+    color: #888;
+    font-weight: 700;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+}
+
+/* 1. CONTENEUR PRINCIPAL (LA CAPSULE) */
+.ia-status-bar {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%); /* Centrage horizontal parfait */
+    
+    width: 95%;
+    max-width: 1200px;
+    height: 80px;
+    
+    /* Design & Couleurs */
+    background: rgba(10, 10, 15, 0.95);
+    backdrop-filter: blur(15px);
+    border: 2px solid #7c4dff; /* La bordure violette de l'image */
+    border-radius: 50px;       /* Forme capsule arrondie */
+    
+    /* Alignement interne */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px;
+    
+    /* Effets visuels */
+    box-shadow: 0 0 25px rgba(124, 77, 255, 0.4), inset 0 0 10px rgba(124, 77, 255, 0.2);
+    z-index: 9999;
+    box-sizing: border-box;
+}
+
+/* 2. VALEURS ET TEXTES */
+.ia-value { 
+    font-weight: 900; 
+    font-size: 1.6rem; 
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.currency { 
+    font-size: 0.9rem; 
+    font-weight: 700;
+    opacity: 0.8;
+}
+
+/* 3. BADGE CENTRAL (ANALYSE EN COURS) */
+.ia-central-badge {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 8px 25px 8px 10px;
+    border-radius: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    gap: 15px;
+    height: 50px;
+}
+
+#ia-verdict {
+    font-weight: 800;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #fff;
+    white-space: nowrap;
+}
+
+/* 4. CERCLE DE PROGRESSION IA */
+.progress-ring-container { 
+    position: relative; 
+    width: 42px; 
+    height: 42px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+}
+
+.progress-ring-container svg { 
+    transform: rotate(-90deg); 
+    width: 42px;
+    height: 42px;
+}
+
+.ring-bg { 
+    fill: none; 
+    stroke: rgba(255, 255, 255, 0.1); 
+    stroke-width: 4; 
+}
+
+.ring-fill {
+    fill: none;
+    stroke: #22c55e; /* Couleur par défaut (vert) */
+    stroke-width: 4;
+    stroke-dasharray: 100.53; /* Circonférence : 2 * π * 16 */
+    stroke-dashoffset: 100.53; 
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease;
+}
+
+#score-percent { 
+    position: absolute; 
+    font-size: 0.65rem; 
+    font-weight: 900; 
+    color: white; 
+}
+
+/* ==========================================================================
+   ADAPTATION MOBILE & TABLETTE (iOS / iPadOS)
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+    :root {
+        --sidebar-width: 0px; /* On annule la marge sur tablette/mobile */
+    }
+
+    /* 1. La Sidebar devient un menu discret ou on réduit sa taille */
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        flex-direction: row;
+        overflow-x: auto;
+        padding: 10px;
+        z-index: 1001;
+    }
+
+    .sidebar .logo {
+        margin-bottom: 0;
+        margin-right: 20px;
+        font-size: 1.2rem;
+    }
+
+    .nav-item {
+        margin-bottom: 0;
+        white-space: nowrap;
+        padding: 8px 12px;
+        font-size: 0.8rem;
+    }
+
+    /* 2. Le contenu prend toute la largeur */
+    .main-content {
+        margin-left: 0 !important;
+        width: 100vw !important;
+        padding: 15px;
+        padding-bottom: 120px; /* Espace pour la barre IA en bas */
+    }
+
+    /* 3. La Barre IA s'adapte (Plus fine et textes plus petits) */
+    .ia-status-bar {
+        width: 95% !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        height: auto;
+        min-height: 70px;
+        flex-wrap: wrap; /* Permet aux blocs de passer à la ligne si besoin */
+        padding: 10px 20px;
+        bottom: 10px;
+    }
+
+    .stat-group {
+        min-width: auto;
+        flex: 1;
+    }
+
+    .ia-value {
+        font-size: 1.1rem;
+    }
+
+    /* On cache le verdict texte sur petit mobile pour garder le cercle */
+    #ia-verdict {
+        font-size: 0.7rem;
+        display: none; /* Masqué par défaut sur mobile pour la clarté */
+    }
+
+    @media (min-width: 768px) {
+        #ia-verdict { display: block; } /* Réapparaît sur iPad */
+    }
+
+    .ia-central-badge {
+        gap: 8px;
+        padding: 5px 15px;
+    }
+
+    /* 4. Grille de cartes : 1 seule colonne sur iPhone */
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+}
+
+/* Optimisation spécifique pour l'iPad (Landscape) */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .ia-status-bar {
+        max-width: 700px;
+    }
 }
