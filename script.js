@@ -52,6 +52,8 @@ inspectionConfig.forEach(pt => {
     }
 });
 
+
+
 // ==========================================================================
 // 2. MODULE NAVIGATION
 // ==========================================================================
@@ -67,17 +69,24 @@ window.switchTab = function(id, btn) {
     if (target) {
         target.classList.add('active');
         target.style.display = 'block';
-}
+    }
 
     // 3. Gérer l'état visuel des boutons de navigation
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     if (btn) btn.classList.add('active');
 
-    // 4. Rafraîchissement intelligent (un seul appel par onglet)
-   // 4. Rafraîchissement intelligent
+    // 4. Rafraîchissement intelligent
     switch(id) {
         case 'pilotage':
             window.updatePilotage();
+            break;
+        case 'analyse':
+            // Optionnel : window.updateAnalyse(); si tu as une fonction dédiée
+            break;
+        case 'expertise':
+            // RELANCE LA LISTE ET LES CALCULS (Comme sur la photo)
+            if (window.renderExpertise) window.renderExpertise();
+            if (window.runCalculations) window.runCalculations();
             break;
         case 'inventaire':
             window.renderInventory();
@@ -87,7 +96,6 @@ window.switchTab = function(id, btn) {
             window.renderMaintenance();
             break;
         case 'finance':
-            // On appelle la fonction de calcul ET de mise à jour UI
             if (window.updateFinance) window.updateFinance();
             else if (window.updateFinanceUI) window.updateFinanceUI();
             break;
@@ -97,18 +105,33 @@ window.switchTab = function(id, btn) {
         case 'admin':
             if (window.updateAdmin) window.updateAdmin();
             break;
-        case 'dashboard': // C'est ici que l'Historique se déclenche !
+        case 'dashboard':
             if (window.updateHistory) window.updateHistory();
             break;
         case 'options':
             window.renderConfigEditor();
             break;
+        case 'profil':
+            // Si tu as une fonction pour le profil
+            break;
+    }
+
+    // --- MISE À JOUR BARRE IA ---
+    const iaBar = document.getElementById('ia-bar');
+    if (iaBar) {
+        const showOn = ['analyse', 'expertise', 'nego'];
+        if (showOn.includes(id)) {
+            iaBar.style.display = 'flex';
+            // Force la mise à jour des données de la barre IA
+            if (window.runCalculations) window.runCalculations();
+        } else {
+            iaBar.style.display = 'none';
+        }
     }
 
     // 5. Relancer les icônes si Lucide est utilisé
     if (window.lucide) lucide.createIcons();
 };
-
 
 // --- 1. DÉCLARATION PRIORITAIRE (EN HAUT DU FICHIER) ---
 window.saveProfile = function() {
@@ -211,6 +234,7 @@ window.addEventListener('load', () => {
         window.updateInvoicesWithProfile(saved);
     }
 });
+
 
 // --- 3. RESTE DU CODE (TON CODE CRM, etc.) ---
 // Tes fonctions renderCustomers etc. commencent ici...
@@ -437,15 +461,36 @@ window.saveAnalysisFolder = function() {
     if (typeof window.renderInventory === "function") window.renderInventory();
     if (typeof window.updateDashboard === "function") window.updateDashboard();
 };
+
 // ==========================================================================
-// 3. MODULE EXPERTISE & CALCULS
+// 1. GESTION DE L'EXPERTISE & CLICS
 // ==========================================================================
+
+window.handleCheck = function(name, val, btn) {
+    if (!window.checks) window.checks = {};
+    window.checks[name] = val;
+    
+    const parent = btn.parentElement;
+    if (parent) {
+        parent.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+    
+    if (typeof window.runCalculations === 'function') {
+        window.runCalculations();
+    }
+};
+
+window.checks = window.checks || {};
+
 window.renderExpertise = function() {
     const container = document.getElementById('checklist-render');
     if (!container) return;
 
     container.innerHTML = inspectionConfig.map(pt => {
-        const conf = window.configExpertise[pt.name];
+        const conf = window.configExpertise[pt.name] || { val: 0, type: 'price' };
+        const safeName = pt.name.replace(/'/g, "\\'"); 
+
         return `
         <div class="card check-item">
             <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
@@ -455,129 +500,124 @@ window.renderExpertise = function() {
                     <small style="opacity:0.6">${conf.val} ${conf.type === 'price' ? '€' : 'pts'}</small>
                 </span>
                 <div class="pill-group">
-                    <button class="pill-btn btn-ok ${window.checks[pt.name] === 1 ? 'active' : ''}" onclick="window.handleCheck('${pt.name}', 1, this)">OK</button>
-                    <button class="pill-btn btn-ko ${window.checks[pt.name] === 0 ? 'active' : ''}" onclick="window.handleCheck('${pt.name}', 0, this)">KO</button>
+                    <button class="pill-btn btn-ok ${window.checks[pt.name] === 1 ? 'active' : ''}" 
+                            onclick="window.handleCheck('${safeName}', 1, this)">OK</button>
+                    <button class="pill-btn btn-ko ${window.checks[pt.name] === 0 ? 'active' : ''}" 
+                            onclick="window.handleCheck('${safeName}', 0, this)">KO</button>
                 </div>
             </div>
         </div>`;
     }).join('');
 };
 
-window.handleCheck = function(name, val, btn) {
-    window.checks[name] = val;
-    btn.parentElement.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    window.runCalculations();
-};
-
+// ==========================================================================
+// 2. MOTEUR DE CALCULS (CORRECTION FINALE & SYNCHRONISATION)
+// ==========================================================================
 window.runCalculations = function() {
-    // 1. Récupération des réglages IA & Business
-    const biz = window.getBizSettings(); 
+    // 1. Récupération des prix (Analyse) avec sauvegarde pour CodePen
+    const getVal = (id) => {
+        const el = document.getElementById(id);
+        if (el && el.offsetParent !== null) {
+            const val = parseFloat(el.value.replace(/[^0-9.]/g, '')) || 0;
+            window[id + '_backup'] = val; 
+            return val;
+        }
+        return window[id + '_backup'] || 0;
+    };
 
-    // 2. Récupération des valeurs d'entrée
-    const market = parseFloat(document.getElementById('market-val')?.value) || 0;
-    const purchase = parseFloat(document.getElementById('target-price')?.value) || 0;
-    const fees = parseFloat(document.getElementById('fees-admin')?.value) || 0;
+    const market = getVal('market-val');
+    const purchase = getVal('target-price');
+    const fees = getVal('fees-admin');
     
-    let totalCash = 0, totalPts = 0, koList = [];
+    // Récupération des réglages business (prépa esthétique)
+    const biz = JSON.parse(localStorage.getItem('ox_business_settings')) || { defaultPrep: 0 };
+    const prepEsthetique = parseFloat(biz.defaultPrep) || 0;
+    
+    let totalCash = 0; // Somme des euros KO
+    let totalPts = 0;  // Somme des points KO (pour le score % )
 
-    // 3. Calcul des frais via l'inspection
+    // 2. BOUCLE SUR TES 27 POINTS (Liaison Courroie, Turbo, etc.)
+    // On utilise ta variable globale 'inspectionConfig'
     inspectionConfig.forEach(pt => {
-        if (window.checks && window.checks[pt.name] === 0) {
-            const conf = window.configExpertise[pt.name];
-            if (conf) {
-                if (conf.type === 'price') totalCash += conf.val;
-                else totalPts += conf.val;
-                koList.push(pt.name);
+        if (window.checks[pt.name] === 0) { // Si l'élément est mis en KO
+            const config = window.configExpertise[pt.name];
+            if (config) {
+                if (config.type === 'price') {
+                    totalCash += parseFloat(config.val) || 0; // Ajoute les 600€ par ex.
+                } else {
+                    totalPts += parseFloat(config.val) || 0; // Ajoute les points
+                }
             }
         }
     });
 
-    // 4. Formule de Marge synchronisée
-    // Déduction : Prix d'achat + Réparations + Frais Admin + Prépa Option + Profit Cible
-    const margeNet = market - (purchase + totalCash + fees + biz.defaultPrep + biz.targetProfit);
-    const score = Math.max(0, 100 - totalPts);
-    
-    // 5. Mise à jour de l'interface (Flash & Inputs)
-    if(document.getElementById('display-marge')) {
-        document.getElementById('display-marge').innerText = Math.round(margeNet).toLocaleString() + " €";
-    }
-    if(document.getElementById('flash-marge')) {
-        document.getElementById('flash-marge').innerText = Math.round(margeNet).toLocaleString() + " €";
-    }
-    if(document.getElementById('flash-repairs')) {
-        document.getElementById('flash-repairs').innerText = totalCash.toLocaleString() + " €";
-    }
-    if(document.getElementById('flash-score')) {
-        document.getElementById('flash-score').innerText = Math.round(score) + "/100";
-    }
-    if(document.getElementById('repairs')) {
-        document.getElementById('repairs').value = totalCash + " €";
+    // 3. LE CALCUL DE LA MARGE NETTE
+    // Formule : Prix de vente - (Achat + Réparations + Frais + Prépa)
+    const margeNet = market - (purchase + totalCash + fees + prepEsthetique);
+    const scoreIA = Math.max(0, 100 - totalPts);
+
+    // 4. MISE À JOUR VISUELLE
+    // Encart central "Repairs"
+    const repairsInput = document.getElementById('repairs');
+    if (repairsInput) repairsInput.value = totalCash.toLocaleString() + " €";
+
+    // Envoi à la barre IA
+    if (typeof window.updateIAVerdict === "function") {
+        window.updateIAVerdict(margeNet, scoreIA, totalCash, market, fees, prepEsthetique);
     }
 
-    // 6. Appels des outils IA liés (une seule fois chaque)
-    if (typeof window.updateIAVerdict === "function") window.updateIAVerdict(margeNet, score);
-    if (typeof window.updateNegoLogic === "function") window.updateNegoLogic(); 
-    if (typeof window.updateAckermann === "function") window.updateAckermann(purchase);
-    if (typeof window.generateSmartRiposte === "function") window.generateSmartRiposte(koList, totalCash);
+    // Mise à jour des petits badges (Ronds Flash)
+    const upd = (id, text) => { if(document.getElementById(id)) document.getElementById(id).innerText = text; };
+    upd('flash-repairs', totalCash.toLocaleString() + " €");
+    upd('flash-marge', Math.round(margeNet).toLocaleString() + " €");
+    upd('flash-score', scoreIA + "/100");
 };
 
 // ==========================================================================
-// 4. MODULE VENTES & PILOTAGE (KPI)
+// 4. VERDICT IA (CORRECTION DE LA LOGIQUE DE COULEUR)
 // ==========================================================================
-window.finalizeSale = function() {
-    const select = document.getElementById('sell-select-vehicle');
-    const realPrice = parseFloat(document.getElementById('real-sell-price')?.value);
+
+window.updateIAVerdict = function(marge, score, repairs, market, fees, prep) {
+    const biz = JSON.parse(localStorage.getItem('ox_business_settings')) || { targetProfit: 1000 };
+    const targetProfit = parseFloat(biz.targetProfit) || 1000;
     
-    if (!select || select.value === "" || isNaN(realPrice)) {
-        alert("⚠️ Sélectionnez un véhicule en stock et entrez le prix de vente final.");
-        return;
+    const verdictEl = document.getElementById('ia-verdict');
+    const confidenceEl = document.getElementById('confidence-level');
+    const margeEl = document.getElementById('marge-val'); // L'élément du bénéfice estimé
+
+    // 1. Affichage du bénéfice (Baisse en temps réel)
+    if (margeEl) {
+        margeEl.innerText = Math.round(marge).toLocaleString() + " €";
+        
+        // Couleur dynamique : Vert si rentable, Rouge si perte
+        if (marge >= targetProfit) margeEl.parentElement.style.color = "#22c55e";
+        else if (marge > 0) margeEl.parentElement.style.color = "#3b82f6";
+        else margeEl.parentElement.style.color = "#ef4444";
     }
 
-    const dealIdx = select.value;
-    const deal = window.savedDeals[dealIdx];
-    
-    // Calcul de l'investissement total (PRK)
-    const totalInvest = (parseFloat(deal.purchase) || 0) + (parseFloat(deal.repairs) || 0) + (parseFloat(deal.fees) || 0);
+    // 2. Verdict textuel et couleur de barre
+    let color = "#ef4444";
+    let verdict = "DANGER : AUCUNE RENTABILITÉ";
 
-    // Mise à jour des données du deal
-    deal.realMarge = realPrice - totalInvest;
-    deal.status = "VENDU";
-    deal.sellDate = new Date().toLocaleDateString('fr-FR');
-    deal.finalSellPrice = realPrice;
-
-    // Sauvegarde et mise à jour de l'interface
-    localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
-    
-    // Fermeture du modal si ouvert
-    if(document.getElementById('modal-overlay')) {
-        document.getElementById('modal-overlay').remove();
+    if (marge > 0) {
+        if (score < 60) {
+            verdict = "RISQUE : ÉTAT TECHNIQUE DÉGRADÉ";
+            color = "#f59e0b";
+        } else {
+            verdict = (marge >= targetProfit) ? "EXCELLENT SIGNAL : ACHAT VALIDÉ" : "NÉGOCIATION REQUISE";
+            color = (marge >= targetProfit) ? "#22c55e" : "#3b82f6";
+        }
     }
 
-    alert(`✅ Vente validée ! Profit net : ${Math.round(deal.realMarge)} €`);
-    
-    // Rafraîchissement des vues
-    window.renderInventory(); 
-    window.updatePilotage();
-};
-
-window.updateIAVerdict = function(marge, score) {
-    const iaBar = document.getElementById('ia-analysis-bar'); 
-    const iaText = document.getElementById('ia-verdict-text');
-    if (!iaBar || !iaText) return;
-
-    let verdict, color, width;
-    if (marge > 2000 && score > 80) { 
-        verdict = "🚀 EXCELLENT DEAL"; color = "#10b981"; width = "100%"; 
-    } else if (marge > 1000 && score > 60) { 
-        verdict = "⚖️ DEAL CORRECT"; color = "#f59e0b"; width = "65%"; 
-    } else { 
-        verdict = "⚠️ ATTENTION RISQUE"; color = "#ef4444"; width = "35%"; 
+    if (verdictEl) {
+        verdictEl.innerText = verdict;
+        verdictEl.style.color = color;
     }
-
-    iaText.innerText = verdict;
-    iaBar.style.width = width;
-    iaBar.style.backgroundColor = color;
+    
+    if (confidenceEl) {
+        confidenceEl.style.width = score + "%";
+        confidenceEl.style.backgroundColor = color;
+    }
 };
 
 window.updateDashboard = function() {
