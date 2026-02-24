@@ -218,14 +218,19 @@
           
 
             <section id="expertise" class="view">
-                <h1>Expertise <span>27 Points</span></h1>
-                <div id="checklist-render" class="dashboard-grid"></div>
-                <div class="card" style="margin-top:24px;">
-                    <h3>Frais de remise en état (Estimation IA)</h3>
-                    <input type="text" id="repairs" readonly style="font-size: 1.5rem; color: var(--accent); font-weight: 800; text-align: center; background: #f9f9f9; border: 1px solid #ddd; width: 100%; border-radius: 8px; padding: 10px;">                  
-                </div>
-            </section>
+    <h1>Expertise <span>27 Points</span></h1>
+    
+    <div id="checklist-render" class="dashboard-grid"></div>
 
+    <div class="card" style="margin-top:24px; background: rgba(20, 20, 25, 0.8);">
+        <h3 style="font-size: 0.8rem; opacity: 0.6; text-transform: uppercase;">Frais de remise en état (Estimation IA)</h3>
+        <input type="text" id="repairs" readonly 
+               style="font-size: 1.8rem; color: #7c4dff; font-weight: 800; text-align: center; background: rgba(0,0,0,0.3); border: 1px solid #333; width: 100%; border-radius: 12px; padding: 15px; margin-top: 10px;" 
+               value="0 €">                  
+    </div>
+</section>
+    
+    
             <section id="nego" class="view">
     <h1>Stratégie <span>Ackermann</span></h1>
     
@@ -818,32 +823,51 @@
           
         </main>
         
-        <footer class="ia-status-bar">
-            <div class="stat-group">
-                <small>BÉNÉFICE ESTIMÉ</small>
-                <div style="color: var(--success); font-weight: 800; font-size: 1.4rem;">+ <span id="marge-val">0</span> €</div>
-            </div>
-            <div class="ia-central-brain">
-                <div id="ia-verdict">ANALYSE EN COURS...</div>
-                <div class="confidence-bar-bg"><div id="confidence-level" class="confidence-bar-fill"></div></div>
-            </div>
-            <div class="stat-group" style="text-align: right;">
-                <small>ACHAT MAX CONSEILLÉ</small>
-                <div style="color: var(--orange); font-weight: 800; font-size: 1.4rem;"><span id="ia-advice">0</span> €</div>
-            </div>
-        </footer>
+     <footer id="ia-bar" class="ia-status-bar">
+    <div class="stat-group">
+        <small>BÉNÉFICE ESTIMÉ</small>
+        <div class="ia-value profit-color">
+            <span id="marge-val">+ 0</span> <span class="currency">€</span>
+        </div>
     </div>
 
-    <div id="recap-overlay" class="modal-overlay" onclick="closeRecap()"></div>
-    <div id="recap-modal">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h2 id="recap-model" style="font-weight: 800; margin: 0; font-size: 1.5rem;">Détails</h2>
-            <button onclick="closeRecap()" style="background:none; border:none; font-size: 2rem; cursor:pointer;">&times;</button>
+    <div class="ia-central-badge">
+        <div class="progress-ring-container">
+            <svg width="40" height="40">
+                <circle class="ring-bg" cx="20" cy="20" r="16"></circle>
+                <circle id="confidence-ring" class="ring-fill" cx="20" cy="20" r="16"></circle>
+            </svg>
+            <span id="score-percent">0%</span>
         </div>
-        <div id="recap-content-detail" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            </div>
-        <button id="delete-btn" class="btn-orange" style="margin-top: 25px; background: var(--danger);">SUPPRIMER</button>
+        <div id="ia-verdict">ANALYSE EN COURS...</div>
     </div>
+
+    <div class="stat-group align-right">
+        <small>ACHAT MAX CONSEILLÉ</small>
+        <div id="ia-buy-reco" class="ia-value">0 <span class="currency">€</span></div>
+    </div>
+</footer>
+
+    <div class="stat-group" style="text-align: right;">
+        <small style="letter-spacing: 1px; color: #888;">ACHAT MAX CONSEILLÉ</small>
+        <div style="color: var(--orange); font-weight: 800; font-size: 1.4rem;">
+            <span id="ia-advice">0</span> €
+        </div>
+    </div>
+</footer>
+
+<div id="recap-overlay" class="modal-overlay" onclick="closeRecap()"></div>
+<div id="recap-modal" style="border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h2 id="recap-model" style="font-weight: 800; margin: 0; font-size: 1.5rem; color: #fff;">Détails</h2>
+        <button onclick="closeRecap()" style="background:none; border:none; font-size: 2rem; cursor:pointer; color: #666;">&times;</button>
+    </div>
+    <div id="recap-content-detail" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; color: #eee;">
+        </div>
+    <button id="delete-btn" class="btn-orange" style="margin-top: 25px; background: var(--danger); width: 100%; font-weight: 700;">
+        SUPPRIMER LE DOSSIER
+    </button>
+</div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
