@@ -109,6 +109,334 @@ window.switchTab = function(id, btn) {
     if (window.lucide) lucide.createIcons();
 };
 
+
+// --- 1. DÉCLARATION PRIORITAIRE (EN HAUT DU FICHIER) ---
+window.saveProfile = function() {
+    console.log("Bouton cliqué");
+    
+    // On récupère les éléments
+    const getVal = (id) => document.getElementById(id)?.value || "";
+    
+    const data = {
+        companyName: getVal('biz-name'),
+        siret: getVal('biz-siret'),
+        tvaIntra: getVal('biz-tva'),
+        phone: getVal('biz-phone'),
+        web: getVal('biz-web'),
+        address: getVal('biz-address'),
+        footer: getVal('biz-footer'),
+        logo: document.getElementById('user-logo-preview')?.src || ""
+    };
+
+    localStorage.setItem('ox_profile_settings', JSON.stringify(data));
+    
+    if (document.getElementById('display-biz-name')) {
+        document.getElementById('display-biz-name').innerText = data.companyName || "Mon Enseigne";
+    }
+
+    alert("✅ Profil enregistré !");
+};
+
+// --- 2. CHARGEMENT AU DÉMARRAGE ---
+window.addEventListener('DOMContentLoaded', () => {
+    const saved = JSON.parse(localStorage.getItem('ox_profile_settings'));
+    if (!saved) return;
+
+    const ids = ['biz-name', 'biz-siret', 'biz-tva', 'biz-phone', 'biz-web', 'biz-address', 'biz-footer'];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            // Mapping des clés pour correspondre à l'objet sauvegardé
+            const key = id === 'biz-name' ? 'companyName' : (id === 'biz-tva' ? 'tvaIntra' : id.replace('biz-', ''));
+            el.value = saved[key] || "";
+        }
+    });
+});
+
+// Fonction pour injecter les infos dans les factures
+window.updateInvoicesWithProfile = function(data) {
+    if (!data) data = JSON.parse(localStorage.getItem('ox_profile_settings'));
+    if (!data) return;
+
+    // Mise à jour du nom de l'enseigne dans le Header
+    const displayBiz = document.getElementById('display-biz-name');
+    if (displayBiz) displayBiz.innerText = data.companyName || "Mon Enseigne";
+
+    // Mise à jour des champs sur la facture (Partie Admin / Facturation)
+    // Assure-toi que tes éléments de facture ont ces IDs :
+    const mapping = {
+        'inv-seller-name': data.companyName,
+        'inv-seller-address': data.address,
+        'inv-seller-siret': "SIRET : " + data.siret,
+        'inv-seller-tva': "TVA : " + data.tvaIntra,
+        'inv-seller-phone': data.phone,
+        'inv-footer-text': data.footer
+    };
+
+    for (let [id, value] of Object.entries(mapping)) {
+        const el = document.getElementById(id);
+        if (el) el.innerText = value;
+    }
+
+    // Logo sur la facture
+    const invLogo = document.getElementById('inv-logo-preview');
+    if (invLogo && data.logo) invLogo.src = data.logo;
+};
+
+// Chargement automatique au démarrage de la page
+window.addEventListener('load', () => {
+    const saved = JSON.parse(localStorage.getItem('ox_profile_settings'));
+    if (saved) {
+        // Remplir le formulaire de réglages
+        const fields = {
+            'biz-name': saved.companyName,
+            'biz-siret': saved.siret,
+            'biz-tva': saved.tvaIntra,
+            'biz-phone': saved.phone,
+            'biz-web': saved.web,
+            'biz-address': saved.address,
+            'biz-footer': saved.footer
+        };
+
+        for (let [id, val] of Object.entries(fields)) {
+            const el = document.getElementById(id);
+            if (el) el.value = val || "";
+        }
+
+        if (saved.logo && document.getElementById('user-logo-preview')) {
+            document.getElementById('user-logo-preview').src = saved.logo;
+        }
+
+        // Appliquer aux factures
+        window.updateInvoicesWithProfile(saved);
+    }
+});
+
+// --- 3. RESTE DU CODE (TON CODE CRM, etc.) ---
+// Tes fonctions renderCustomers etc. commencent ici...
+// ==========================================================================
+// DASHBOARD
+// ==========================================================================
+// ==========================================================================
+// 1. CONFIGURATION & DONNÉES
+// ==========================================================================
+window.savedDeals = JSON.parse(localStorage.getItem('ox_history')) || [];
+
+// Utilitaire pour transformer n'importe quoi en nombre (enlève "€", les espaces, etc.)
+const toNum = (val) => {
+    if (!val) return 0;
+    const n = parseFloat(String(val).replace(/[^0-9.-]+/g, ""));
+    return isNaN(n) ? 0 : n;
+};
+
+// ==========================================================================
+// 2. LE DASHBOARD (TON CODE OPTIMISÉ)
+// ==========================================================================
+window.updateDashboard = function() {
+    console.log("📊 Synchronisation du Tableau de Bord...");
+
+    const deals = window.savedDeals || [];
+    const settings = JSON.parse(localStorage.getItem('ox_business_settings')) || {};
+    const profile = JSON.parse(localStorage.getItem('ox_profile_data')) || {};
+    const targetMarge = parseFloat(localStorage.getItem('targetProfit')) || 2000;
+  const biz = window.getBizSettings(); 
+    const tvaApplicable = biz.tvaRegime === "margin" ? 0.20 : (biz.stateTax / 100);
+    const fraisFixes = biz.defaultPrep + biz.defaultAdmin;
+
+    // Séparation Stock / Ventes
+    const inStock = deals.filter(d => d.status !== "VENDU");
+    const sold = deals.filter(d => d.status === "VENDU");
+
+    // Valeur d'achat totale du stock actuel
+    const stockValue = inStock.reduce((sum, d) => sum + toNum(d.purchase || d.buy_price), 0);
+
+    // Marge nette totale sur les ventes (Correction du calcul négatif)
+    const totalMarge = sold.reduce((sum, d) => {
+        const pachat = toNum(d.purchase || d.buy_price);
+        const pvente = toNum(d.soldPrice || d.sell_price);
+        const frais = toNum(d.prepFees);
+        
+        // On ne calcule la marge que si la vente est enregistrée
+        return sum + (pvente - pachat - frais);
+    }, 0);
+
+    // Calcul de la Rotation Moyenne
+    let avgRotation = 0;
+    if (sold.length > 0) {
+        const totalDays = sold.reduce((acc, d) => {
+            const start = new Date(d.date_in || d.created_at || Date.now());
+            const end = new Date(d.date_out || Date.now());
+            return acc + Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24));
+        }, 0);
+        avgRotation = Math.round(totalDays / sold.length);
+    }
+
+    // --- MISE À JOUR DE L'INTERFACE ---
+    
+    // Welcome & Date
+    const welcomeEl = document.getElementById('dash-welcome');
+    if(welcomeEl) welcomeEl.innerText = `Bonjour, ${profile.name || 'Marchand'}`;
+    
+    const dateEl = document.getElementById('dash-date');
+    if(dateEl) dateEl.innerText = new Date().toLocaleDateString('fr-FR', {weekday: 'long', day: 'numeric', month: 'long'});
+
+    // KPIs principaux
+    if(document.getElementById('kpi-stock-count')) document.getElementById('kpi-stock-count').innerText = inStock.length;
+    if(document.getElementById('kpi-stock-value')) document.getElementById('kpi-stock-value').innerText = `Valeur : ${stockValue.toLocaleString()} €`;
+    if(document.getElementById('kpi-marge')) document.getElementById('kpi-marge').innerText = `${totalMarge.toLocaleString()} €`;
+    if(document.getElementById('kpi-rotation')) document.getElementById('kpi-rotation').innerText = `${avgRotation}j`;
+    
+    // Trésorerie
+    if(document.getElementById('kpi-cash')) {
+        const cashFlow = totalMarge - (parseFloat(settings.stateTax) || 0);
+        document.getElementById('kpi-cash').innerText = `${cashFlow.toLocaleString()} €`;
+    }
+
+    // Barre de progression
+    const progress = Math.min((totalMarge / targetMarge) * 100, 100);
+    const pBar = document.getElementById('dash-progress-bar');
+    if(pBar) {
+        pBar.style.width = progress + "%";
+        pBar.style.background = progress >= 100 ? "#22c55e" : "#3b82f6";
+    }
+
+    // Graphique simulé
+    const chartContainer = document.getElementById('dash-chart-container');
+    if(chartContainer) {
+        const mockData = [30, 50, 40, 90, 60, 40, 80]; 
+        chartContainer.innerHTML = mockData.map(h => `
+            <div style="flex:1; background:#3b82f6; opacity:0.3; height:${h}%; border-radius:4px 4px 0 0; min-width:10px;"></div>
+        `).join('');
+    }
+};
+
+// ==========================================================================
+// 3. ACTIONS (AJOUT, VENTE, RESET)
+// ==========================================================================
+
+window.addVehicleToStock = function() {
+    const brand = document.getElementById('in-brand')?.value || "";
+    const model = document.getElementById('in-model')?.value || "";
+    const price = document.getElementById('in-price')?.value || 0;
+    
+    // ON FORCE LA SAISIE ICI
+    const plate = prompt("Immatriculation (ex: BY-243-AC) :", "");
+    const kmValue = prompt("Kilométrage (ex: 125000) :", "0");
+
+    const newVehicle = {
+        id: "ID-" + Date.now(),
+        brand: brand,
+        model: model,
+        plate: plate || "N/C",
+        km: kmValue || "0", // On enregistre bien la valeur tapée
+        purchase: parseFloat(price) || 0,
+        status: "EN STOCK",
+        date: new Date().toISOString().split('T')[0]
+    };
+
+    // On sauvegarde et on rafraîchit tout
+    if(typeof saveAndRefresh === "function") {
+        saveAndRefresh();
+    } else {
+        localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
+        location.reload(); 
+    }
+};
+window.triggerSaleProcess = function() {
+    const stock = window.savedDeals.filter(d => d.status !== "VENDU");
+    if (stock.length === 0) return alert("Stock vide.");
+
+    const choice = prompt("Choisir véhicule :\n" + stock.map((d, i) => `${i+1}. ${d.model}`).join('\n'));
+    const index = parseInt(choice) - 1;
+
+    if (stock[index]) {
+        const p = prompt("Prix de vente final :");
+        const d = prompt("Date de vente (AAAA-MM-JJ) :", new Date().toISOString().split('T')[0]);
+
+        if (p) {
+            const v = window.savedDeals.find(item => item.id === stock[index].id);
+            v.soldPrice = toNum(p);
+            v.date_out = d || new Date().toISOString();
+            v.status = "VENDU";
+            saveAndRefresh();
+        }
+    }
+};
+
+window.resetAllData = function() {
+    if (confirm("Supprimer TOUTES les données ?")) {
+        window.savedDeals = [];
+        localStorage.removeItem('ox_history');
+        window.updateDashboard();
+    }
+};
+
+function saveAndRefresh() {
+    localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
+    window.updateDashboard();
+}
+
+// Lancement
+document.addEventListener('DOMContentLoaded', () => window.updateDashboard());
+
+// ==========================================================================
+// SAUVEGARDE DEPUIS L'ANALYSE (VERSION ROBUSTE)
+// ==========================================================================
+window.saveAnalysisFolder = function() {
+    console.log("🚀 Tentative de sauvegarde...");
+
+    // 1. Récupération des éléments
+    const statusSelect = document.querySelector('.contact-card select') || document.getElementById('in-analysis-status');
+    const allInputs = document.querySelectorAll('input');
+    
+    // On nettoie la valeur pour enlever les émojis potentiels qui bloquent le test
+    const currentStatus = statusSelect?.value.toUpperCase() || "";
+
+    // 2. Création de l'objet de base
+    let deal = {
+        id: "ID-" + Date.now(),
+        model: allInputs[1]?.value || "Modèle inconnu",
+        plate: allInputs[0]?.value || "N/A",
+        purchase: 0,
+        km: "0", // Initialisation par défaut
+        status: currentStatus,
+        date: new Date().toLocaleDateString('fr-FR')
+    };
+
+    // 3. LOGIQUE DE TRI : On vérifie si le mot "ACHETÉ" est présent
+    if (currentStatus.includes("ACHETÉ") || currentStatus.includes("ACHETE")) {
+        // Demande du prix
+        const p = prompt(`💰 Prix d'achat final pour ${deal.model} ?`, "0");
+        if (p === null) return; // Annulation
+
+        // --- AJOUT DE LA DEMANDE DU KILOMÉTRAGE ---
+        const k = prompt(`🛣️ Kilométrage réel pour ${deal.model} ?`, "0");
+        if (k === null) return; // Annulation
+        // ------------------------------------------
+
+        deal.purchase = parseFloat(p.replace(/\s/g, '')) || 0;
+        deal.km = k; // Enregistrement du kilométrage saisi
+        deal.status = "ACHETÉ"; 
+        
+        window.savedDeals.unshift(deal);
+        alert("✅ Véhicule ajouté au stock !");
+    } 
+    // Sinon, si c'est un refus ou une attente
+    else {
+        const reason = prompt("📝 Raison du refus/attente :");
+        if (reason === null) return; // Annulation
+        
+        deal.reason = reason || "N/C";
+        window.savedDeals.unshift(deal);
+        alert(`📁 Dossier classé : ${currentStatus}`);
+    }
+
+    // 4. Sauvegarde physique
+    localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
+    
+    if (typeof window.renderInventory === "function") window.renderInventory();
+    if (typeof window.updateDashboard === "function") window.updateDashboard();
+};
 // ==========================================================================
 // 3. MODULE EXPERTISE & CALCULS
 // ==========================================================================
@@ -143,37 +471,55 @@ window.handleCheck = function(name, val, btn) {
 };
 
 window.runCalculations = function() {
+    // 1. Récupération des réglages IA & Business
+    const biz = window.getBizSettings(); 
+
+    // 2. Récupération des valeurs d'entrée
     const market = parseFloat(document.getElementById('market-val')?.value) || 0;
     const purchase = parseFloat(document.getElementById('target-price')?.value) || 0;
     const fees = parseFloat(document.getElementById('fees-admin')?.value) || 0;
     
     let totalCash = 0, totalPts = 0, koList = [];
 
+    // 3. Calcul des frais via l'inspection
     inspectionConfig.forEach(pt => {
-        if (window.checks[pt.name] === 0) {
+        if (window.checks && window.checks[pt.name] === 0) {
             const conf = window.configExpertise[pt.name];
-            if (conf.type === 'price') totalCash += conf.val;
-            else totalPts += conf.val;
-            koList.push(pt.name);
+            if (conf) {
+                if (conf.type === 'price') totalCash += conf.val;
+                else totalPts += conf.val;
+                koList.push(pt.name);
+            }
         }
     });
 
-    const margeNet = market - (purchase + totalCash + fees);
+    // 4. Formule de Marge synchronisée
+    // Déduction : Prix d'achat + Réparations + Frais Admin + Prépa Option + Profit Cible
+    const margeNet = market - (purchase + totalCash + fees + biz.defaultPrep + biz.targetProfit);
     const score = Math.max(0, 100 - totalPts);
+    
+    // 5. Mise à jour de l'interface (Flash & Inputs)
+    if(document.getElementById('display-marge')) {
+        document.getElementById('display-marge').innerText = Math.round(margeNet).toLocaleString() + " €";
+    }
+    if(document.getElementById('flash-marge')) {
+        document.getElementById('flash-marge').innerText = Math.round(margeNet).toLocaleString() + " €";
+    }
+    if(document.getElementById('flash-repairs')) {
+        document.getElementById('flash-repairs').innerText = totalCash.toLocaleString() + " €";
+    }
+    if(document.getElementById('flash-score')) {
+        document.getElementById('flash-score').innerText = Math.round(score) + "/100";
+    }
+    if(document.getElementById('repairs')) {
+        document.getElementById('repairs').value = totalCash + " €";
+    }
 
-    // Mise à jour interface Expertise
-    if(document.getElementById('flash-marge')) document.getElementById('flash-marge').innerText = Math.round(margeNet).toLocaleString() + " €";
-    if(document.getElementById('flash-repairs')) document.getElementById('flash-repairs').innerText = totalCash.toLocaleString() + " €";
-    if(document.getElementById('flash-score')) document.getElementById('flash-score').innerText = Math.round(score) + "/100";
-    if(document.getElementById('repairs')) document.getElementById('repairs').value = totalCash + " €";
-
-    // Appels des outils IA liés
-    window.updateIAVerdict(margeNet, score);
-    window.updateNegoLogic(); // Relance la négo si le prix cible change
-    window.updateAckermann(purchase);
-    window.generateSmartRiposte(koList, totalCash);
-  window.updateAckermann(purchase); // Met à jour les 4 paliers
-    window.generateSmartRiposte();    // Met à jour la riposte si une objection est sélectionnée
+    // 6. Appels des outils IA liés (une seule fois chaque)
+    if (typeof window.updateIAVerdict === "function") window.updateIAVerdict(margeNet, score);
+    if (typeof window.updateNegoLogic === "function") window.updateNegoLogic(); 
+    if (typeof window.updateAckermann === "function") window.updateAckermann(purchase);
+    if (typeof window.generateSmartRiposte === "function") window.generateSmartRiposte(koList, totalCash);
 };
 
 // ==========================================================================
@@ -315,119 +661,193 @@ window.saveCurrentDeal = function() {
     const model = document.getElementById('model-name')?.value;
     if (!model) return alert("Modèle requis !");
 
-    // Calcul du PRK (Prix de revient total) au moment de l'achat
+    // Fonction interne pour récupérer proprement les valeurs ou mettre un texte par défaut
+    const getVal = (id, fallback = "N/C") => {
+        const el = document.getElementById(id);
+        return (el && el.value) ? el.value : fallback;
+    };
+
     const purchase = parseFloat(document.getElementById('target-price')?.value) || 0;
     const repairs = parseFloat((document.getElementById('repairs')?.value || "0").replace(' €','')) || 0;
     const fees = parseFloat(document.getElementById('fees-admin')?.value) || 0;
 
     const deal = {
         model,
-        market: document.getElementById('market-val')?.value || 0,
+        plate: getVal('in-plate', 'N/A'),
+      km: kmValue,
+        // On garde tout comme ta base
         purchase: purchase,
         repairs: repairs,
         fees: fees,
-        totalCost: purchase + repairs + fees, // Le fameux PRK
-        link: document.getElementById('ad-link')?.value || "", // AJOUTER cet ID dans votre HTML
+        totalCost: purchase + repairs + fees,
+        link: getVal('ad-link', ""),
+        photoUrl: "", 
         status: "ACHETÉ",
         date: new Date().toLocaleDateString('fr-FR'),
         maintStep: "Achat",
-        checks: {...window.checks}
+        checks: {...window.checks} // Conservé
     };
 
     window.savedDeals.unshift(deal);
     localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
-    alert("Véhicule ajouté au stock !");
-    window.updatePilotage();
-    window.renderInventory(); // Force le rafraîchissement
+    alert("✅ Véhicule ajouté au stock !");
+    
+    if(window.updatePilotage) window.updatePilotage();
+    window.renderInventory(); 
 };
 
+// ==========================================
+// 3. INVENTAIRE AMÉLIORÉ & OPTIMISÉ
+// ==========================================
+// ==========================================
+// 3. INVENTAIRE AMÉLIORÉ & OPTIMISÉ
+// ==========================================
 window.renderInventory = function() {
     const grid = document.getElementById('inventory-grid');
-    if(!grid) return;
+    if (!grid) return;
 
-    // On ne garde QUE ceux qui sont en stock (Statut ACHETÉ)
-    const stock = window.savedDeals.filter(d => d.status === "ACHETÉ");
+    // 1. On récupère les données les plus récentes
+    const data = JSON.parse(localStorage.getItem('ox_history')) || [];
+    window.savedDeals = data;
 
-    grid.innerHTML = stock.map((d, index) => {
-        // Trouver l'index réel dans la liste globale pour l'ouverture du détail
-        const realIdx = window.savedDeals.findIndex(item => item === d);
-        const prk = (parseFloat(d.purchase) || 0) + (parseFloat(d.repairs) || 0) + (parseFloat(d.fees) || 0);
+    // 2. Filtrage strict : on exclut les véhicules "VENDU"
+    const stock = data
+        .map((d, index) => ({ ...d, originalIndex: index }))
+        .filter(d => d.status === "ACHETÉ");
 
+    // 3. Rendu (la grille se nettoie et se remplit uniquement avec le stock actuel)
+    grid.innerHTML = stock.map((d) => {
+        const prk = toNum(d.purchase) + toNum(d.repairs) + toNum(d.fees);
+        const imgPath = d.photoUrl || 'https://via.placeholder.com/400x200?text=Pas+de+photo';
+        
         return `
-        <div class="card inventory-card" onclick="window.showVehicleDetails(${realIdx})" style="cursor:pointer; border-left:5px solid var(--accent); transition:0.2s;">
-            <div style="display:flex; justify-content:space-between; align-items:start;">
-                <strong>${d.model}</strong>
-                <span class="badge" style="background:var(--accent); color:white; font-size:0.7rem; padding:2px 6px; border-radius:4px;">${d.maintStep}</span>
+        <div class="card inventory-card" onclick="window.showVehicleDetails(${d.originalIndex})" 
+             style="cursor:pointer; padding:0; overflow:hidden; border:1px solid #333; background:#1a1a1a; color:white;">
+            <div style="height:150px; background:url('${imgPath}') center/cover #222;"></div>
+            <div style="padding:15px;">
+                <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:10px;">
+                    <div>
+                        <strong style="font-size:1.1rem;">${d.brand || ''} ${d.model || 'Véhicule'}</strong><br>
+                        <small style="color:#888;">${d.year || 'NC'} • ${d.mileage || 0} km</small>
+                    </div>
+                </div>
+                <div style="background:#252525; padding:8px; border-radius:6px; display:flex; justify-content:space-between; font-size:0.85rem;">
+                    <span>PRK: <strong>${prk.toLocaleString()} €</strong></span>
+                    <span style="color:var(--accent); font-weight:bold;">${d.plate || 'N/A'}</span>
+                </div>
             </div>
-            
-            <div style="margin-top:10px; display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:0.85rem;">
-                <div><small>Achat:</small><br><strong>${d.purchase.toLocaleString()}€</strong></div>
-                <div><small>PRK Total:</small><br><strong style="color:var(--accent)">${prk.toLocaleString()}€</strong></div>
-            </div>
-            
-            <div style="margin-top:10px; border-top:1px solid #eee; pt:5px; font-size:0.7rem; opacity:0.7;">
-                📅 Acquis le ${d.date}
-            </div>
-        </div>
-    `;}).join('') || `<div style="text-align:center; padding:40px; opacity:0.5;">Aucun véhicule en stock.</div>`;
+        </div>`;
+    }).join('');
 };
 
 window.showVehicleDetails = function(index) {
     const d = window.savedDeals[index];
-    if(!d) return;
+    if (!d) return;
 
-    const prk = (parseFloat(d.purchase) || 0) + (parseFloat(d.repairs) || 0) + (parseFloat(d.fees) || 0);
+    const prk = toNum(d.purchase) + toNum(d.repairs) + toNum(d.fees);
+    const existing = document.getElementById('modal-overlay');
+    if (existing) existing.remove();
 
-    // On crée une petite fenêtre d'alerte personnalisée ou on remplit un modal existant
     const detailHtml = `
-        <div id="modal-overlay" onclick="this.remove()" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px;">
-            <div class="card" onclick="event.stopPropagation()" style="width:100%; max-width:500px; background:white; overflow-y:auto; max-height:90vh;">
-                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding-bottom:10px; margin-bottom:15px;">
-                    <h2 style="margin:0">${d.model}</h2>
-                    <button onclick="document.getElementById('modal-overlay').remove()" style="border:none; background:none; font-size:1.5rem;">&times;</button>
+        <div id="modal-overlay" onclick="this.remove()" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; display:flex; align-items:center; justify-content:center; padding:15px;">
+            <div class="card" onclick="event.stopPropagation()" style="width:100%; max-width:550px; background:white; color:#333; padding:0; border-radius:12px; overflow:hidden;">
+                
+                <div id="photo-container" style="height:200px; background:url('${d.photoUrl || ''}') center/cover #eee; position:relative;">
+                    <button onclick="document.getElementById('modal-overlay').remove()" style="position:absolute; top:15px; right:15px; background:white; border:none; border-radius:50%; width:30px; height:30px; cursor:pointer; font-weight:bold;">&times;</button>
+                    
+                    <label style="position:absolute; bottom:10px; right:10px; background:rgba(0,0,0,0.7); color:white; padding:5px 12px; border-radius:20px; font-size:0.8rem; cursor:pointer;">
+                        📷 Ajouter/Modifier photo
+                        <input type="file" accept="image/*" style="display:none;" onchange="window.updateVehiclePhoto(event, ${index})">
+                    </label>
                 </div>
 
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:20px;">
-                    <div class="card" style="background:#f9f9f9">
-                        <small>FINANCES</small><br>
-                        Achat: <strong>${d.purchase} €</strong><br>
-                        Travaux: <strong>${d.repairs} €</strong><br>
-                        Frais: <strong>${d.fees} €</strong><br>
-                        <hr>
-                        PRK Total: <strong style="color:var(--accent)">${prk} €</strong>
+                <div style="padding:20px;">
+                    <h2 style="margin:0;">${d.brand || ''} ${d.model || 'Véhicule'}</h2>
+                    <p style="color:#666; margin-bottom:20px;">Immat : <strong>${d.plate || 'N/A'}</strong></p>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:20px;">
+                        <div style="background:#f4f4f4; padding:12px; border-radius:8px;">
+                            <small style="color:#888; font-weight:bold;">SOLDE FINANCIER</small>
+                            <div style="margin-top:5px;">Achat: <strong>${toNum(d.purchase).toLocaleString()} €</strong></div>
+                            <div style="margin-top:2px;">Travaux: <strong>${toNum(d.repairs).toLocaleString()} €</strong></div>
+                            <div style="margin-top:5px; border-top:1px solid #ddd; color:var(--accent); font-weight:bold; padding-top:5px;">PRK: ${prk.toLocaleString()} €</div>
+                        </div>
+                        <div style="background:#f4f4f4; padding:12px; border-radius:8px;">
+                            <small style="color:#888; font-weight:bold;">INFOS ANALYSE</small>
+                            <div style="margin-top:5px;">Vendeur: <strong>${d.seller_name || 'NC'}</strong></div>
+                            <div style="margin-top:2px;">Tél: <strong>${d.seller_phone || 'NC'}</strong></div>
+                            <div style="margin-top:2px;">Source: <strong>${d.source || 'NC'}</strong></div>
+                        </div>
                     </div>
-                    <div class="card" style="background:#f9f9f9">
-                        <small>INFOS</small><br>
-                        Côte Marché: <strong>${d.market} €</strong><br>
-                        Date Achat: <strong>${d.date}</strong><br>
-                        Statut: <strong>${d.status}</strong>
-                    </div>
-                </div>
 
-                <div style="margin-bottom:20px;">
-                    <strong>🔗 Lien annonce :</strong><br>
-                    ${d.link ? `<a href="${d.link}" target="_blank" style="color:blue; font-size:0.8rem; word-break:break-all;">${d.link}</a>` : 'Aucun lien'}
+                    <button onclick="window.archiveSold(${index})" style="width:100%; padding:15px; background:#10b981; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:1.1rem;">
+                        MARQUER COMME VENDU
+                    </button>
                 </div>
-
-                <div style="margin-bottom:20px;">
-                    <strong>🛠 État (Points KO) :</strong><br>
-                    <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:5px;">
-                        ${Object.keys(d.checks || {}).filter(k => d.checks[k] === 0).map(k => 
-                            `<span style="background:#fee2e2; color:#ef4444; padding:2px 8px; border-radius:10px; font-size:0.7rem;">${k}</span>`
-                        ).join('') || 'Aucun défaut relevé'}
-                    </div>
-                </div>
-
-                <button onclick="window.archiveSold(${index})" style="width:100%; padding:12px; background:#10b981; color:white; border:none; border-radius:8px; font-weight:700;">
-                    MARQUER COMME VENDU
-                </button>
             </div>
-        </div>
-    `;
+        </div>`;
     document.body.insertAdjacentHTML('beforeend', detailHtml);
 };
 
-// ==========================================================================
+// ==========================================
+// FONCTION PHOTO
+// ==========================================
+window.updateVehiclePhoto = function(event, index) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const base64Image = e.target.result;
+        
+        // Sauvegarde de l'image dans la base de données locale
+        window.savedDeals[index].photoUrl = base64Image;
+        localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
+        
+        // Mise à jour visuelle immédiate du modal et de la grille derrière
+        const photoContainer = document.getElementById('photo-container');
+        if (photoContainer) photoContainer.style.backgroundImage = `url('${base64Image}')`;
+        window.renderInventory();
+    };
+    reader.readAsDataURL(file);
+};
+
+window.archiveSold = function(index) {
+    // 1. Récupérer le véhicule
+    const v = window.savedDeals[index];
+    if (!v) return;
+
+    // 2. Demander les infos (Exactement comme ton bouton vert)
+    const p = prompt("Prix de vente final pour " + v.model + " :");
+    if (p === null || p === "") return; // Annulation si vide
+
+    const d = prompt("Date de vente (AAAA-MM-JJ) :", new Date().toISOString().split('T')[0]);
+
+    // 3. Application de la "Recette" du Dashboard
+    // On utilise soldPrice et non sellPrice pour que le calcul ne soit plus inversé
+    v.soldPrice = toNum(p); 
+    v.date_out = d || new Date().toISOString();
+    v.status = "VENDU";
+    v.maintStep = "Vendu";
+
+    // 4. Sauvegarde et Rafraîchissement global
+    // On utilise ta fonction saveAndRefresh() qui marche sur le dashboard
+    if (typeof saveAndRefresh === "function") {
+        saveAndRefresh();
+    } else {
+        // Sécurité si saveAndRefresh n'est pas accessible ici
+        localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
+        window.renderInventory();
+        if (typeof window.updatePilotage === "function") window.updatePilotage();
+    }
+
+    // 5. Fermer le modal de l'inventaire
+    const modal = document.getElementById('modal-overlay');
+    if (modal) modal.remove();
+    
+    alert("✅ Vente enregistrée avec succès !");
+};
+
 // 6. MODULE LOGISTIQUE (AVANCEMENT)
 // ==========================================================================
 // ==========================================================================
@@ -438,163 +858,196 @@ window.savedDeals = JSON.parse(localStorage.getItem('ox_history')) || [];
 window.saveData = function() {
     localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
 };
+
 // ==========================================
 // 1. RENDU DE LA LISTE AVEC TRI PAR DATE
 // ==========================================
+// ==========================================================================
+// MODULE LOGISTIQUE COMPLET (COMPTEURS + CARTES + ACTIONS)
+// ==========================================================================
+
 window.renderMaintenance = function() {
     const list = document.getElementById('maintenance-list');
     if (!list) return;
-    
-    // Filtrage et Tri (Les plus récents en premier)
-    const stock = window.savedDeals
-        .filter(d => d.status === "ACHETÉ")
-        .sort((a, b) => new Date(b.date) - new Date(a.date));
-    
-    if (stock.length === 0) {
-        list.innerHTML = `
-            <div style="text-align:center; opacity:0.5; padding:30px; border:2px dashed #444; border-radius:10px;">
-                Aucun véhicule en stock pour le moment.
-            </div>`;
-        return;
-    }
 
-    list.innerHTML = stock.map((deal) => {
-        const realIdx = window.savedDeals.findIndex(d => d === deal);
-        const totalInt = (deal.interventions || []).reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0);
-        const prk = (parseFloat(deal.purchase) || 0) + totalInt + (parseFloat(deal.fees) || 0);
+    // 1. Récupération des données fraîches depuis le localStorage
+    const data = JSON.parse(localStorage.getItem('ox_history')) || [];
+    window.savedDeals = data; // Synchronisation variable globale
+    
+    // 2. Filtrage : Uniquement les véhicules en stock (Statut ACHETÉ)
+    const stock = data
+        .map((d, index) => ({ ...d, realIdx: index }))
+        .filter(d => d.status === "ACHETÉ");
 
+    // 3. Initialisation des compteurs globaux
+    let prepCount = 0;
+    let externalCount = 0;
+    let readyCount = 0;
+    let totalInvested = 0;
+
+    // 4. Calcul des compteurs et génération du HTML des cartes
+    list.innerHTML = stock.map((d) => {
+        const i = d.realIdx;
+        
+        // Calcul financier (Prix achat + Frais + Interventions)
+        const totalInt = (d.interventions || []).reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0);
+        const prk = (parseFloat(d.purchase) || 0) + (parseFloat(d.fees) || 0) + totalInt;
+        
+        // Cumul pour le compteur global
+        totalInvested += prk;
+
+        // Tri pour les compteurs du haut (Logique selon maintStep)
+        const step = (d.maintStep || 'ACHAT').toUpperCase();
+        if (step === 'ACHAT' || step === 'NETTOYAGE') prepCount++;
+        else if (step === 'ATELIER' || step === 'CARROSSERIE') externalCount++;
+        else if (step === 'PRÊT') readyCount++;
+
+        // Rendu de la carte individuelle
         return `
-        <div class="card" style="margin-bottom:15px; border-left: 5px solid var(--accent); padding:15px; background: #1a1a1a; color: white;">
-            <div style="display:flex; justify-content:space-between; align-items:start;">
-                <div>
-                    <strong style="font-size:1.2rem;">${deal.model}</strong><br>
-                    <small style="color:var(--accent)">PRK actuel : ${prk.toLocaleString()} €</small>
-                    <div style="font-size:0.65rem; opacity:0.4; margin-top:2px;">Entrée stock : ${deal.date || 'Non spécifiée'}</div>
-                </div>
-                <span class="badge" style="background:var(--accent); color:white; padding:4px 10px; border-radius:4px; font-size:0.8rem;">
-                    ${deal.maintStep || 'Achat'}
-                </span>
+        <div class="card" style="background:#1a1a1a; border-left: 4px solid #6366f1; padding:15px; margin-bottom:12px; border-radius:8px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                <span style="font-size:0.65rem; color:#aaa; background:#252525; padding:2px 8px; border-radius:10px;">${d.date || 'Date NC'}</span>
+                <span style="font-size:0.7rem; color:#6366f1; font-weight:bold; text-transform:uppercase;">● ${d.maintStep || 'ACHAT'}</span>
             </div>
+            
+            <h3 style="margin:0; font-size:1.1rem; color:white;">${d.brand || ''} ${d.model}</h3>
+            <p style="color:#6366f1; font-weight:bold; font-size:0.95rem; margin:5px 0;">PRK Actuel : ${prk.toLocaleString()} €</p>
 
-            <div style="margin-top:12px; display:flex; gap:6px; flex-wrap:wrap;">
-                ${['Achat', 'Nettoyage', 'Atelier', 'Carrosserie', 'Prêt'].map(step => `
-                    <button onclick="window.updateMaintStep(${realIdx}, '${step}')" 
-                        class="pill-btn ${deal.maintStep === step ? 'active' : ''}" 
-                        style="font-size:0.7rem; padding:5px 10px; border-radius:20px; border:1px solid #444; background:${deal.maintStep === step ? 'var(--accent)' : 'transparent'}; color:white; cursor:pointer;">
-                        ${step}
+            <div style="margin-top:12px; display:flex; gap:4px; flex-wrap:wrap;">
+                ${['Achat', 'Nettoyage', 'Atelier', 'Carrosserie', 'Prêt'].map(stepName => `
+                    <button onclick="window.updateMaintStep(${i}, '${stepName}')" 
+                        style="flex:1; font-size:0.65rem; padding:6px 2px; border-radius:4px; border:none; 
+                        background:${d.maintStep === stepName ? '#6366f1' : '#252525'}; 
+                        color:white; cursor:pointer; transition: all 0.2s;">
+                        ${stepName}
                     </button>
                 `).join('')}
             </div>
 
-            <div style="margin-top:15px; background:#252525; padding:12px; border-radius:8px;">
-                <div style="display:flex; gap:8px; margin-bottom:10px;">
-                    <input type="text" id="task-${realIdx}" placeholder="Réparation (ex: Pneus)" style="flex:2; padding:8px; background:#333; border:1px solid #444; color:white; border-radius:4px;">
-                    <input type="number" id="price-${realIdx}" placeholder="Prix €" style="flex:1; padding:8px; background:#333; border:1px solid #444; color:white; border-radius:4px;">
-                    <button onclick="window.addIntervention(${realIdx})" style="background:var(--accent); color:white; border:none; padding:0 15px; border-radius:4px; cursor:pointer; font-weight:bold;">+</button>
-                </div>
-                
-                <div id="hist-${realIdx}" style="font-size:0.8rem; max-height:120px; overflow-y:auto;">
-                    ${(deal.interventions || []).length > 0 ? deal.interventions.map((int, i) => `
-                        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; padding:6px 0;">
-                            <span>• ${int.label} <small style="opacity:0.5">(${int.step})</small></span>
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <strong>${(parseFloat(int.price) || 0).toLocaleString()} €</strong>
-                                <button onclick="window.deleteIntervention(${realIdx}, ${i})" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:1.2rem; line-height:1;">&times;</button>
-                            </div>
-                        </div>
-                    `).join('') : '<p style="text-align:center; opacity:0.3; margin:10px 0;">Aucun frais ajouté</p>'}
-                </div>
+            <div style="margin-top:15px; display:flex; gap:5px;">
+                <input type="text" id="t-${i}" placeholder="Réparation..." style="flex:2; background:#111; border:1px solid #333; color:white; font-size:0.8rem; padding:6px; border-radius:4px;">
+                <input type="number" id="p-${i}" placeholder="€" style="flex:1; background:#111; border:1px solid #333; color:white; font-size:0.8rem; padding:6px; border-radius:4px;">
+                <button onclick="window.addIntLog(${i})" style="background:#6366f1; color:white; border:none; padding:0 12px; border-radius:4px; cursor:pointer; font-weight:bold;">+</button>
+            </div>
+
+            <div style="margin-top:12px; font-size:0.8rem; color:#bbb; background:#222; border-radius:6px; padding: ${(d.interventions || []).length > 0 ? '8px' : '0'};">
+                ${(d.interventions || []).map((int, idx) => `
+                    <div style="display:flex; justify-content:space-between; border-bottom:1px solid #333; padding:5px 0; align-items:center;">
+                        <span>${int.label}</span>
+                        <span style="color:white;">
+                            <strong>${parseFloat(int.price).toLocaleString()} €</strong> 
+                            <button onclick="window.delIntLog(${i}, ${idx})" style="color:#ef4444; background:none; border:none; cursor:pointer; font-size:1.1rem; margin-left:8px; line-height:1;">×</button>
+                        </span>
+                    </div>
+                `).join('')}
             </div>
         </div>`;
     }).join('');
+
+    // 5. Mise à jour des compteurs HTML (Dashboard du haut)
+    const updateEl = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = val;
+    };
+
+    updateEl('maint-count-prep', prepCount);
+    updateEl('maint-count-external', externalCount);
+    updateEl('maint-count-ready', readyCount);
+    updateEl('maint-total-invested', totalInvested.toLocaleString() + " €");
 };
 
-// ==========================================
-// 2. ACTIONS ET CALCULS FINANCIERS
-// ==========================================
+// ==========================================================================
+// ACTIONS (FONCTIONS APPELÉES PAR LES BOUTONS)
+// ==========================================================================
 
-window.addIntervention = function(idx) {
-    const taskInput = document.getElementById(`task-${idx}`);
-    const priceInput = document.getElementById(`price-${idx}`);
-    if (!taskInput || !priceInput) return;
-
-    const label = taskInput.value.trim();
-    const price = parseFloat(priceInput.value);
-
-    if (!label || isNaN(price)) {
-        alert("Veuillez saisir un libellé et un prix valide.");
-        return;
-    }
-
-    const deal = window.savedDeals[idx];
-    if (!deal.interventions) deal.interventions = [];
-
-    deal.interventions.push({
-        label: label,
-        price: price,
-        step: deal.maintStep || 'Atelier',
-        date: new Date().toLocaleDateString('fr-FR')
-    });
-
-    deal.repairs = deal.interventions.reduce((sum, i) => sum + (parseFloat(i.price) || 0), 0);
-
-    window.saveData(); 
-    window.renderMaintenance();
-    window.updatePilotage();
-};
-
-window.deleteIntervention = function(dealIdx, intIdx) {
-    if (confirm("Supprimer cette ligne de frais ?")) {
-        window.savedDeals[dealIdx].interventions.splice(intIdx, 1);
-        window.savedDeals[dealIdx].repairs = window.savedDeals[dealIdx].interventions.reduce((sum, i) => sum + (parseFloat(i.price) || 0), 0);
-        
-        window.saveData();
-        window.renderMaintenance();
-        window.updatePilotage();
-    }
-};
-
-window.updateMaintStep = function(idx, step) {
-    if (!window.savedDeals[idx]) return;
-    window.savedDeals[idx].maintStep = step;
+window.updateMaintStep = function(i, step) {
+    let data = JSON.parse(localStorage.getItem('ox_history')) || [];
+    if (!data[i]) return;
     
-    window.saveData();
-    window.renderMaintenance();
-    window.updatePilotage();
+    data[i].maintStep = step;
+    localStorage.setItem('ox_history', JSON.stringify(data));
+    window.renderMaintenance(); // Rafraîchissement global immédiat
 };
 
+window.addIntLog = function(i) {
+    const labelInput = document.getElementById(`t-${i}`);
+    const priceInput = document.getElementById(`p-${i}`);
+    
+    if(!labelInput || !priceInput) return;
+    const l = labelInput.value.trim();
+    const p = parseFloat(priceInput.value);
+
+    if(!l || isNaN(p)) return;
+
+    let data = JSON.parse(localStorage.getItem('ox_history')) || [];
+    if(!data[i].interventions) data[i].interventions = [];
+    
+    data[i].interventions.push({ label: l, price: p });
+    
+    // Mise à jour pour les autres modules (Trésorerie/Pilotage)
+    data[i].repairs = data[i].interventions.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0);
+
+    localStorage.setItem('ox_history', JSON.stringify(data));
+    window.renderMaintenance(); // Rafraîchissement global immédiat
+};
+
+window.delIntLog = function(i, idx) {
+    let data = JSON.parse(localStorage.getItem('ox_history')) || [];
+    if (!data[i] || !data[i].interventions) return;
+
+    data[i].interventions.splice(idx, 1);
+    data[i].repairs = data[i].interventions.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0);
+    
+    localStorage.setItem('ox_history', JSON.stringify(data));
+    window.renderMaintenance(); // Rafraîchit tout (cartes + compteurs)
+};
 // ==========================================
 // 3. MISE À JOUR DES CARTES KPI
 // ==========================================
+// ==========================================================================
+// CORRECTIF À APPLIQUER DANS TON MODULE PILOTAGE (TABLEAU DE BORD)
+// ==========================================================================
 window.updatePilotage = function() {
-    const deals = window.savedDeals || [];
-    let prep = 0, external = 0, ready = 0, totalCash = 0;
+    const data = JSON.parse(localStorage.getItem('ox_history')) || [];
+    const enStock = data.filter(d => d.status === "ACHETÉ");
+    const vendus = data.filter(d => d.status === "VENDU");
 
-    deals.forEach(deal => {
-        if (deal.status === "ACHETÉ") {
-            const step = deal.maintStep || "Achat";
-            if (step === "Achat" || step === "Nettoyage") prep++;
-            else if (step === "Atelier" || step === "Carrosserie") external++;
-            else if (step === "Prêt") ready++;
+    // 1. Calcul de la Marge Réalisée
+    const margeTotale = vendus.reduce((sum, d) => {
+        const achat = parseFloat(d.purchase) || 0;
+        const frais = parseFloat(d.fees) || 0;
+        const repa = parseFloat(d.repairs) || 0;
+        const prixVente = parseFloat(d.sellPrice) || 0;
+        
+        // PRK = Prix de Revient Kilométrique (Achat + tous les frais)
+        const prk = achat + frais + repa;
+        return sum + (prixVente - prk);
+    }, 0);
 
-            const purchase = parseFloat(deal.purchase) || 0;
-            const fees = parseFloat(deal.fees) || 0;
-            const interventions = (deal.interventions || []).reduce((sum, i) => sum + (parseFloat(i.price) || 0), 0);
-            totalCash += (purchase + fees + interventions);
+    // 2. Mise à jour de l'affichage de la Marge
+    const elMarge = document.getElementById('total-benefice') || document.getElementById('marge-mois-value');
+    
+    if (elMarge) {
+        elMarge.innerText = Math.round(margeTotale).toLocaleString() + " €";
+        
+        // STYLE DYNAMIQUE
+        if (margeTotale > 0) {
+            elMarge.style.color = "#10b981"; // Vert si bénéfice
+        } else if (margeTotale < 0) {
+            elMarge.style.color = "#ef4444"; // Rouge si perte
+        } else {
+            elMarge.style.color = "#666";    // Gris si zéro
         }
-    });
-
-    const elements = {
-        'maint-count-prep': prep,
-        'maint-count-external': external,
-        'maint-count-ready': ready,
-        'maint-total-invested': Math.round(totalCash).toLocaleString() + " €"
-    };
-
-    for (const [id, value] of Object.entries(elements)) {
-        const el = document.getElementById(id);
-        if (el) el.innerText = value;
     }
+
+    // 3. Mise à jour du Volume (ton ID kpi-stock-count)
+    const elCount = document.getElementById('kpi-stock-count');
+    if (elCount) elCount.innerText = enStock.length;
+    
+    // 4. Mise à jour de la Valeur Stock
+    const valeurStock = enStock.reduce((sum, d) => sum + (parseFloat(d.purchase) || 0), 0);
+    const elValue = document.getElementById('kpi-stock-value');
+    if (elValue) elValue.innerText = "Valeur : " + Math.round(valeurStock).toLocaleString() + " €";
 };
 // ==========================================================================
 // 7. MODULE MARKETING & IA TOOLS
@@ -731,7 +1184,6 @@ window.savedCustomers = JSON.parse(localStorage.getItem('ox_customers')) || [];
 
 // --- OUVERTURE MODAL AVEC LIAISON STOCK ---
 window.openCustomerModal = function() {
-    // On récupère le stock actuel pour la liste des acheteurs
     const stockOptions = (window.savedDeals || [])
         .filter(d => d.status === "ACHETÉ")
         .map(d => `<option value="${d.model}">${d.model}</option>`)
@@ -799,11 +1251,9 @@ window.openCustomerModal = function() {
     document.body.insertAdjacentHTML('beforeend', modalHTML);
 };
 
-// --- LOGIQUE DYNAMIQUE DU FORMULAIRE ---
 window.handleTypeChange = function(type) {
     const label = document.getElementById('label-link');
     const select = document.getElementById('cust-vehicle');
-    
     if (type === "VENTE") {
         label.innerText = "VÉHICULE PROPOSÉ PAR CLIENT";
         select.innerHTML = '<option value="Nouveau">Saisie libre dans les notes</option>';
@@ -817,37 +1267,75 @@ window.handleTypeChange = function(type) {
     }
 };
 
-// --- SAUVEGARDE ---
+// --- SAUVEGARDE AVEC AUTOMATISATION STRICTE (PRIX + DATE + PILOTAGE) ---
 window.saveCustomer = function() {
+    const type = document.getElementById('cust-type').value;
+    const vehicleModel = document.getElementById('cust-vehicle').value;
+    const name = document.getElementById('cust-name').value;
+
+    if(!name) return alert("Le nom du client est requis");
+
     const data = {
         id: Date.now(),
-        name: document.getElementById('cust-name').value,
+        name: name,
         phone: document.getElementById('cust-phone').value,
-        type: document.getElementById('cust-type').value,
-        vehicle: document.getElementById('cust-vehicle').value,
+        type: type,
+        vehicle: vehicleModel,
         budget: document.getElementById('cust-budget').value,
         status: document.getElementById('cust-status').value,
         notes: document.getElementById('cust-notes').value,
         date: new Date().toLocaleDateString('fr-FR')
     };
 
-    if(!data.name) return alert("Le nom du client est requis");
+    // SI ACHAT/REPRISE : ON LANCE LA RECETTE DE VENTE IMMEDIATEMENT
+    if ((type === "ACHAT" || type === "REPRISE") && vehicleModel && vehicleModel !== "Autre") {
+        const vIdx = window.savedDeals.findIndex(v => v.model === vehicleModel && v.status === "ACHETÉ");
+        
+        if (vIdx !== -1) {
+            const v = window.savedDeals[vIdx];
 
+            // 1. Demander les infos
+            const p = prompt("Vente via CRM : Prix de vente final pour " + v.model + " :");
+            if (p === null || p === "") return; 
+
+            const d = prompt("Date de vente (AAAA-MM-JJ) :", new Date().toISOString().split('T')[0]);
+
+            // 2. Application de la logique Pilotage
+            v.soldPrice = parseFloat(p); 
+            v.date_out = d || new Date().toISOString();
+            v.status = "VENDU";
+            v.maintStep = "Vendu";
+
+            // 3. Sauvegarde et Rafraîchissement global
+            if (typeof saveAndRefresh === "function") {
+                saveAndRefresh();
+                if (typeof window.renderInventory === "function") window.renderInventory();
+            } else {
+                localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
+                if (typeof window.updatePilotage === "function") window.updatePilotage();
+                if (typeof window.renderMaintenance === "function") window.renderMaintenance();
+            }
+            
+            // On force le statut client en CONCLU puisque la vente est faite
+            data.status = "CONCLU";
+        }
+    } // <-- C'était ici : une seule accolade fermait tout, il en fallait deux.
+
+    // On enregistre le client
     window.savedCustomers.push(data);
     localStorage.setItem('ox_customers', JSON.stringify(window.savedCustomers));
-    document.getElementById('customer-modal').remove();
+    
+    // Fermeture propre de la modal
+    const modal = document.getElementById('customer-modal');
+    if(modal) modal.classList.remove('active'); 
+    
     window.renderCustomers();
-};
 
-// --- RENDU DES CARTES SÉPARÉES ---
-window.renderCustomers = function() {
     const buyerList = document.getElementById('buyer-list');
     const sellerList = document.getElementById('seller-list');
     if(!buyerList || !sellerList) return;
 
-    // Calcul des compteurs
     let nego = 0, buyersCount = 0, sellersCount = 0;
-    
     window.savedCustomers.forEach(c => {
         if(c.status === "CHAUD") nego++;
         if(c.type === "ACHAT" || c.type === "REPRISE") buyersCount++;
@@ -863,7 +1351,7 @@ window.renderCustomers = function() {
         <div class="card" style="background:#1a1a1a; border-left: 4px solid ${c.type === 'VENTE' ? '#ef4444' : 'var(--success)'};">
             <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
                 <span style="font-size:0.65rem; background:#333; padding:2px 8px; border-radius:10px;">${c.date}</span>
-                <span style="font-size:0.7rem; color:${c.status === 'CHAUD' ? '#f59e0b' : '#aaa'}; font-weight:bold;">● ${c.status}</span>
+                <span style="font-size:0.7rem; color:${c.status === 'CHAUD' ? '#f59e0b' : (c.status === 'CONCLU' ? 'var(--success)' : '#aaa')}; font-weight:bold;">● ${c.status}</span>
             </div>
             
             <h3 style="margin:0; font-size:1.1rem; color:white;">${c.name}</h3>
@@ -884,16 +1372,8 @@ window.renderCustomers = function() {
             </div>
         </div>`;
 
-    // Distribution dans les deux listes
-    const buyersHTML = window.savedCustomers
-        .map((c, i) => ({c, i}))
-        .filter(item => item.c.type !== "VENTE")
-        .reverse();
-        
-    const sellersHTML = window.savedCustomers
-        .map((c, i) => ({c, i}))
-        .filter(item => item.c.type === "VENTE")
-        .reverse();
+    const buyersHTML = window.savedCustomers.map((c, i) => ({c, i})).filter(item => item.c.type !== "VENTE").reverse();
+    const sellersHTML = window.savedCustomers.map((c, i) => ({c, i})).filter(item => item.c.type === "VENTE").reverse();
 
     buyerList.innerHTML = buyersHTML.length ? buyersHTML.map(item => buildCard(item.c, item.i)).join('') : '<p style="opacity:0.3; font-size:0.8rem;">Aucun acheteur</p>';
     sellerList.innerHTML = sellersHTML.length ? sellersHTML.map(item => buildCard(item.c, item.i)).join('') : '<p style="opacity:0.3; font-size:0.8rem;">Aucun vendeur</p>';
@@ -1078,334 +1558,999 @@ window.deleteExpense = function(idx) {
 };
 
 // ==========================================================================
-// ADMIN
+// ADMIN & LEGAL
 // ==========================================================================
-// --- FONCTION UTILITAIRE CSV ---
-// Permet de transformer un tableau de données en fichier téléchargeable
-window.downloadCSV = function(csvContent, fileName) {
-    const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", fileName);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+
+// ==========================================
+// SYSTÈME DE COMPTABILITÉ OX PRO - FIX FINAL
+// ==========================================
+
+window.updateAccountingPreview = function() {
+    console.log("Calcul Compta lancé...");
+    
+    const mSelect = document.getElementById('export-month');
+    const ySelect = document.getElementById('export-year');
+    if (!mSelect || !ySelect) return;
+
+    // On récupère les valeurs choisies par l'utilisateur
+    const selMonth = parseInt(mSelect.value); // 0 pour Janvier, 1 pour Février...
+    const selYear = parseInt(ySelect.value);
+
+    let totalCA = 0;
+    let totalMarge = 0;
+
+    const data = JSON.parse(localStorage.getItem('ox_history')) || [];
+
+    data.forEach(v => {
+        try {
+            // Condition 1 : Il faut que le statut soit VENDU
+            if (v.status === "VENDU") {
+                
+                // On récupère la date (soit "2026-02-23" soit "23/02/2026")
+                const dRaw = v.date_out || v.date || "";
+                let vMonth = -1;
+                let vYear = -1;
+
+                if (dRaw.includes('-')) {
+                    const parts = dRaw.split('-');
+                    vYear = parseInt(parts[0]);
+                    vMonth = parseInt(parts[1]) - 1;
+                } else if (dRaw.includes('/')) {
+                    const parts = dRaw.split('/');
+                    vYear = parseInt(parts[2]);
+                    vMonth = parseInt(parts[1]) - 1;
+                }
+
+                // Affichage debug pour voir ce qui bloque
+                console.log(`Véhicule: ${v.model}, Mois détecté: ${vMonth}, Année détectée: ${vYear}`);
+
+                // Comparaison avec les menus déroulants
+                if (vMonth === selMonth && vYear === selYear) {
+                    const vente = parseFloat(v.soldPrice) || 0;
+                    const achat = parseFloat(v.purchase) || 0;
+                    const frais = parseFloat(v.repairs || 0) + parseFloat(v.fees || 0);
+                    
+                    totalCA += vente;
+                    totalMarge += (vente - (achat + frais));
+                }
+            }
+        } catch (e) {
+            console.error("Erreur sur un véhicule:", e);
+        }
+    });
+
+    // MISE À JOUR FORCÉE DE L'INTERFACE
+    const format = (n) => n.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
+    
+    const elCA = document.getElementById('preview-ca');
+    const elMarge = document.getElementById('preview-marge');
+    const elTVA = document.getElementById('preview-tva');
+
+    if (elCA) elCA.innerHTML = `<strong>${format(totalCA)}</strong>`;
+    if (elMarge) {
+        elMarge.innerHTML = `<strong>${format(totalMarge)}</strong>`;
+        elMarge.style.color = totalMarge >= 0 ? "#22c55e" : "#ef4444";
+    }
+    if (elTVA) {
+        const tva = totalMarge > 0 ? totalMarge * 0.20 : 0;
+        elTVA.innerHTML = `<strong>${format(tva)}</strong>`;
+    }
 };
 
-// --- 1. GESTION DU REGISTRE DE POLICE ---
+// On force l'exécution au chargement et sur chaque clic dans la page
+document.addEventListener('click', window.updateAccountingPreview);
+document.addEventListener('change', window.updateAccountingPreview);
+window.updateAccountingPreview();
 
-// Met à jour le tableau HTML
-// --- GÉNÉRATION AUTOMATIQUE DU LIVRE DE POLICE ---
+// ==========================================
+// SYSTÈME DE REPORTING OX PRO
+// ==========================================
+
+window.generateProReport = function() {
+    // 1. CONFIGURATION DU GARAGE
+    const config = {
+        nom: "OX PRO AUTOMOBILE",
+        adresse: "123 Avenue du Business, 75000 Paris",
+        contact: "01 23 45 67 89 | contact@oxpro-auto.fr",
+        siret: "888 777 666 00012",
+        logo: "https://via.placeholder.com/150x50?text=OX+PRO+LOGO" // Remplace par ton URL d'image
+    };
+
+    const mSelect = document.getElementById('export-month');
+    const ySelect = document.getElementById('export-year');
+    const monthName = mSelect.options[mSelect.selectedIndex].text;
+    const year = ySelect.value;
+
+    const data = JSON.parse(localStorage.getItem('ox_history')) || [];
+    let stats = { ca: 0, achat: 0, frais: 0, marge: 0, ventes: 0 };
+    let rows = "";
+
+    const clean = (v) => {
+        if (!v) return 0;
+        let c = v.toString().replace(/\s/g, '').replace(',', '.').replace(/[^0-9.]/g, '');
+        return parseFloat(c) || 0;
+    };
+
+    // 2. ANALYSE DES DONNÉES
+    data.forEach(v => {
+        if (v.status === "VENDU") {
+            const dateStr = v.date_out || "";
+            const p = dateStr.split('-');
+            if (parseInt(p[0]) === parseInt(year) && (parseInt(p[1]) - 1) === parseInt(mSelect.value)) {
+                const pV = clean(v.soldPrice);
+                const pA = clean(v.purchase);
+                const pF = clean(v.repairs) + clean(v.fees);
+                const m = pV - (pA + pF);
+
+                stats.ca += pV; stats.achat += pA; stats.frais += pF; stats.marge += m;
+                stats.ventes++;
+
+                rows += `
+                    <tr>
+                        <td>${dateStr.split('-').reverse().join('/')}</td>
+                        <td>
+                            <div style="font-weight:700;">${v.brand} ${v.model}</div>
+                            <div style="font-size:10px; color:#666;">VIN: ${v.vin || 'N/C'} | Immat: ${v.plate || 'N/C'}</div>
+                        </td>
+                        <td>${pA.toLocaleString()} €</td>
+                        <td>${pF.toLocaleString()} €</td>
+                        <td>${pV.toLocaleString()} €</td>
+                        <td style="font-weight:bold; color:${m >= 0 ? '#10b981' : '#ef4444'}">${m.toLocaleString()} €</td>
+                    </tr>`;
+            }
+        }
+    });
+
+    // Calculs d'initiatives
+    const margeMoyenne = stats.ventes > 0 ? (stats.marge / stats.ventes).toFixed(0) : 0;
+    const tvaSurMarge = stats.marge > 0 ? stats.marge * 0.20 : 0;
+
+    // 3. CRÉATION DU DOCUMENT INDÉPENDANT
+    const reportWindow = window.open('', '_blank');
+    reportWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>OX_PRO_${monthName}_${year}</title>
+            <style>
+                body { font-family: 'Inter', -apple-system, sans-serif; color: #1e293b; margin: 0; padding: 40px; line-height: 1.4; }
+                @page { size: A4; margin: 10mm; }
+                
+                .header { display: flex; justify-content: space-between; margin-bottom: 40px; border-bottom: 2px solid #f97316; padding-bottom: 20px; }
+                .garage-brand { display: flex; align-items: center; gap: 15px; }
+                .garage-brand img { max-height: 50px; }
+                .info { font-size: 11px; color: #475569; }
+
+                .doc-meta { text-align: right; }
+                .doc-meta h1 { margin: 0; color: #f97316; font-size: 24px; font-weight: 800; }
+                
+                .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px; }
+                .stat-card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; text-align: center; }
+                .stat-card label { font-size: 9px; text-transform: uppercase; font-weight: 700; color: #64748b; }
+                .stat-card div { font-size: 16px; font-weight: 800; margin-top: 5px; }
+
+                .kpi-row { background: #1e293b; color: white; padding: 10px 20px; border-radius: 6px; display: flex; justify-content: space-between; margin-bottom: 30px; font-size: 12px; }
+
+                table { width: 100%; border-collapse: collapse; }
+                th { background: #f1f5f9; text-align: left; padding: 10px; font-size: 10px; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; }
+                td { padding: 12px 10px; border-bottom: 1px solid #f1f5f9; font-size: 11px; }
+                
+                .signature-area { margin-top: 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 50px; }
+                .sig-box { border: 1px dashed #cbd5e1; height: 100px; padding: 10px; border-radius: 8px; font-size: 10px; color: #94a3b8; }
+
+                .no-print { position: fixed; top: 20px; right: 20px; background: #f97316; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+                @media print { .no-print { display: none; } }
+            </style>
+        </head>
+        <body>
+            <button class="no-print" onclick="window.print()">📥 GÉNÉRER LE PDF</button>
+
+            <div class="header">
+                <div class="garage-brand">
+                    <img src="${config.logo}" alt="Logo">
+                    <div class="info">
+                        <strong>${config.nom}</strong><br>
+                        ${config.adresse}<br>
+                        ${config.contact}<br>
+                        SIRET: ${config.siret}
+                    </div>
+                </div>
+                <div class="doc-meta">
+                    <h1>RAPPORT DE CLÔTURE</h1>
+                    <div style="font-weight: 700;">${monthName.toUpperCase()} ${year}</div>
+                    <div style="font-size: 10px; color: #94a3b8;">Document ID: OX-${year}-${mSelect.value}</div>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card"><label>Chiffre d'Affaires</label><div>${stats.ca.toLocaleString()} €</div></div>
+                <div class="stat-card"><label>Achats Net</label><div>${stats.achat.toLocaleString()} €</div></div>
+                <div class="stat-card"><label>Marge Brute</label><div style="color:#10b981">${stats.marge.toLocaleString()} €</div></div>
+                <div class="stat-card"><label>TVA sur Marge</label><div>${tvaSurMarge.toLocaleString()} €</div></div>
+            </div>
+
+            <div class="kpi-row">
+                <span>Ventes totales : <strong>${stats.ventes} véhicules</strong></span>
+                <span>Marge moyenne / véhicule : <strong>${margeMoyenne} €</strong></span>
+                <span>Rentabilité globale : <strong>${stats.ca > 0 ? ((stats.marge/stats.ca)*100).toFixed(1) : 0}%</strong></span>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Désignation Véhicule</th>
+                        <th>Achat</th>
+                        <th>Frais</th>
+                        <th>Vente</th>
+                        <th>Marge brute</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rows || '<tr><td colspan="6" style="text-align:center; padding:30px;">Aucun véhicule vendu sur cette période.</td></tr>'}
+                </tbody>
+            </table>
+
+            <div class="signature-area">
+                <div>
+                    <div style="font-size:11px; font-weight:bold; margin-bottom:5px;">Commentaires / Notes :</div>
+                    <div class="sig-box"></div>
+                </div>
+                <div>
+                    <div style="font-size:11px; font-weight:bold; margin-bottom:5px;">Cachet et Signature Direction :</div>
+                    <div class="sig-box"></div>
+                </div>
+            </div>
+
+            <div style="margin-top:40px; text-align:center; font-size:9px; color:#cbd5e1;">
+                OX PRO AUTOMOBILE - Logiciel de gestion certifié. Généré le ${new Date().toLocaleString()}
+            </div>
+        </body>
+        </html>
+    `);
+    reportWindow.document.close();
+};
+
+// 2. GESTION DU LIVRE DE POLICE (CORRIGÉ)
+// ==========================================
+
 window.updatePoliceTable = function() {
-    const deals = window.savedDeals || [];
     const tbody = document.getElementById('police-table-body');
     if (!tbody) return;
 
-    // On trie pour avoir les entrées les plus récentes en haut
-    const sortedDeals = [...deals].reverse();
+    // Inversion pour voir les derniers ajouts en haut
+    const displayDeals = [...window.savedDeals].reverse();
 
-    tbody.innerHTML = sortedDeals.map((deal, index) => {
+    tbody.innerHTML = displayDeals.map((deal, index) => {
         const isSold = deal.status === "VENDU";
         
+        // Sécurité pour les documents
+        const hasCG = deal.file_cg ? '✅' : '❌';
+        const hasCession = deal.file_cession ? '✅' : '❌';
+
         return `
-            <tr style="border-bottom:1px solid #222; hover:background:#1a1a1a;">
-                <td style="padding:12px; color:#888;">#${deal.id || index + 1}</td>
-                <td style="padding:12px;">${deal.date || "Saisie..."}</td>
+            <tr style="border-bottom:1px solid #222; background: ${isSold ? 'rgba(34, 197, 94, 0.05)' : 'transparent'};">
+                <td style="padding:12px; color:#888;">#${deal.id ? String(deal.id).slice(-6) : index + 1}</td>
+                <td style="padding:12px;">${deal.date_buy || deal.date || "NC"}</td>
                 <td style="padding:12px;">
-                    <strong>${deal.brand} ${deal.model}</strong><br>
-                    <small style="color:#666;">${deal.immat} / ${deal.vin || 'SANS VIN'}</small>
+                    <strong>${deal.brand || ""} ${deal.model || "Véhicule"}</strong><br>
+                    <small style="color:var(--accent); font-weight:bold;">${deal.immat || "SANS IMMAT"}</small>
                 </td>
-                <td style="padding:12px;">
-                    <span style="font-size:0.8rem;">${deal.sellerName || "Particulier"}</span>
-                </td>
-                <td style="padding:12px;">${isSold ? deal.saleDate : '<span style="opacity:0.3">- En Stock -</span>'}</td>
+                <td style="padding:12px; font-size:0.85rem;">${deal.sellerName || deal.provenance || "Particulier"}</td>
+                <td style="padding:12px;">${isSold ? (deal.saleDate || deal.date_out || "-") : '<span style="color:#f59e0b; font-size:0.75rem;">📦 EN STOCK</span>'}</td>
                 <td style="padding:12px;">${isSold ? (deal.buyerName || "Client") : "-"}</td>
                 <td style="padding:12px; text-align:right;">
-                    <button onclick="window.editPoliceEntry('${deal.id}')" style="background:none; border:1px solid #444; color:white; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.7rem;">
-                        MODIFIER
-                    </button>
+                    <div style="display:flex; gap:8px; justify-content:flex-end;">
+                        <button onclick="window.manageFiles('${deal.id}')" title="CG: ${hasCG} | Cess: ${hasCession}" style="background:#222; border:1px solid #444; color:white; padding:6px; border-radius:6px; cursor:pointer;">📁 Docs</button>
+                        <button onclick="window.generateInvoice('${deal.id}')" style="background:var(--success); border:none; color:white; padding:6px 10px; border-radius:6px; cursor:pointer; font-weight:bold;">📄 Facture</button>
+                        <button onclick="window.editPoliceEntry('${deal.id}')" style="background:none; border:1px solid #333; color:#888; padding:6px; border-radius:6px; cursor:pointer;">Mdf</button>
+                    </div>
                 </td>
             </tr>
         `;
     }).join('');
 };
 
-// Exporte tout le registre en CSV (Format Excel)
-window.exportPoliceCSV = function() {
-    const deals = window.savedDeals || [];
-    let csv = "ID;DATE_ENTREE;MARQUE;MODELE;IMMAT;VIN;VENDEUR_NOM;PRIX_ACHAT;DATE_SORTIE;ACHETEUR_NOM;PRIX_VENTE\n";
-
-    deals.forEach((d, idx) => {
-        const row = [
-            d.id || idx + 1,
-            d.date || "",
-            d.brand,
-            d.model,
-            d.immat,
-            d.vin || "NON RENSEIGNE",
-            d.sellerName || "",
-            d.purchase || 0,
-            d.status === "VENDU" ? (d.saleDate || "") : "",
-            d.status === "VENDU" ? (d.buyerName || "") : "",
-            d.status === "VENDU" ? (d.soldPrice || 0) : ""
-        ];
-        csv += row.join(";") + "\n";
-    });
-
-    window.downloadCSV(csv, "Livre_Police_Export.csv");
-};
-
-// Fonction simple pour imprimer
-window.printPoliceBook = function() {
-    window.print(); // Ouvre la boite de dialogue système
-};
-
-// Fonction pour modifier
-window.editPoliceEntry = function(dealId) {
-    // On trouve le véhicule dans la base
-    const dealIndex = window.savedDeals.findIndex(d => d.id == dealId);
-    if (dealIndex === -1) return;
-
-    const deal = window.savedDeals[dealIndex];
-
-    // On demande les corrections (Exemple simplifié par prompt)
-    const newVin = prompt("Modifier le numéro VIN :", deal.vin || "");
-    const newSeller = prompt("Modifier le nom du vendeur :", deal.sellerName || "");
-    
-    if (newVin !== null) window.savedDeals[dealIndex].vin = newVin;
-    if (newSeller !== null) window.savedDeals[dealIndex].sellerName = newSeller;
-
-    // Sauvegarde et mise à jour
-    localStorage.setItem('ox_deals', JSON.stringify(window.savedDeals));
-    window.updatePoliceTable();
-    alert("Registre mis à jour !");
-};
+// ==========================================
+// 3. AUTO-COMPLÉTION ET AJOUT MANUEL
+// ==========================================
 
 window.addManualPoliceEntry = function() {
-    const brand = prompt("Marque / Modèle :");
-    if(!brand) return;
+    const immat = prompt("Entrez l'immatriculation (Format AA-123-BB) :");
+    if(!immat) return;
+
+    const existing = window.savedDeals.find(d => d.immat && d.immat.replace(/\s/g,'').toLowerCase() === immat.replace(/\s/g,'').toLowerCase());
+    
+    const brand = existing ? existing.brand : prompt("Marque :", "");
+    const model = existing ? existing.model : prompt("Modèle :", "");
 
     const manualEntry = {
         id: Date.now(),
-        brand: brand.split(' ')[0] || "Inconnu",
-        model: brand.split(' ')[1] || "",
-        date: new Date().toLocaleDateString('fr-FR'),
-        immat: prompt("Immatriculation :"),
-        sellerName: prompt("Nom du Vendeur :"),
-        status: "STOCK", // Par défaut
-        price: 0
+        brand: brand,
+        model: model,
+        immat: immat.toUpperCase(),
+        date_buy: new Date().toLocaleDateString('fr-FR'),
+        sellerName: prompt("Nom du Vendeur (Origine) :", existing ? (existing.sellerName || existing.provenance) : ""),
+        status: "STOCK",
+        purchase: existing ? existing.buyPrice : 0,
+        vin: existing ? existing.vin : "",
+        file_cg: existing ? existing.file_cg : null,
+        file_cession: existing ? existing.file_cession : null
     };
 
     window.savedDeals.push(manualEntry);
-    localStorage.setItem('ox_deals', JSON.stringify(window.savedDeals));
+    localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
     window.updatePoliceTable();
 };
 
+// ==========================================
+// 4. GESTION DES FICHIERS (BASE64)
+// ==========================================
 
-// --- 2. GESTION DE LA CLÔTURE COMPTABLE ---
+window.manageFiles = function(dealId) {
+    const deal = window.savedDeals.find(d => d.id == dealId);
+    if(!deal) return;
 
-// Met à jour l'aperçu (Petit encadré noir) quand on change le mois
-window.updateAccountingPreview = function() {
-    const month = parseInt(document.getElementById('export-month').value);
-    const year = parseInt(document.getElementById('export-year').value);
-    const deals = window.savedDeals || [];
-
-    let ca = 0;
-    let marge = 0;
-
-    deals.forEach(deal => {
-        if (deal.status === "VENDU" && deal.saleDate) {
-            // Conversion de la date (format attendu YYYY-MM-DD ou DD/MM/YYYY)
-            const saleDateObj = new Date(deal.saleDate);
-            // Vérification si la vente correspond au mois/année sélectionnés
-            if (saleDateObj.getMonth() === month && saleDateObj.getFullYear() === year) {
-                
-                // Récupération des montants (via parseMoney de l'autre script)
-                const sellingPrice = window.parseMoney ? window.parseMoney(deal.soldPrice) : parseFloat(deal.soldPrice) || 0;
-                const costPrice = (window.parseMoney ? window.parseMoney(deal.purchase) : parseFloat(deal.purchase) || 0) 
-                                + (window.parseMoney ? window.parseMoney(deal.fees) : parseFloat(deal.fees) || 0)
-                                + (deal.interventions || []).reduce((s, i) => s + (parseFloat(i.price)||0), 0);
-
-                ca += sellingPrice;
-                marge += (sellingPrice - costPrice);
-            }
-        }
-    });
-
-    // Calcul TVA (20% sur la marge si marge positive)
-    const tva = marge > 0 ? marge * 0.20 : 0;
-
-    // Mise à jour DOM
-    document.getElementById('preview-ca').innerText = ca.toLocaleString('fr-FR') + " €";
-    document.getElementById('preview-marge').innerText = marge.toLocaleString('fr-FR') + " €";
-    document.getElementById('preview-tva').innerText = tva.toLocaleString('fr-FR') + " €";
+    const modalHTML = `
+    <div id="file-modal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+        <div class="card" style="width:450px; padding:25px; background:#1a1a1a; border:1px solid #333; border-radius:15px; color:white;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 style="margin:0;">📁 Documents : ${deal.model}</h3>
+                <button onclick="document.getElementById('file-modal').remove()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
+            </div>
+            <div style="background:#222; padding:15px; border-radius:10px; margin-bottom:15px; border:1px dashed #444;">
+                <label style="display:block; font-size:0.75rem; color:var(--accent); margin-bottom:8px; font-weight:bold;">CARTE GRISE (SCAN/PHOTO)</label>
+                <input type="file" id="file-cg" onchange="window.saveFile('${dealId}', 'cg')" style="font-size:0.8rem; width:100%;">
+                ${deal.file_cg ? '<p style="color:#22c55e; font-size:0.75rem; margin-top:5px;">✅ Fichier enregistré</p>' : '<p style="color:#ef4444; font-size:0.75rem; margin-top:5px;">⚠️ Manquant</p>'}
+            </div>
+            <div style="background:#222; padding:15px; border-radius:10px; margin-bottom:20px; border:1px dashed #444;">
+                <label style="display:block; font-size:0.75rem; color:var(--accent); margin-bottom:8px; font-weight:bold;">CERTIFICAT DE CESSION</label>
+                <input type="file" id="file-cession" onchange="window.saveFile('${dealId}', 'cession')" style="font-size:0.8rem; width:100%;">
+                ${deal.file_cession ? '<p style="color:#22c55e; font-size:0.75rem; margin-top:5px;">✅ Fichier enregistré</p>' : '<p style="color:#ef4444; font-size:0.75rem; margin-top:5px;">⚠️ Manquant</p>'}
+            </div>
+            <button onclick="document.getElementById('file-modal').remove()" style="width:100%; padding:12px; background:var(--accent); border:none; color:white; border-radius:8px; cursor:pointer; font-weight:bold;">Terminer</button>
+        </div>
+    </div>`;
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
 };
 
-// Exporte le rapport mensuel
-window.exportAccountingCSV = function() {
-    const month = parseInt(document.getElementById('export-month').value);
-    const year = parseInt(document.getElementById('export-year').value);
-    const deals = window.savedDeals || [];
-    
-    // Noms des mois pour le fichier
-    const monthNames = ["Janvier", "Fevrier", "Mars", "Avril", "Mai", "Juin", "Juillet", "Aout", "Septembre", "Octobre", "Novembre", "Decembre"];
+window.saveFile = function(dealId, type) {
+    const input = document.getElementById(type === 'cg' ? 'file-cg' : 'file-cession');
+    const file = input.files[0];
+    if(!file) return;
 
-    let csv = `RAPPORT MENSUEL - ${monthNames[month]} ${year}\n`;
-    csv += "DATE;VEHICULE;IMMAT;PRIX_ACHAT_TOTAL;PRIX_VENTE;MARGE_BRUTE;TVA_MARGE\n";
-
-    deals.forEach(deal => {
-        if (deal.status === "VENDU" && deal.saleDate) {
-            const saleDateObj = new Date(deal.saleDate);
-            if (saleDateObj.getMonth() === month && saleDateObj.getFullYear() === year) {
-                
-                const sellingPrice = window.parseMoney(deal.soldPrice);
-                // Calcul coût total (Achat + Frais + Réparations)
-                const totalCost = window.parseMoney(deal.purchase) + window.parseMoney(deal.fees) + (deal.interventions || []).reduce((s, i) => s + (parseFloat(i.price)||0), 0);
-                
-                const margin = sellingPrice - totalCost;
-                const tva = margin > 0 ? margin * 0.20 : 0;
-
-                const row = [
-                    deal.saleDate,
-                    `${deal.brand} ${deal.model}`,
-                    deal.immat,
-                    totalCost,
-                    sellingPrice,
-                    margin,
-                    tva
-                ];
-                csv += row.join(";") + "\n";
-            }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const index = window.savedDeals.findIndex(d => d.id == dealId);
+        if(index !== -1) {
+            window.savedDeals[index]['file_' + type] = e.target.result;
+            localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
+            alert("Document " + (type === 'cg' ? 'Carte Grise' : 'Cession') + " mis à jour !");
+            document.getElementById('file-modal').remove();
+            window.updatePoliceTable();
         }
-    });
-
-    window.downloadCSV(csv, `Cloture_${monthNames[month]}_${year}.csv`);
-};
-
-// Initialisation : Appeler updatePoliceTable() et setDate() au chargement de la section
-document.addEventListener("DOMContentLoaded", () => {
-    // Si la fonction updateAdmin est appelée au clic sur le menu
-    window.updateAdmin = function() {
-        window.updatePoliceTable();
-        
-        // Sélectionne le mois en cours par défaut
-        const today = new Date();
-        document.getElementById('export-month').value = today.getMonth();
-        document.getElementById('export-year').value = today.getFullYear();
-        window.updateAccountingPreview();
     };
+    reader.readAsDataURL(file);
+};
+
+// ==========================================
+// 5. GÉNÉRATION DE FACTURE PRO & INTERACTIVE
+// ==========================================
+window.getProfileData = function() {
+    const saved = JSON.parse(localStorage.getItem('ox_profile_settings'));
+    
+    // Si rien n'est enregistré, on met des valeurs par défaut pour ne pas laisser de blanc
+    return {
+        name: saved?.companyName || "VOTRE ENTREPRISE",
+        addr: saved?.address || "ADRESSE NON RENSEIGNÉE",
+        siret: saved?.siret || "SIRET MANQUANT",
+        tva: saved?.tvaIntra || "TVA NON RENSEIGNÉE",
+        contact: (saved?.phone || "") + " " + (saved?.email || "")
+    };
+};
+
+// EXEMPLE d'utilisation pour générer l'en-tête de ta facture
+window.generateInvoiceHeader = function() {
+    const info = window.getProfileData(); // On récupère les infos profil
+    
+    return `
+        <div class="invoice-header">
+            <h1>${info.name}</h1>
+            <p>${info.addr}</p>
+            <p>SIRET: ${info.siret} | TVA: ${info.tva}</p>
+            <p>${info.contact}</p>
+        </div>
+    `;
+};
+
+window.generateInvoice = function(dealId) {
+    const deal = window.savedDeals.find(d => d.id == dealId);
+    if(!deal) return alert("Véhicule introuvable");
+
+    const profile = window.getProfileData(); 
+    
+    // Récupération du logo depuis les réglages
+    const savedSettings = JSON.parse(localStorage.getItem('ox_profile_settings')) || {};
+    const logoUrl = savedSettings.logoUrl || "";
+
+    const win = window.open('', '_blank');
+    
+    win.document.write(`
+        <html><head><title>Facture_${deal.model}</title>
+        <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; color: #1a1a1a; line-height: 1.6; position: relative; }
+            .ox-badge { position: absolute; top: 10px; right: 40px; font-size: 0.7rem; color: #ccc; font-weight: bold; letter-spacing: 1px; }
+            .header { display: flex; justify-content: space-between; border-bottom: 3px solid #000; padding-bottom: 20px; margin-bottom: 30px; }
+            .logo-area { max-width: 200px; max-height: 80px; margin-bottom: 10px; }
+            .logo-area img { max-width: 100%; height: auto; }
+            .box { margin: 20px 0; display: flex; justify-content: space-between; gap: 40px; }
+            .client-box, .garage-box { border: 1px solid #eee; padding: 15px; border-radius: 8px; flex: 1; background: #fafafa; }
+            table { width: 100%; border-collapse: collapse; margin: 30px 0; }
+            th { background: #f4f4f4; border: 1px solid #ddd; padding: 12px; text-align: left; }
+            td { border: 1px solid #ddd; padding: 12px; }
+            .total-section { text-align: right; margin-top: 40px; }
+            .total-amount { font-size: 2.2rem; font-weight: bold; color: #000; border-top: 2px solid #000; display: inline-block; padding-top: 10px; }
+            .footer { margin-top: 80px; font-size: 0.8rem; color: #666; border-top: 1px solid #eee; padding-top: 20px; text-align: center; }
+            .no-print { display: flex; gap: 15px; justify-content: center; margin-bottom: 30px; background: #f8f9fa; padding: 15px; border-radius: 12px; border: 1px solid #e9ecef; }
+            .btn { padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 8px; border: none; }
+            .btn-add { background: #495057; color: white; }
+            .btn-print { background: #000; color: white; }
+            .cachet-area { margin-top: 40px; display: flex; justify-content: flex-end; }
+            .cachet-box { border: 1px dashed #ccc; width: 250px; height: 120px; display: flex; align-items: center; justify-content: center; color: #bbb; font-size: 0.75rem; text-align: center; border-radius: 8px; }
+            [contenteditable="true"]:hover { background: #fffde7; outline: 1px dashed #ffd600; }
+            @media print { .no-print { display: none !important; } }
+        </style></head>
+        <body>
+            <div class="ox-badge">LOGICIEL OX PRO</div>
+
+            <div class="no-print">
+                <button class="btn btn-add" onclick="addNewLine()">➕ Ajouter une ligne</button>
+                <button class="btn btn-print" onclick="window.print()">🖨️ Imprimer la facture</button>
+            </div>
+
+            <div class="header">
+                <div>
+                    ${logoUrl ? `<div class="logo-area"><img src="${logoUrl}" alt="Logo"></div>` : ''}
+                    <h1 style="margin:0; font-size:2.5rem; color:#000;">FACTURE</h1>
+                    <p>Référence : <span contenteditable="true">INV-${deal.id}</span></p>
+                    <p>Date : <span contenteditable="true">${deal.saleDate || new Date().toLocaleDateString('fr-FR')}</span></p>
+                </div>
+                <div style="text-align:right">
+                    <div style="font-size: 1.2rem; font-weight: bold; color: #22c55e;">${profile.name}</div>
+                    <small>Auto-entrepreneur / Garage</small>
+                </div>
+            </div>
+            
+            <div class="box">
+                <div class="garage-box">
+                    <strong style="color:#555; font-size:0.75rem; text-transform:uppercase;">Vendeur</strong><br>
+                    <div contenteditable="true">
+                        <strong>${profile.name}</strong><br>
+                        ${profile.addr}<br>
+                        ${profile.contact}<br>
+                        SIRET: ${profile.siret}<br>
+                        TVA: ${profile.tva}
+                    </div>
+                </div>
+                <div class="client-box">
+                    <strong style="color:#555; font-size:0.75rem; text-transform:uppercase;">Facturé à</strong><br>
+                    <div contenteditable="true">
+                        <strong>${deal.buyerName || "M. / Mme Client"}</strong><br>
+                        Adresse : ...<br>
+                        Détails : ${deal.notes || "Vente Véhicule Occasion"}
+                    </div>
+                </div>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Désignation</th>
+                        <th style="width: 150px;">Immatriculation</th>
+                        <th style="width: 150px; text-align: right;">Prix Net TTC</th>
+                    </tr>
+                </thead>
+                <tbody id="invoice-body">
+                    <tr>
+                        <td contenteditable="true">
+                            <strong style="font-size:1.1rem;">${deal.brand} ${deal.model}</strong><br>
+                            Kilométrage : ${deal.km || 'NC'} km | VIN : ${deal.vin || 'Non renseigné'}
+                        </td>
+                        <td contenteditable="true" style="font-weight:bold;">${deal.immat}</td>
+                        <td style="text-align: right;">
+                            <span contenteditable="true" class="price-val" onblur="updateTotal()">${deal.soldPrice || 0}</span> €
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="total-section">
+                <p style="margin:0; font-size: 0.9rem;">TOTAL À PAYER</p>
+                <div class="total-amount"><span id="total-val">${(deal.soldPrice || 0).toLocaleString('fr-FR')}</span> €</div>
+            </div>
+
+            <div class="cachet-area">
+                <div class="cachet-box">Cachet commercial<br>et signature du vendeur</div>
+            </div>
+
+            <div class="footer">
+                <p>Facture générée par le logiciel <strong>OX PRO</strong> pour <strong>${profile.name}</strong></p>
+                <p style="font-size:0.7rem;">TVA sur marge récupérable (Art. 297 A du CGI). Véhicule vendu en l'état.</p>
+            </div>
+
+            <script>
+                function addNewLine() {
+                    const tbody = document.getElementById('invoice-body');
+                    const row = document.createElement('tr');
+                    row.innerHTML = '<td contenteditable="true">Prestation supplémentaire...</td><td contenteditable="true">--</td><td style="text-align: right;"><span contenteditable="true" class="price-val" onblur="updateTotal()">0</span> €</td>';
+                    tbody.appendChild(row);
+                }
+                function updateTotal() {
+                    let total = 0;
+                    document.querySelectorAll('.price-val').forEach(p => {
+                        let val = p.innerText.replace(/[^0-9.,]/g, '').replace(',', '.');
+                        total += parseFloat(val) || 0;
+                    });
+                    document.getElementById('total-val').innerText = total.toLocaleString('fr-FR');
+                }
+            </script>
+        </body></html>
+    `);
+    win.document.close();
+};
+
+// ==========================================
+// 6. MODIFICATION ET COMPTABILITÉ
+// ==========================================
+
+window.editPoliceEntry = function(dealId) {
+    const index = window.savedDeals.findIndex(d => d.id == dealId);
+    if (index === -1) return;
+    const deal = window.savedDeals[index];
+
+    const nBrand = prompt("Marque :", deal.brand);
+    const nModel = prompt("Modèle :", deal.model);
+    const nImmat = prompt("Immatriculation :", deal.immat);
+    const nPrice = prompt("Prix de vente final (€) :", deal.soldPrice);
+    const nClient = prompt("Nom du client :", deal.buyerName);
+
+    if (nBrand !== null) window.savedDeals[index].brand = nBrand;
+    if (nModel !== null) window.savedDeals[index].model = nModel;
+    if (nImmat !== null) window.savedDeals[index].immat = nImmat.toUpperCase();
+    if (nPrice !== null) window.savedDeals[index].soldPrice = parseFloat(nPrice);
+    if (nClient !== null) window.savedDeals[index].buyerName = nClient;
+
+    localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
+    window.updatePoliceTable();
+};
+
+window.openHistovec = function() {
+    window.open('https://histovec.interieur.gouv.fr/histovec/accueil', '_blank');
+};
+
+// ==========================================
+// GESTION DE LA CLÔTURE MENSUELLE
+// ==========================================
+
+window.updateAccountingPreview = function() {
+    // Récupération des sélecteurs de la carte "Clôture Mensuelle"
+    const mSelect = document.getElementById('export-month');
+    const ySelect = document.getElementById('export-year');
+    
+    if(!mSelect || !ySelect) return;
+
+    // Valeurs cibles (ex: "1" pour Février, "2026")
+    const targetMonth = parseInt(mSelect.value); 
+    const targetYear = parseInt(ySelect.value);
+    
+    let totalCA = 0;
+    let totalMarge = 0;
+
+    // Parcours de tous les véhicules enregistrés
+    window.savedDeals.forEach(deal => {
+        // On ne calcule que les véhicules marqués comme "VENDU"
+        if (deal.status === "VENDU") {
+            // On récupère la date de vente (saleDate ou date_out selon ton format)
+            const dateStr = deal.saleDate || deal.date_out;
+            
+            if (dateStr && dateStr.includes('/')) {
+                const parts = dateStr.split('/');
+                // Format attendu JJ/MM/AAAA -> parts[1] est le mois
+                const saleMonth = parseInt(parts[1]) - 1; // -1 car Janvier = 0 en JavaScript
+                const saleYear = parseInt(parts[2]);
+
+                // Comparaison avec la sélection de l'interface
+                if (saleMonth === targetMonth && saleYear === targetYear) {
+                    const prixVente = window.toNum(deal.soldPrice);
+                    const fraisTotaux = window.toNum(deal.buyPrice) + window.toNum(deal.totalFrais || deal.fees);
+                    
+                    totalCA += prixVente;
+                    totalMarge += (prixVente - fraisTotaux);
+                }
+            }
+        }
+    });
+
+    // Mise à jour de l'affichage dans les balises de la carte "Clôture Mensuelle"
+    const formatEuro = (v) => v.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
+
+    if(document.getElementById('preview-ca')) {
+        document.getElementById('preview-ca').innerText = formatEuro(totalCA);
+    }
+    if(document.getElementById('preview-marge')) {
+        // Affiche la marge en vert si positive, rouge si négative
+        const elMarge = document.getElementById('preview-marge');
+        elMarge.innerText = formatEuro(totalMarge);
+        elMarge.style.color = totalMarge >= 0 ? "#22c55e" : "#ef4444";
+    }
+    if(document.getElementById('preview-tva')) {
+        // Calcul de la TVA sur marge (20%) si la marge est positive
+        const tva = totalMarge > 0 ? totalMarge * 0.20 : 0;
+        document.getElementById('preview-tva').innerText = formatEuro(tva);
+    }
+};
+
+// Liaison des événements de changement sur les menus déroulants
+const mSel = document.getElementById('export-month');
+const ySel = document.getElementById('export-year');
+if(mSel) mSel.onchange = window.updateAccountingPreview;
+if(ySel) ySel.onchange = window.updateAccountingPreview;
+
+
+window.openFactureVierge = function() {
+    // Récupération des données via ta fonction de profil officielle
+    const profile = window.getProfileData(); 
+    
+    // Récupération du logo (si existant)
+    const savedSettings = JSON.parse(localStorage.getItem('ox_profile_settings')) || {};
+    const logoUrl = savedSettings.logoUrl || ""; 
+
+    const win = window.open('', '_blank');
+    win.document.write(`
+        <html><head><title>Facture_Vierge_OX_PRO</title>
+        <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; color: #1a1a1a; line-height: 1.6; position: relative; }
+            .ox-badge { position: absolute; top: 10px; right: 40px; font-size: 0.7rem; color: #ccc; font-weight: bold; letter-spacing: 1px; }
+            .header { display: flex; justify-content: space-between; border-bottom: 3px solid #000; padding-bottom: 20px; margin-bottom: 30px; }
+            .logo-area { max-width: 200px; max-height: 80px; margin-bottom: 10px; }
+            .logo-area img { max-width: 100%; height: auto; }
+            .box { margin: 20px 0; display: flex; justify-content: space-between; gap: 40px; }
+            .client-box, .garage-box { border: 1px solid #eee; padding: 15px; border-radius: 8px; flex: 1; background: #fafafa; }
+            table { width: 100%; border-collapse: collapse; margin: 30px 0; }
+            th { background: #f4f4f4; border: 1px solid #ddd; padding: 12px; text-align: left; text-transform: uppercase; font-size: 0.8rem; }
+            td { border: 1px solid #ddd; padding: 12px; }
+            .total-section { text-align: right; margin-top: 40px; }
+            .total-amount { font-size: 2.2rem; font-weight: bold; color: #000; border-top: 2px solid #000; display: inline-block; padding-top: 10px; }
+            .footer { margin-top: 80px; font-size: 0.8rem; color: #666; border-top: 1px solid #eee; padding-top: 20px; text-align: center; }
+            .no-print { display: flex; gap: 15px; justify-content: center; margin-bottom: 30px; background: #f8f9fa; padding: 15px; border-radius: 12px; border: 1px solid #e9ecef; }
+            .btn { padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 8px; border: none; }
+            .btn-add { background: #495057; color: white; }
+            .btn-print { background: #000; color: white; }
+            .cachet-area { margin-top: 40px; display: flex; justify-content: flex-end; }
+            .cachet-box { border: 1px dashed #ccc; width: 250px; height: 120px; display: flex; align-items: center; justify-content: center; color: #bbb; font-size: 0.75rem; text-align: center; border-radius: 8px; }
+            [contenteditable="true"]:hover { background: #fffde7; outline: 1px dashed #ffd600; }
+            @media print { .no-print { display: none !important; } }
+        </style></head>
+        <body>
+            <div class="ox-badge">LOGICIEL OX PRO</div>
+
+            <div class="no-print">
+                <button class="btn btn-add" onclick="addNewLine()">➕ Ajouter une ligne</button>
+                <button class="btn btn-print" onclick="window.print()">🖨️ IMPRIMER LA FACTURE</button>
+            </div>
+
+            <div class="header">
+                <div>
+                    ${logoUrl ? `<div class="logo-area"><img src="${logoUrl}" alt="Logo"></div>` : ''}
+                    <h1 style="margin:0; font-size:2.5rem; color:#000;">FACTURE</h1>
+                    <p>Référence : <span contenteditable="true">INV-${new Date().getFullYear()}-${Math.floor(Math.random()*9000)+1000}</span></p>
+                    <p>Date : <span contenteditable="true">${new Date().toLocaleDateString('fr-FR')}</span></p>
+                </div>
+                <div style="text-align:right">
+                    <div style="font-size: 1.2rem; font-weight: bold; color: #22c55e;">${profile.name}</div>
+                    <small>Auto-entrepreneur / Garage</small>
+                </div>
+            </div>
+            
+            <div class="box">
+                <div class="garage-box">
+                    <strong style="color:#555; font-size:0.75rem; text-transform:uppercase;">Vendeur</strong><br>
+                    <div contenteditable="true">
+                        <strong>${profile.name}</strong><br>
+                        ${profile.addr}<br>
+                        ${profile.contact}<br><br>
+                        SIRET: ${profile.siret}<br>
+                        TVA: ${profile.tva}
+                    </div>
+                </div>
+                <div class="client-box">
+                    <strong style="color:#555; font-size:0.75rem; text-transform:uppercase;">Facturé à</strong><br>
+                    <div contenteditable="true" style="min-height: 100px;">
+                        <strong>Nom du Client</strong><br>
+                        Adresse : <br>
+                        CP / Ville : 
+                    </div>
+                </div>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Désignation</th>
+                        <th style="width: 180px;">Détails (VIN/Immat)</th>
+                        <th style="width: 150px; text-align: right;">Prix Net TTC</th>
+                    </tr>
+                </thead>
+                <tbody id="invoice-body">
+                    <tr>
+                        <td contenteditable="true"><strong>Vente de véhicule d'occasion</strong></td>
+                        <td contenteditable="true">Immat : <br>KM : </td>
+                        <td style="text-align: right;">
+                            <span contenteditable="true" class="price-val" onblur="updateTotal()">0.00</span> €
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="total-section">
+                <p style="margin:0; font-size: 0.9rem; font-weight: bold;">TOTAL À PAYER</p>
+                <div class="total-amount"><span id="total-val">0,00</span> €</div>
+            </div>
+
+            <div class="cachet-area">
+                <div class="cachet-box">Cachet commercial<br>et signature du vendeur</div>
+            </div>
+
+            <div class="footer">
+                <p>Facture générée par le logiciel <strong>OX PRO</strong> pour <strong>${profile.name}</strong></p>
+                <p style="font-size:0.7rem; color: #999;">
+                    TVA sur marge récupérable (Art. 297 A du CGI). Véhicule vendu en l'état sans garantie contractuelle sauf mention contraire.
+                </p>
+            </div>
+
+            <script>
+                function addNewLine() {
+                    const tbody = document.getElementById('invoice-body');
+                    const row = document.createElement('tr');
+                    row.innerHTML = '<td contenteditable="true">Prestation supplémentaire...</td><td contenteditable="true">--</td><td style="text-align: right;"><span contenteditable="true" class="price-val" onblur="updateTotal()">0.00</span> €</td>';
+                    tbody.appendChild(row);
+                }
+                function updateTotal() {
+                    let total = 0;
+                    document.querySelectorAll('.price-val').forEach(p => {
+                        let val = p.innerText.replace(/\\s/g, '').replace(',', '.');
+                        total += parseFloat(val) || 0;
+                    });
+                    document.getElementById('total-val').innerText = total.toLocaleString('fr-FR', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                }
+            </script>
+        </body></html>
+    `);
+    win.document.close();
+};
+
+// ==========================================
+// 7. INITIALISATION AUTO
+// ==========================================
+
+window.updateAdmin = function() {
+    window.updatePoliceTable();
+    window.updateAccountingPreview();
+};
+
+// OPTION : ACTIVATION DES BOUTONS SANS MODIFIER LE HTML
+document.addEventListener('DOMContentLoaded', function() {
+    // On cherche tous les boutons de la page
+    const allButtons = document.querySelectorAll('button');
+
+    allButtons.forEach(btn => {
+        // Relier le bouton "Facture Vierge"
+        if (btn.innerText.includes('Facture Vierge')) {
+            btn.onclick = window.openFactureVierge;
+        }
+        
+        // Relier le bouton "Imprimer" (Registre de police)
+        if (btn.innerText.includes('IMPRIMER')) {
+            btn.onclick = function() { window.print(); };
+        }
+    });
+
+    // Relier les menus déroulants du CA
+    const mSel = document.getElementById('export-month');
+    const ySel = document.getElementById('export-year');
+    if(mSel) mSel.addEventListener('change', window.updateAccountingPreview);
+    if(ySel) ySel.addEventListener('change', window.updateAccountingPreview);
 });
 
 
 // ==========================================================================
-// HISTORIQUE
+// SYSTÈME HISTORIQUE OX PRO - VERSION INTÉGRALE
 // ==========================================================================
-// --- LOGIQUE DE L'HISTORIQUE ---
 
-// --- FONCTIONS DE L'HISTORIQUE (Version Ultra-Stable) ---
-
-// 1. Mise à jour de la liste
 window.updateHistory = function(filterType = 'all') {
     const feed = document.getElementById('history-feed');
     if (!feed) return;
 
-    const deals = window.savedDeals || [];
+    // Récupération sécurisée des données
+    const deals = JSON.parse(localStorage.getItem('ox_history')) || [];
     const searches = JSON.parse(localStorage.getItem('ox_searches')) || [];
     let events = [];
 
-    // Récupération Stocks/Ventes
-    deals.forEach(deal => {
-        events.push({
-            type: 'buy',
-            date: new Date(deal.date || Date.now()),
-            title: `ACHAT : ${deal.brand} ${deal.model}`,
-            desc: `Stock (${deal.immat || 'N/A'})`,
-            val: `${parseFloat(deal.purchase || 0).toLocaleString()} €`,
-            color: '#3b82f6', icon: '📥'
-        });
-        if (deal.status === "VENDU") {
-            events.push({
-                type: 'sell',
-                date: new Date(deal.saleDate || Date.now()),
-                title: `VENTE : ${deal.brand} ${deal.model}`,
-                desc: `Vendu à ${deal.buyerName || 'Client'}`,
-                val: `+ ${parseFloat(deal.soldPrice || 0).toLocaleString()} €`,
-                color: '#22c55e', icon: '💰'
-            });
+    // 1. TRAITEMENT DES DOSSIERS (Achats / Ventes / Stock)
+    deals.forEach(v => {
+        const nom = (v.brand && v.brand !== "undefined" ? v.brand + " " : "") + (v.model || "Véhicule");
+        const immat = v.plate || v.vin || "SANS IMMAT";
+        const kms = (v.km && v.km !== "0" && v.km !== "") ? v.km + " KM" : "⚠️ KM à saisir";
+        
+        // Détermination du type pour le filtrage
+        const statusBrut = (v.status || "").toUpperCase().trim();
+        let type = 'search'; // Par défaut "En attente"
+        
+        if (statusBrut === "VENDU") {
+            type = 'sell';
+        } else if (statusBrut === "EN STOCK" || statusBrut === "STOCK" || v.purchase > 0) {
+            type = 'buy'; // Considéré comme Achat/Stock
         }
+
+        events.push({
+            id: v.id,
+            type: type, // 'buy', 'sell' ou 'search' (attente)
+            date: new Date(v.date_out || v.date || Date.now()),
+            title: nom,
+            val: (v.soldPrice || v.purchase || 0).toLocaleString() + " €",
+            immat: immat,
+            kms: kms,
+            status: v.status || "EN ATTENTE",
+            purchase: v.purchase || 0,
+            icon: statusBrut === "VENDU" ? '💰' : (type === 'buy' ? '📦' : '⏳'),
+            color: statusBrut === "VENDU" ? '#22c55e' : (type === 'buy' ? '#3b82f6' : '#f97316')
+        });
     });
 
-    // Récupération Recherches
+    // 2. AJOUT DES RECHERCHES IA (Si elles existent encore à part)
     searches.forEach(s => {
         events.push({
             type: 'search',
             date: new Date(s.timestamp || Date.now()),
-            title: `RECHERCHE : ${s.brand} ${s.model}`,
-            desc: `Estimation IA`,
-            val: `${(s.price || 0).toLocaleString()} €`,
-            color: '#f97316', icon: '🔍'
+            title: "RECHERCHE IA : " + (s.brand || "") + " " + (s.model || ""),
+            val: (s.price || 0).toLocaleString() + " €",
+            immat: "ESTIMATION",
+            kms: "N/A",
+            status: "IA",
+            icon: '🔍',
+            color: '#8b5cf6'
         });
     });
 
+    // Tri par date (plus récent en haut)
     events.sort((a, b) => b.date - a.date);
 
-    // Filtrage
-    if (filterType !== 'all') {
-        events = events.filter(e => e.type === filterType);
-    }
-
-    // Affichage
-    if (events.length === 0) {
-        feed.innerHTML = `<div style="padding:40px; text-align:center; color:#555;">Aucun dossier trouvé (${filterType}).</div>`;
-        return;
-    }
-
-    feed.innerHTML = events.map(e => `
-        <div class="history-row" style="display:flex; align-items:center; gap:15px; padding:15px; border-bottom:1px solid #222;">
-            <div style="font-size:1.2rem;">${e.icon}</div>
-            <div style="flex:1;">
-                <div style="display:flex; justify-content:space-between;">
-                    <strong style="color:white; font-size:0.9rem;">${e.title}</strong>
-                    <span style="color:${e.color}; font-weight:bold;">${e.val}</span>
+    // 3. FONCTION DE RENDU D'UNE CARTE
+    const renderCard = (e) => `
+        <div class="history-card" onclick="this.classList.toggle('open')" style="background:#111; border:1px solid #222; margin-bottom:10px; border-radius:8px; cursor:pointer; overflow:hidden; transition:0.2s;">
+            <div style="padding:12px; display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="font-size:1.2rem;">${e.icon}</div>
+                    <div>
+                        <div style="color:white; font-weight:bold; font-size:0.85rem;">${e.title}</div>
+                        <div style="color:#444; font-size:0.7rem;">${e.immat}</div>
+                    </div>
                 </div>
-                <div style="display:flex; justify-content:space-between; margin-top:3px;">
-                    <span style="font-size:0.8rem; color:#666;">${e.desc}</span>
-                    <span style="font-size:0.7rem; color:#333;">${e.date.toLocaleDateString()}</span>
+                <div style="text-align:right;">
+                    <div style="color:${e.color}; font-weight:bold; font-size:0.85rem;">${e.val}</div>
+                    <div style="color:#333; font-size:0.6rem;">${e.date.toLocaleDateString()}</div>
+                </div>
+            </div>
+            <div class="details-pane" style="max-height:0; overflow:hidden; transition:0.3s; background:#0a0a0a;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:15px; border-top:1px solid #222; font-size:0.75rem;">
+                    <div><span style="color:#444">KILOMÉTRAGE:</span> <span style="color:#eee">${e.kms}</span></div>
+                    <div><span style="color:#444">STATUT ACTUEL:</span> <span style="color:${e.color}">${e.status}</span></div>
+                    <div><span style="color:#444">PRIX ACHAT:</span> <span style="color:#eee">${e.purchase} €</span></div>
+                    <div style="text-align:right;">
+                        <button onclick="event.stopPropagation(); window.editDeal('${e.id}')" style="background:#222; color:white; border:1px solid #444; padding:4px 8px; border-radius:4px; font-size:0.6rem; cursor:pointer;">✏️ MODIFIER</button>
+                    </div>
                 </div>
             </div>
         </div>
-    `).join('');
-};
+    `;
 
-// 2. Gestion des clics sur les filtres (FIXED)
-window.filterHistory = function(type, btn) {
-    console.log("Filtrage sur :", type); // Pour vérifier dans la console F12
-    
-    // On enlève la classe active de TOUS les boutons dans la section historique
-    const buttons = btn.parentElement.querySelectorAll('.tab-btn');
-    buttons.forEach(b => b.classList.remove('active'));
-    
-    // On l'ajoute au bouton cliqué
-    btn.classList.add('active');
-    
-    // On met à jour la liste
-    window.updateHistory(type);
-};
+    // 4. LOGIQUE D'AFFICHAGE (BI-COLONNE VS FILTRE UNIQUE)
+    if (filterType === 'all') {
+        feed.style.display = "grid";
+        feed.style.gridTemplateColumns = "1fr 1fr";
+        feed.style.gap = "20px";
 
-// 3. Effacer (FIXED)
-window.clearFullHistory = function() {
-    if (confirm("Voulez-vous vraiment effacer l'historique des recherches IA ?")) {
-        localStorage.removeItem('ox_searches');
-        window.updateHistory(); // Rafraîchit l'affichage
-        alert("Historique des recherches supprimé.");
+        const colFlux = events.filter(e => e.type === 'sell' || e.type === 'buy');
+        const colAttente = events.filter(e => e.type === 'search');
+
+        feed.innerHTML = `
+            <div class="hist-column">
+                <h4 style="color:#666; font-size:0.65rem; margin-bottom:15px; text-transform:uppercase; border-bottom:1px solid #222; padding-bottom:5px;">📊 Flux & Livre de Police</h4>
+                ${colFlux.map(renderCard).join('') || '<p style="color:#333; font-size:0.7rem;">Aucune transaction.</p>'}
+            </div>
+            <div class="hist-column">
+                <h4 style="color:#666; font-size:0.65rem; margin-bottom:15px; text-transform:uppercase; border-bottom:1px solid #222; padding-bottom:5px;">⏳ Dossiers en Attente</h4>
+                ${colAttente.map(renderCard).join('') || '<p style="color:#333; font-size:0.7rem;">Aucun dossier en attente.</p>'}
+            </div>
+        `;
+    } else {
+        feed.style.display = "block";
+        const filtered = events.filter(e => e.type === filterType);
+        feed.innerHTML = filtered.map(renderCard).join('') || `<p style="padding:40px; text-align:center; color:#555;">Aucun résultat pour "${filterType}".</p>`;
     }
 };
 
+// --- FONCTIONS DE GESTION DES BOUTONS ---
 
+window.filterHistory = function(type, btn) {
+    // Gestion visuelle des boutons
+    const buttons = btn.parentElement.querySelectorAll('.tab-btn');
+    buttons.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    
+    // Lancement du filtre
+    window.updateHistory(type);
+};
+
+window.clearFullHistory = function() {
+    if (confirm("⚠️ Voulez-vous vraiment effacer l'historique des recherches IA ?\n(Cela ne supprimera pas vos stocks)")) {
+        localStorage.removeItem('ox_searches');
+        window.updateHistory();
+    }
+};
+
+window.editDeal = function(id) {
+    if (!id || id === 'undefined') return alert("Impossible de modifier ce dossier (ID manquant).");
+    
+    const nouveauKm = prompt("Entrez le kilométrage réel du véhicule :");
+    if (nouveauKm !== null) {
+        let history = JSON.parse(localStorage.getItem('ox_history')) || [];
+        const index = history.findIndex(v => v.id === id);
+        
+        if (index !== -1) {
+            history[index].km = nouveauKm;
+            localStorage.setItem('ox_history', JSON.stringify(history));
+            window.updateHistory();
+        } else {
+            alert("Erreur : Dossier introuvable.");
+        }
+    }
+};
+
+// --- INITIALISATION AU CHARGEMENT ---
+document.addEventListener('DOMContentLoaded', () => {
+    // Petit délai pour laisser le temps aux données de charger
+    setTimeout(() => window.updateHistory('all'), 100);
+});
+
+// Ajout du CSS nécessaire
+const styleHeader = document.createElement('style');
+styleHeader.innerHTML = `
+    .history-card.open { border-color: #f97316 !important; background: #151515 !important; }
+    .history-card.open .details-pane { max-height: 200px !important; }
+    .tab-btn.active { background: #f97316 !important; color: white !important; border-color: #f97316 !important; }
+    @media (max-width: 768px) { #history-feed { grid-template-columns: 1fr !important; } }
+`;
+document.head.appendChild(styleHeader);
 
 // ==========================================================================
 // OPTION
 // ==========================================================================
+
+// --- RÉCUPÉRATION DES PARAMÈTRES POUR LE SYSTÈME ---
+window.getBizSettings = function() {
+    const saved = JSON.parse(localStorage.getItem('ox_business_settings'));
+    return {
+        targetProfit: parseFloat(saved?.targetProfit || 2000),
+        defaultPrep: parseFloat(saved?.defaultPrep || 500),
+        defaultAdmin: parseFloat(saved?.defaultAdmin || 290),
+        tvaRegime: saved?.tvaRegime || "margin",
+        stateTax: parseFloat(saved?.stateTax || 11)
+    };
+};
 
 // --- SAUVEGARDE GLOBALE (Version Corrigée) ---
 window.saveAllOptions = function() {
@@ -1448,6 +2593,8 @@ window.saveAllOptions = function() {
         alert("Erreur lors de la sauvegarde. Vérifie la console.");
     }
 };
+// À la fin de ton window.saveAllOptions existant, ajoute l'appel :
+window.calculateGlobalFinances();
 
 // --- EXPORT DES DONNÉES (Backup) ---
 window.exportDatabase = function() {
@@ -1491,123 +2638,53 @@ window.loadOptions = function() {
     }
 };
 
+// --- CALCULS ET AFFICHAGE FINANCIER SYNCHRONISÉS ---
+window.updateFinancials = function() {
+    const biz = window.getBizSettings(); // On récupère tes réglages IA
+    const history = JSON.parse(localStorage.getItem('ox_history')) || [];
+    
+    // On ne calcule que sur les véhicules vendus
+    const soldVehicles = history.filter(v => v.status === "VENDU");
+
+    let totalVentes = 0;
+    let totalAchats = 0;
+
+    soldVehicles.forEach(v => {
+        totalVentes += parseFloat(v.soldPrice) || 0;
+        totalAchats += parseFloat(v.purchase) || 0;
+    });
+
+    const margeBrute = totalVentes - totalAchats;
+
+    // Calcul de la TVA selon ton option choisie
+    let tvaDUE = (biz.tvaRegime === "margin") ? (margeBrute * 0.20) : (totalVentes * (biz.stateTax / 100));
+
+    // --- MISE À JOUR DES ÉCRANS (Tes captures 1 et 2) ---
+    
+    // Écran Trésorerie
+    if(document.getElementById('display-ca')) document.getElementById('display-ca').innerText = totalVentes.toLocaleString() + " €";
+    if(document.getElementById('display-marge-brute')) document.getElementById('display-marge-brute').innerText = margeBrute.toLocaleString() + " €";
+    
+    // Écran Admin & Légal (Le petit + vert de ta photo)
+    if(document.getElementById('display-tva-due')) document.getElementById('display-tva-due').innerText = tvaDUE.toLocaleString() + " €";
+    
+    const beneficeNet = margeBrute - tvaDUE;
+    if(document.getElementById('display-benefice-net')) {
+        document.getElementById('display-benefice-net').innerText = "+ " + beneficeNet.toLocaleString() + " €";
+    }
+};
+
 // Appeler le chargement au lancement
 document.addEventListener('DOMContentLoaded', window.loadOptions);
 
-// ==========================================================================
-// PROFIL
-// ==========================================================================
 
-// --- GESTION DU PROFIL SAAS PRO ---
-
-window.saveProfile = function() {
-    // On récupère tous les champs, y compris les nouveaux champs de connexion
-    const profileData = {
-        name: document.getElementById('biz-name')?.value || "",
-        siret: document.getElementById('biz-siret')?.value || "",
-        phone: document.getElementById('biz-phone')?.value || "",
-        email: document.getElementById('biz-email')?.value || "", // Email pro
-        loginEmail: document.getElementById('login-email')?.value || "", // Email connexion
-        address: document.getElementById('biz-address')?.value || "",
-        tva: document.getElementById('biz-tva')?.value || "",
-        web: document.getElementById('biz-web')?.value || "",
-        footer: document.getElementById('biz-footer')?.value || "",
-        logo: document.getElementById('user-logo-preview').src
-    };
-
-    localStorage.setItem('ox_profile_data', JSON.stringify(profileData));
-    
-    // Mise à jour visuelle immédiate
-    if (profileData.name) {
-        const display = document.getElementById('display-biz-name');
-        if(display) display.innerText = profileData.name;
-    }
-
-    alert("✅ Configuration SaaS enregistrée !");
+// À mettre dans tes scripts
+window.goToHome = function() {
+    showSection('stats'); // Affiche la section
+    // Optionnel : simule un clic sur le premier bouton du menu pour mettre l'onglet en surbrillance
+    const firstBtn = document.querySelector('nav button');
+    if(firstBtn) firstBtn.click(); 
 };
-
-window.loadProfile = function() {
-    const saved = JSON.parse(localStorage.getItem('ox_profile_data'));
-    if (!saved) return;
-
-    // Remplissage sécurisé (avec vérification de l'existence des IDs)
-    const setVal = (id, val) => { if(document.getElementById(id)) document.getElementById(id).value = val || ""; };
-
-    setVal('biz-name', saved.name);
-    setVal('biz-siret', saved.siret);
-    setVal('biz-phone', saved.phone);
-    setVal('biz-email', saved.email);
-    setVal('login-email', saved.loginEmail);
-    setVal('biz-address', saved.address);
-    setVal('biz-tva', saved.tva);
-    setVal('biz-web', saved.web);
-    setVal('biz-footer', saved.footer);
-    
-    if (saved.logo && document.getElementById('user-logo-preview')) {
-        document.getElementById('user-logo-preview').src = saved.logo;
-    }
-    
-    if (saved.name && document.getElementById('display-biz-name')) {
-        document.getElementById('display-biz-name').innerText = saved.name;
-    }
-};
-
-// Gestion de l'upload du logo
-window.handleLogoUpload = function(event) {
-    const file = event.target.files[0];
-    if (file) {
-        // Limitation à 2Mo pour le localStorage
-        if (file.size > 2 * 1024 * 1024) {
-            alert("Image trop lourde (max 2Mo)");
-            return;
-        }
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById('user-logo-preview').src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-    }
-};
-
-// --- FONCTIONS SYSTÈME (SaaS) ---
-
-window.changePassword = function() {
-    const oldPass = prompt("Ancien mot de passe :");
-    if (oldPass) {
-        const newPass = prompt("Nouveau mot de passe :");
-        if (newPass) alert("Mot de passe mis à jour avec succès !");
-    }
-};
-
-window.manageBilling = function() {
-    alert("Ouverture du portail de facturation sécurisé (Stripe)...");
-};
-
-// --- CALCUL DES STATS RÉELLES ---
-window.updateProfileStats = function() {
-    const deals = window.savedDeals || [];
-    const soldDeals = deals.filter(d => d.status === "VENDU");
-    
-    const salesEl = document.getElementById('stat-sales-month');
-    const rotEl = document.getElementById('stat-rotation');
-
-    if(salesEl) salesEl.innerText = soldDeals.length;
-    
-    // Calcul de rotation simplifié (différence entre achat et vente)
-    if(rotEl) {
-        if (soldDeals.length > 0) {
-            rotEl.innerText = "14j"; // Simulation de moyenne
-        } else {
-            rotEl.innerText = "0j";
-        }
-    }
-};
-
-// Initialisation
-document.addEventListener('DOMContentLoaded', () => {
-    window.loadProfile();
-    window.updateProfileStats();
-});
 
 
 // ==========================================================================
