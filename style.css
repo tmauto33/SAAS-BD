@@ -33,7 +33,7 @@ body {
 
 /* --- 3. SIDEBAR (Placement d'origine préservé) --- */
 
-/* --- SIDEBAR CORRIGÉE --- */
+/* /* --- SIDEBAR CORRIGÉE --- */
 .sidebar { 
     width: var(--sidebar-width); 
     background: var(--primary); 
@@ -74,6 +74,151 @@ body {
     transition: 0.2s;
     width: 100%;
     text-align: left;
+}
+
+.nav-item:hover { color: white; background: rgba(255,255,255,0.05); }
+.nav-item.active { 
+    background: var(--accent) !important; 
+    color: white !important;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+}
+
+/* --- AJOUT POUR MOBILE ET IPAD --- */
+/* --- SIDEBAR CORRIGÉE --- */
+.sidebar { 
+    width: var(--sidebar-width); 
+    background: var(--primary); 
+    padding: 30px 20px; 
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    position: fixed; 
+    top: 0;
+    left: 0;
+    z-index: 1000; 
+    pointer-events: auto;
+}
+
+.logo { 
+    font-size: 1.6rem; 
+    font-weight: 800;
+    margin-bottom: 40px; 
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.logo span { color: var(--accent); }
+
+.nav-item { 
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    border-radius: 12px; 
+    padding: 14px 18px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 600;
+    transition: 0.2s;
+    width: 100%;
+    text-align: left;
+}
+
+.nav-item:hover { color: white; background: rgba(255,255,255,0.05); }
+.nav-item.active { 
+    background: var(--accent) !important; 
+    color: white !important;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+}
+
+/* --- AJOUT POUR NAVIGATION MOBILE ET ZOOM --- */
+/* --- SIDEBAR UNIVERSELLE SCROLLABLE (PC & MOBILE) --- */
+.sidebar { 
+    width: 100%; /* Prend toute la largeur sur PC et Mobile */
+    background: var(--primary); 
+    padding: 10px 20px; 
+    display: flex;
+    flex-direction: row; /* Alignement horizontal partout */
+    height: auto; 
+    min-height: 70px;
+    position: sticky; /* Reste en haut et suit le zoom */
+    top: 0;
+    left: 0;
+    z-index: 1000; 
+    pointer-events: auto;
+
+    /* --- LOGIQUE DE SCROLL HORIZONTAL --- */
+    overflow-x: auto; /* Active le scroll si ça dépasse */
+    overflow-y: hidden;
+    white-space: nowrap; /* Empêche le retour à la ligne */
+    gap: 15px;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    
+    /* Pour un défilement fluide au doigt et à la souris */
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin; /* Pour Firefox */
+}
+
+/* Personnalisation de la barre de scroll pour PC (plus discrète) */
+/* --- SIDEBAR RÉINITIALISÉE AVEC SCROLL --- */
+.sidebar { 
+    width: var(--sidebar-width); 
+    background: var(--primary); 
+    padding: 30px 20px; 
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    position: fixed; 
+    top: 0;
+    left: 0;
+    /* On baisse le z-index pour qu'il ne couvre pas les modales mais reste au-dessus du contenu */
+    z-index: 1000; 
+    pointer-events: auto;
+
+    /* --- AJOUT : FONCTION SCROLL VERTICAL --- */
+    overflow-y: auto;  /* Active le scroll vertical si les boutons dépassent */
+    overflow-x: hidden; /* Empêche le scroll horizontal parasite */
+}
+
+/* Optionnel : Rendre la barre de scroll invisible ou très fine pour l'esthétique */
+.sidebar::-webkit-scrollbar {
+    width: 4px;
+}
+.sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+}
+
+.logo { 
+    font-size: 1.6rem; 
+    font-weight: 800;
+    margin-bottom: 40px; 
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0; /* Empêche le logo de s'écraser si on scrolle */
+}
+.logo span { color: var(--accent); }
+
+.nav-item { 
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    border-radius: 12px; 
+    padding: 14px 18px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 600;
+    transition: 0.2s;
+    width: 100%;
+    text-align: left;
+    flex-shrink: 0; /* Garde la taille des boutons intacte */
 }
 
 .nav-item:hover { color: white; background: rgba(255,255,255,0.05); }
@@ -621,92 +766,148 @@ main.v-main {
 }
 
 /* ==========================================================================
-   ADAPTATION MOBILE & TABLETTE (iOS / iPadOS)
+   OPTIMISATION MOBILE ULTIME (iPhone / Android / iPad)
    ========================================================================== */
 
 @media (max-width: 1024px) {
     :root {
-        --sidebar-width: 0px; /* On annule la marge sur tablette/mobile */
+        --sidebar-width: 0px;
     }
 
-    /* 1. La Sidebar devient un menu discret ou on réduit sa taille */
+    /* 1. Sidebar : Navigation Horizontale compacte */
     .sidebar {
-        width: 100%;
-        height: auto;
-        position: relative;
-        flex-direction: row;
-        overflow-x: auto;
-        padding: 10px;
-        z-index: 1001;
+        width: 100% !important;
+        height: 60px !important;
+        position: sticky !important; /* Reste en haut au scroll */
+        top: 0;
+        flex-direction: row !important;
+        overflow-x: auto !important; /* Scroll des onglets au doigt */
+        padding: 0 15px !important;
+        background: rgba(10, 10, 10, 0.95) !important;
+        backdrop-filter: blur(10px); /* Effet moderne */
+        border-bottom: 1px solid #333;
+        z-index: 2000;
+        align-items: center;
+        gap: 10px;
+        -webkit-overflow-scrolling: touch;
     }
 
     .sidebar .logo {
-        margin-bottom: 0;
-        margin-right: 20px;
-        font-size: 1.2rem;
+        margin: 0 15px 0 0 !important;
+        font-size: 1rem !important;
+        flex-shrink: 0;
     }
 
     .nav-item {
-        margin-bottom: 0;
+        margin: 0 !important;
+        padding: 8px 12px !important;
+        font-size: 0.75rem !important;
         white-space: nowrap;
-        padding: 8px 12px;
-        font-size: 0.8rem;
+        width: auto !important;
+        border-radius: 8px !important;
     }
 
-    /* 2. Le contenu prend toute la largeur */
+    /* 2. Ajustement du contenu pour ne pas être caché */
     .main-content {
         margin-left: 0 !important;
-        width: 100vw !important;
-        padding: 15px;
-        padding-bottom: 120px; /* Espace pour la barre IA en bas */
+        width: 100% !important;
+        padding: 10px !important;
+        margin-top: 0 !important;
     }
 
-    /* 3. La Barre IA s'adapte (Plus fine et textes plus petits) */
+    /* 3. Dossier Analyse : On force les colonnes à s'empiler */
+    /* Remplace 'dashboard-grid' par l'id ou la classe de ton container d'analyse */
+    .dashboard-grid, 
+    #analyse .grid-container, 
+    .view section {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 15px !important;
+    }
+
+    .card {
+        width: 100% !important;
+        margin-bottom: 10px;
+        padding: 15px !important;
+    }
+
+    /* 4. Barre IA : Version "Bouton Flottant" sur Mobile */
     .ia-status-bar {
-        width: 95% !important;
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-        height: auto;
-        min-height: 70px;
-        flex-wrap: wrap; /* Permet aux blocs de passer à la ligne si besoin */
-        padding: 10px 20px;
-        bottom: 10px;
+        width: calc(100% - 20px) !important;
+        bottom: 10px !important;
+        border-radius: 15px !important;
+        padding: 8px 15px !important;
+        height: auto !important;
+        min-height: 60px !important;
+        background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%) !important;
+        border: 1px solid var(--accent) !important;
+        box-shadow: 0 -5px 20px rgba(0,0,0,0.5) !important;
     }
 
     .stat-group {
-        min-width: auto;
-        flex: 1;
+        text-align: center;
+    }
+
+    .stat-group small {
+        font-size: 0.6rem !important;
+        display: block;
     }
 
     .ia-value {
-        font-size: 1.1rem;
+        font-size: 0.9rem !important;
     }
 
-    /* On cache le verdict texte sur petit mobile pour garder le cercle */
-    #ia-verdict {
-        font-size: 0.7rem;
-        display: none; /* Masqué par défaut sur mobile pour la clarté */
-    }
-
-    @media (min-width: 768px) {
-        #ia-verdict { display: block; } /* Réapparaît sur iPad */
-    }
-
+    /* On réduit le badge central pour gagner de la place */
     .ia-central-badge {
-        gap: 8px;
-        padding: 5px 15px;
+        transform: scale(0.85);
+        margin: 0 5px;
     }
 
-    /* 4. Grille de cartes : 1 seule colonne sur iPhone */
-    .dashboard-grid {
-        grid-template-columns: 1fr;
-        gap: 15px;
+    /* On cache certains textes trop longs */
+    .stat-group:nth-child(1) { order: 1; } /* Bénéfice */
+    .ia-central-badge { order: 2; }    /* Cercle */
+    .stat-group:nth-child(3) { order: 3; } /* Achat Max */
+
+    /* Cacher les labels "Bénéfice estimé" pour ne laisser que le chiffre sur mini écrans */
+    @media (max-width: 400px) {
+        .stat-group small { display: none; }
+        .ia-value { font-size: 1rem !important; }
     }
 }
 
-/* Optimisation spécifique pour l'iPad (Landscape) */
-@media (min-width: 768px) and (max-width: 1024px) {
-    .ia-status-bar {
-        max-width: 700px;
-    }
+/* --- STYLE DU MENU DÉROULANT (SELECT) --- */
+select {
+    width: 100%;
+    padding: 12px 15px;
+    background: #1a1a1a; /* Fond sombre comme tes inputs */
+    color: white;
+    border: 1px solid #333;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    appearance: none; /* Supprime la flèche par défaut du navigateur */
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    background-size: 18px;
+    transition: all 0.2s;
+}
+
+/* Effet au survol et focus */
+select:hover {
+    border-color: var(--accent);
+}
+
+select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+/* Style des options (limité par le navigateur, mais aide à la cohérence) */
+select option {
+    background: #1a1a1a;
+    color: white;
+    padding: 10px;
 }
