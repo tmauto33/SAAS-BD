@@ -78,13 +78,14 @@ window.switchTab = function(id, btn) {
     // 4. Rafraîchissement intelligent
     switch(id) {
         case 'pilotage':
+            // --- AJOUT SEUL ---
+            if (window.updateDashboard) window.updateDashboard();
+            // ------------------
             window.updatePilotage();
             break;
         case 'analyse':
-            // Optionnel : window.updateAnalyse(); si tu as une fonction dédiée
             break;
         case 'expertise':
-            // RELANCE LA LISTE ET LES CALCULS (Comme sur la photo)
             if (window.renderExpertise) window.renderExpertise();
             if (window.runCalculations) window.runCalculations();
             break;
@@ -94,6 +95,9 @@ window.switchTab = function(id, btn) {
         case 'maintenance':
         case 'logistique':
             window.renderMaintenance();
+            // --- AJOUT SEUL ---
+            if (window.updateDashboard) window.updateDashboard();
+            // ------------------
             break;
         case 'finance':
             if (window.updateFinance) window.updateFinance();
@@ -112,7 +116,9 @@ window.switchTab = function(id, btn) {
             window.renderConfigEditor();
             break;
         case 'profil':
-            // Si tu as une fonction pour le profil
+            break;
+        case 'annonce':
+            if (window.loadAdVehicles) window.loadAdVehicles();
             break;
     }
 
@@ -122,14 +128,12 @@ window.switchTab = function(id, btn) {
         const showOn = ['analyse', 'expertise', 'nego'];
         if (showOn.includes(id)) {
             iaBar.style.display = 'flex';
-            // Force la mise à jour des données de la barre IA
             if (window.runCalculations) window.runCalculations();
         } else {
             iaBar.style.display = 'none';
         }
     }
 
-    // 5. Relancer les icônes si Lucide est utilisé
     if (window.lucide) lucide.createIcons();
 };
 
@@ -257,83 +261,122 @@ const toNum = (val) => {
 // 2. LE DASHBOARD (TON CODE OPTIMISÉ)
 // ==========================================================================
 window.updateDashboard = function() {
-    console.log("📊 Synchronisation du Tableau de Bord...");
+    // 1. RÉCUPÉRATION DES DONNÉES (Tes variables globales)
+    const stock = window.savedDeals || [];
+    const leads = window.contacts || [];
 
-    const deals = window.savedDeals || [];
-    const settings = JSON.parse(localStorage.getItem('ox_business_settings')) || {};
-    const profile = JSON.parse(localStorage.getItem('ox_profile_data')) || {};
-    const targetMarge = parseFloat(localStorage.getItem('targetProfit')) || 2000;
-  const biz = window.getBizSettings(); 
-    const tvaApplicable = biz.tvaRegime === "margin" ? 0.20 : (biz.stateTax / 100);
-    const fraisFixes = biz.defaultPrep + biz.defaultAdmin;
+    // 2. COMPTAGES SIMPLES
+    const vehiculesEnStock = stock.filter(v => v.status !== "VENDU");
+    const vehiculesVendus = stock.filter(v => v.status === "VENDU");
 
-    // Séparation Stock / Ventes
-    const inStock = deals.filter(d => d.status !== "VENDU");
-    const sold = deals.filter(d => d.status === "VENDU");
+    // 3. CALCUL FINANCIER BASIQUE
+    let margeBrute = 0;
+    vehiculesVendus.forEach(v => {
+        const achat = parseFloat(v.purchase) || 0;
+        const vente = parseFloat(v.soldPrice) || 0;
+        const frais = parseFloat(v.prepFees || v.repairs) || 0;
+        margeBrute += (vente - (achat + frais));
+    });
 
-    // Valeur d'achat totale du stock actuel
-    const stockValue = inStock.reduce((sum, d) => sum + toNum(d.purchase || d.buy_price), 0);
+    const tva = margeBrute * 0.20;
+    const net = margeBrute - tva;
 
-    // Marge nette totale sur les ventes (Correction du calcul négatif)
-    const totalMarge = sold.reduce((sum, d) => {
-        const pachat = toNum(d.purchase || d.buy_price);
-        const pvente = toNum(d.soldPrice || d.sell_price);
-        const frais = toNum(d.prepFees);
-        
-        // On ne calcule la marge que si la vente est enregistrée
-        return sum + (pvente - pachat - frais);
-    }, 0);
-
-    // Calcul de la Rotation Moyenne
-    let avgRotation = 0;
-    if (sold.length > 0) {
-        const totalDays = sold.reduce((acc, d) => {
-            const start = new Date(d.date_in || d.created_at || Date.now());
-            const end = new Date(d.date_out || Date.now());
-            return acc + Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24));
-        }, 0);
-        avgRotation = Math.round(totalDays / sold.length);
-    }
-
-    // --- MISE À JOUR DE L'INTERFACE ---
+    // 4. AFFICHAGE DANS TON HTML (IDs de tes captures)
     
-    // Welcome & Date
-    const welcomeEl = document.getElementById('dash-welcome');
-    if(welcomeEl) welcomeEl.innerText = `Bonjour, ${profile.name || 'Marchand'}`;
-    
-    const dateEl = document.getElementById('dash-date');
-    if(dateEl) dateEl.innerText = new Date().toLocaleDateString('fr-FR', {weekday: 'long', day: 'numeric', month: 'long'});
+    // --- Bloc Trésorerie ---
+    if(document.getElementById('kpi-cash')) 
+        document.getElementById('kpi-cash').innerText = net.toLocaleString() + " €";
+    if(document.getElementById('dash-tva-value')) 
+        document.getElementById('dash-tva-value').innerText = tva.toLocaleString() + " €";
 
-    // KPIs principaux
-    if(document.getElementById('kpi-stock-count')) document.getElementById('kpi-stock-count').innerText = inStock.length;
-    if(document.getElementById('kpi-stock-value')) document.getElementById('kpi-stock-value').innerText = `Valeur : ${stockValue.toLocaleString()} €`;
-    if(document.getElementById('kpi-marge')) document.getElementById('kpi-marge').innerText = `${totalMarge.toLocaleString()} €`;
-    if(document.getElementById('kpi-rotation')) document.getElementById('kpi-rotation').innerText = `${avgRotation}j`;
-    
-    // Trésorerie
-    if(document.getElementById('kpi-cash')) {
-        const cashFlow = totalMarge - (parseFloat(settings.stateTax) || 0);
-        document.getElementById('kpi-cash').innerText = `${cashFlow.toLocaleString()} €`;
+    // --- Bloc Performance ---
+    if(document.getElementById('kpi-marge')) 
+        document.getElementById('kpi-marge').innerText = margeBrute.toLocaleString() + " €";
+
+    // --- Bloc Stock ---
+    if(document.getElementById('kpi-stock-value')) {
+        const totalAchat = vehiculesEnStock.reduce((s, v) => s + (parseFloat(v.purchase) || 0), 0);
+        document.getElementById('kpi-stock-value').innerText = totalAchat.toLocaleString() + " €";
+    }
+    if(document.getElementById('kpi-stock-count-detail')) 
+        document.getElementById('kpi-stock-count-detail').innerText = vehiculesEnStock.length + " véhicules";
+
+    // --- Bloc Logistique (Comptage par texte exact) ---
+    const setLog = (id, label) => {
+        const el = document.getElementById(id);
+        if(el) el.innerText = vehiculesEnStock.filter(v => v.status === label).length;
+    };
+    setLog('log-prep', 'EN PRÉPARATION');
+    setLog('log-prov', 'CHEZ LE PRESTATAIRE');
+    setLog('log-ready', 'PRÊT À LA VENTE');
+
+    // --- Bloc CRM ---
+    if(document.getElementById('crm-total')) 
+        document.getElementById('crm-total').innerText = leads.length;
+    if(document.getElementById('crm-nego')) 
+        document.getElementById('crm-nego').innerText = leads.filter(l => l.status === 'négociation').length;
+
+    // --- Remplacement du Graphique par une info simple ---
+    const chartCont = document.getElementById('dash-chart-container');
+    if(chartCont) {
+        chartCont.style.display = "flex";
+        chartCont.style.alignItems = "center";
+        chartCont.style.justifyContent = "center";
+        chartCont.innerHTML = `<div style="text-align:center; color:#64748b;">
+            <div style="font-size:1.5rem; font-weight:bold; color:var(--accent);">${vehiculesVendus.length}</div>
+            <div style="font-size:0.7rem;">VENTES RÉALISÉES</div>
+        </div>`;
     }
 
-    // Barre de progression
-    const progress = Math.min((totalMarge / targetMarge) * 100, 100);
-    const pBar = document.getElementById('dash-progress-bar');
-    if(pBar) {
-        pBar.style.width = progress + "%";
-        pBar.style.background = progress >= 100 ? "#22c55e" : "#3b82f6";
+    // --- Nettoyage des Alertes ---
+    const alertBox = document.getElementById('dash-alerts');
+    if(alertBox) {
+        alertBox.innerHTML = `<div style="padding:10px; color:#22c55e; font-size:0.75rem;">✅ Système synchronisé avec le stock (${stock.length} dossiers)</div>`;
     }
 
-    // Graphique simulé
-    const chartContainer = document.getElementById('dash-chart-container');
-    if(chartContainer) {
-        const mockData = [30, 50, 40, 90, 60, 40, 80]; 
-        chartContainer.innerHTML = mockData.map(h => `
-            <div style="flex:1; background:#3b82f6; opacity:0.3; height:${h}%; border-radius:4px 4px 0 0; min-width:10px;"></div>
-        `).join('');
-    }
+    if (window.lucide) lucide.createIcons();
 };
 
+window.triggerSaleProcess = function() {
+    const history = JSON.parse(localStorage.getItem('ox_history')) || [];
+    // On ne propose à la vente que les véhicules qui ne sont pas déjà vendus
+    const availableVehicles = history.filter(v => v.status !== "VENDU");
+
+    if (availableVehicles.length === 0) {
+        alert("Aucun véhicule en stock à vendre !");
+        return;
+    }
+
+    // 1. Choix du véhicule (simple prompt pour l'exemple, à adapter selon ton interface)
+    const vehicleList = availableVehicles.map((v, i) => `${i + 1}. ${v.brand} ${v.model} (${v.plate || 'Sans plaque'})`).join('\n');
+    const choice = prompt(`Sélectionnez le véhicule vendu :\n${vehicleList}`);
+    
+    if (choice) {
+        const index = parseInt(choice) - 1;
+        const selectedVehicle = availableVehicles[index];
+        
+        // 2. Saisie du prix de vente
+        const soldPrice = prompt(`Prix de vente final pour ${selectedVehicle.model} ?`, selectedVehicle.price || 0);
+        
+        if (soldPrice) {
+            // Trouver l'index réel dans l'historique complet
+            const realIndex = history.findIndex(v => v === selectedVehicle);
+            
+            // 3. MISE À JOUR DES DONNÉES
+            history[realIndex].status = "VENDU";
+            history[realIndex].soldPrice = parseFloat(soldPrice);
+            // Crucial pour le graphique :
+            history[realIndex].dateVente = new Date().toISOString(); 
+
+            // Sauvegarde
+            localStorage.setItem('ox_history', JSON.stringify(history));
+            
+            // 4. RAFRAÎCHISSEMENT INSTANTANÉ
+            alert("Vente enregistrée !");
+            if (window.updateDashboard) window.updateDashboard();
+        }
+    }
+};
 // ==========================================================================
 // 3. ACTIONS (AJOUT, VENTE, RESET)
 // ==========================================================================
@@ -406,6 +449,9 @@ document.addEventListener('DOMContentLoaded', () => window.updateDashboard());
 // ==========================================================================
 // SAUVEGARDE DEPUIS L'ANALYSE (VERSION ROBUSTE)
 // ==========================================================================
+// ==========================================================================
+// SAUVEGARDE DEPUIS L'ANALYSE (VERSION ROBUSTE - FIX NC)
+// ==========================================================================
 window.saveAnalysisFolder = function() {
     console.log("🚀 Tentative de sauvegarde...");
 
@@ -416,13 +462,20 @@ window.saveAnalysisFolder = function() {
     // On nettoie la valeur pour enlever les émojis potentiels qui bloquent le test
     const currentStatus = statusSelect?.value.toUpperCase() || "";
 
-    // 2. Création de l'objet de base
+    // 2. Création de l'objet de base (On garde tes allInputs[0] et [1])
     let deal = {
         id: "ID-" + Date.now(),
         model: allInputs[1]?.value || "Modèle inconnu",
         plate: allInputs[0]?.value || "N/A",
+        
+        // --- AJOUT UNIQUEMENT DE CES LIGNES POUR FIXER LE "NC" ---
+        seller_name: document.getElementById('vendeur-nom')?.value || "NC",
+        seller_phone: document.getElementById('vendeur-tel')?.value || "NC",
+        source: document.getElementById('source-annonce')?.value || "NC",
+        // -------------------------------------------------------
+
         purchase: 0,
-        km: "0", // Initialisation par défaut
+        km: "0", 
         status: currentStatus,
         date: new Date().toLocaleDateString('fr-FR')
     };
@@ -433,13 +486,12 @@ window.saveAnalysisFolder = function() {
         const p = prompt(`💰 Prix d'achat final pour ${deal.model} ?`, "0");
         if (p === null) return; // Annulation
 
-        // --- AJOUT DE LA DEMANDE DU KILOMÉTRAGE ---
+        // Demande du kilométrage
         const k = prompt(`🛣️ Kilométrage réel pour ${deal.model} ?`, "0");
         if (k === null) return; // Annulation
-        // ------------------------------------------
 
         deal.purchase = parseFloat(p.replace(/\s/g, '')) || 0;
-        deal.km = k; // Enregistrement du kilométrage saisi
+        deal.km = k; 
         deal.status = "ACHETÉ"; 
         
         window.savedDeals.unshift(deal);
@@ -448,7 +500,7 @@ window.saveAnalysisFolder = function() {
     // Sinon, si c'est un refus ou une attente
     else {
         const reason = prompt("📝 Raison du refus/attente :");
-        if (reason === null) return; // Annulation
+        if (reason === null) return; 
         
         deal.reason = reason || "N/C";
         window.savedDeals.unshift(deal);
@@ -623,77 +675,178 @@ window.updateIAVerdict = function(marge, score, repairs, market, fees, prep) {
 window.updateDashboard = function() {
     console.log("📊 Synchronisation du Tableau de Bord...");
 
-    // 1. RÉCUPÉRATION DES DONNÉES
-    const deals = window.savedDeals || [];
+    // 1. DATA SOURCES
+    const deals = JSON.parse(localStorage.getItem('ox_history')) || [];
     const settings = JSON.parse(localStorage.getItem('ox_business_settings')) || {};
     const profile = JSON.parse(localStorage.getItem('ox_profile_data')) || {};
     const targetMarge = parseFloat(localStorage.getItem('targetProfit')) || 2000;
+    const contacts = JSON.parse(localStorage.getItem('ox_crm_contacts')) || [];
 
-    // 2. LOGIQUE DE CALCUL (KPIs)
+    // 2. FILTRES & CALCULS
     const inStock = deals.filter(d => d.status !== "VENDU");
     const sold = deals.filter(d => d.status === "VENDU");
     
-    // Valeur d'achat totale du stock actuel
-    const stockValue = inStock.reduce((sum, d) => sum + parseFloat(d.purchase || 0), 0);
+    const stockValue = inStock.reduce((sum, d) => sum + (parseFloat(d.purchase) || 0) + (parseFloat(d.prepFees || d.repairs) || 0), 0);
     
-    // Marge nette totale sur les ventes
     const totalMarge = sold.reduce((sum, d) => {
-        const pachat = parseFloat(d.purchase || 0);
-        const pvente = parseFloat(d.soldPrice || 0);
-        const frais = parseFloat(d.prepFees || 0);
-        return sum + (pvente - pachat - frais);
+        const cost = (parseFloat(d.purchase) || 0) + (parseFloat(d.prepFees || d.repairs) || 0);
+        return sum + ((parseFloat(d.soldPrice) || 0) - cost);
     }, 0);
 
-    // 3. MISE À JOUR DE L'INTERFACE
-    
-    // Header & Welcome
-    const welcomeEl = document.getElementById('dash-welcome');
-    if(welcomeEl) welcomeEl.innerText = `Bonjour, ${profile.name || 'Marchand'}`;
-    
-    const dateEl = document.getElementById('dash-date');
-    if(dateEl) dateEl.innerText = new Date().toLocaleDateString('fr-FR', {weekday: 'long', day: 'numeric', month: 'long'});
-
-    // Remplissage des KPIs
-    if(document.getElementById('kpi-stock-count')) document.getElementById('kpi-stock-count').innerText = inStock.length;
-    if(document.getElementById('kpi-stock-value')) document.getElementById('kpi-stock-value').innerText = `Valeur : ${stockValue.toLocaleString()} €`;
-    if(document.getElementById('kpi-marge')) document.getElementById('kpi-marge').innerText = `${totalMarge.toLocaleString()} €`;
-    
-    // Trésorerie estimée (Marge réalisée - frais fixes simulés)
-    if(document.getElementById('kpi-cash')) {
-        const cashFlow = totalMarge - (parseFloat(settings.stateTax) || 0);
-        document.getElementById('kpi-cash').innerText = `${cashFlow.toLocaleString()} €`;
+    let avgRotation = 0;
+    if (sold.length > 0) {
+        const totalDays = sold.reduce((sum, d) => {
+            const diff = new Date(d.dateVente || Date.now()) - new Date(d.dateAchat || d.dateAction);
+            return sum + (diff / (1000 * 60 * 60 * 24));
+        }, 0);
+        avgRotation = Math.round(totalDays / sold.length);
     }
 
-    // 4. BARRE DE PROGRESSION (OBJECTIF)
+    // 3. MISE À JOUR KPI FINANCE
+    if(document.getElementById('dash-welcome')) document.getElementById('dash-welcome').innerText = `Ravi de vous revoir, ${profile.name || 'Marchand'}. Voici l'état de votre parc.`;
+    if(document.getElementById('dash-date')) document.getElementById('dash-date').innerText = new Date().toLocaleDateString('fr-FR', {weekday: 'long', day: 'numeric', month: 'long'});
+    
+    if(document.getElementById('kpi-marge')) document.getElementById('kpi-marge').innerText = `${totalMarge.toLocaleString('fr-FR')} €`;
+    if(document.getElementById('kpi-stock-value')) document.getElementById('kpi-stock-value').innerText = `${stockValue.toLocaleString('fr-FR')} €`;
+    if(document.getElementById('kpi-stock-count-detail')) document.getElementById('kpi-stock-count-detail').innerText = `${inStock.length} véhicules`;
+    if(document.getElementById('kpi-rotation')) document.getElementById('kpi-rotation').innerText = avgRotation;
+
+    const tva = totalMarge * 0.20;
+    if(document.getElementById('dash-tva-value')) document.getElementById('dash-tva-value').innerText = `- ${tva.toLocaleString('fr-FR')} €`;
+    if(document.getElementById('kpi-cash')) document.getElementById('kpi-cash').innerText = `${(totalMarge - tva).toLocaleString('fr-FR')} €`;
+
+    // 4. OBJECTIF & BARRE DE PROGRESSION
     const progress = Math.min((totalMarge / targetMarge) * 100, 100);
     const pBar = document.getElementById('dash-progress-bar');
-    if(pBar) {
-        pBar.style.width = progress + "%";
-        pBar.style.background = progress >= 100 ? "#22c55e" : "var(--accent)";
+    if(pBar) pBar.style.width = progress + "%";
+    
+    const statusText = progress >= 100 ? "🎯 OBJECTIF ATTEINT" : `RESTE À GÉNÉRER : ${(targetMarge - totalMarge).toLocaleString()} €`;
+    if(document.getElementById('dash-obj-status')) document.getElementById('dash-obj-status').innerText = statusText;
+
+    // 5. LOGISTIQUE & CRM (Compteurs corrigés pour le temps réel)
+    
+    // Compteur : EN PRÉPARATION
+    if(document.getElementById('log-prep')) {
+        document.getElementById('log-prep').innerText = inStock.filter(v => 
+            v.logStatus === 'prépa' || v.status === 'EN PRÉPARATION' || v.logistique === 'En cours'
+        ).length;
     }
 
-    // 5. MINI GRAPHIQUE VISUEL (Simulé)
-    const chartContainer = document.getElementById('dash-chart-container');
-    if(chartContainer) {
-        // On crée des barres basées sur les 7 derniers jours ou des data simulées
-        const mockData = [30, 50, 40, 90, 60, 40, 80]; 
-        chartContainer.innerHTML = mockData.map(h => `
-            <div style="flex:1; background:var(--accent); opacity:0.3; height:${h}%; border-radius:4px 4px 0 0; min-width:10px; transition: height 0.8s ease;"></div>
-        `).join('');
+    // Compteur : PRESTATAIRE
+    if(document.getElementById('log-prov')) {
+        document.getElementById('log-prov').innerText = inStock.filter(v => 
+            v.logStatus === 'prestataire' || v.status === 'CHEZ LE PRESTATAIRE' || v.logistique === 'Externe'
+        ).length;
     }
 
-    // 6. SYSTÈME D'ALERTES
+    // Compteur : PRÊT À LA VENTE
+    if(document.getElementById('log-ready')) {
+        document.getElementById('log-ready').innerText = inStock.filter(v => 
+            v.logStatus === 'prêt' || v.status === 'PRÊT À LA VENTE' || v.status === 'ACHETÉ'
+        ).length;
+    }
+
+    if(document.getElementById('crm-total')) document.getElementById('crm-total').innerText = contacts.length;
+    if(document.getElementById('crm-nego')) document.getElementById('crm-nego').innerText = contacts.filter(c => c.step === 'négociation').length;
+
+    // 6. GRAPHIQUE DYNAMIQUE
+    const chart = document.getElementById('dash-chart-container');
+    if(chart) {
+        const last7Days = [...Array(7)].map((_, i) => {
+            const d = new Date(); d.setDate(d.getDate() - i);
+            return d.toLocaleDateString();
+        }).reverse();
+
+        chart.innerHTML = last7Days.map(dateStr => {
+            const count = sold.filter(s => new Date(s.dateVente || s.dateAction).toLocaleDateString() === dateStr).length;
+            const height = count > 0 ? (count * 40) : 5; 
+            return `<div style="flex:1; background:${count > 0 ? 'var(--accent)' : 'rgba(255,255,255,0.05)'}; height:${height}%; border-radius:4px; position:relative;" title="${count} ventes">
+                ${count > 0 ? `<span style="position:absolute; top:-20px; left:50%; transform:translateX(-50%); font-size:0.6rem; color:var(--accent);">${count}</span>` : ''}
+            </div>`;
+        }).join('');
+    }
+
+    // 7. SYSTÈME D'ALERTES
     const alertsBox = document.getElementById('dash-alerts');
     if(alertsBox) {
         let alerts = [];
-        if(inStock.length === 0) alerts.push("📭 Stock vide : Pensez à rentrer des véhicules.");
-        if(progress < 50 && new Date().getDate() > 15) alerts.push("📉 Objectif de marge en retard pour le milieu de mois.");
+        const stagnant = inStock.filter(v => (new Date() - new Date(v.dateAchat || v.dateAction)) / 86400000 > 30);
+        if(stagnant.length > 0) alerts.push(`🚗 ${stagnant.length} véhicules stagnant (+30j)`);
         
-        alertsBox.innerHTML = alerts.length > 0 ? 
-            alerts.map(a => `<div style="padding:8px; background:rgba(255,255,255,0.05); border-radius:5px; margin-bottom:5px; border-left:3px solid #f97316;">${a}</div>`).join('') : 
-            "✅ Aucune alerte critique.";
+        const inPrepCount = inStock.filter(v => v.logStatus === 'prépa' || v.status === 'EN PRÉPARATION').length;
+        if(inPrepCount > 2) alerts.push(`🔧 Atelier surchargé (${inPrepCount} en cours)`);
+
+        if(progress < 30 && new Date().getDate() > 20) alerts.push(`📉 Retard critique sur l'objectif`);
+
+        alertsBox.innerHTML = alerts.map(a => `
+            <div style="padding:10px; background:rgba(255,255,255,0.03); border-radius:8px; border-left:3px solid #f59e0b; font-size:0.7rem; color:#ccc;">${a}</div>
+        `).join('') || "<div style='color:#22c55e; font-size:0.75rem;'>✅ Aucune anomalie détectée</div>";
+    }
+
+    if (window.lucide) lucide.createIcons();
+};
+
+// ==========================================================================
+// 5. MODULE ANNONCE
+// ==========================================================================
+
+// 1. On charge les données dans le menu (Indispensable pour avoir les infos du VH)
+window.loadAdVehicles = function() {
+    const select = document.getElementById('ad-vehicle-select');
+    if (!select) return;
+
+    const data = JSON.parse(localStorage.getItem('ox_history')) || [];
+    // On filtre pour ne garder que ce qui est en stock
+    const stock = data.filter(v => v.status === "ACHETÉ" || v.status === "EN STOCK");
+
+    select.innerHTML = '<option value="">Sélectionnez un véhicule...</option>';
+    stock.forEach(v => {
+        const option = document.createElement('option');
+        option.value = JSON.stringify(v); // On stocke l'objet complet ici
+        option.textContent = `${v.plate || 'SANS IMMAT'} - ${v.model || 'SANS MODELE'}`;
+        select.appendChild(option);
+    });
+};
+
+// 2. La fonction de génération qui suit TON script à la lettre
+window.generateAd = function() {
+    const select = document.getElementById('ad-vehicle-select');
+    const template = document.getElementById('ad-template'); // Bloc 2
+    const output = document.getElementById('ad-output');     // Bloc 3
+
+    if (!select || !select.value) return;
+
+    try {
+        // 1. On récupère l'objet véhicule
+        const v = JSON.parse(select.value);
+
+        // 2. CONNEXION : On récupère le texte que TU as écrit dans le Bloc 2
+        let texteSource = template.value;
+
+        // 3. REMPLISSAGE : On remplace les balises par les infos du véhicule
+        // On utilise .replace() avec /gi pour que ça marche peu importe la casse
+        let resultat = texteSource
+            .replace(/{MODELE}/gi, v.model || v.modele || "Véhicule")
+            .replace(/{KM}/gi, v.km ? v.km.toLocaleString('fr-FR') : "NC")
+            .replace(/{IMMAT}/gi, v.plate || v.immat || "NC");
+
+        // Gestion du prix (Vente si dispo, sinon Achat, sinon texte)
+        const prixBrut = v.soldPrice || v.purchase || 0;
+        const prixFinal = prixBrut > 0 ? prixBrut.toLocaleString('fr-FR') + " €" : "À débattre";
+        resultat = resultat.replace(/{PRIX}/gi, prixFinal);
+
+        // 4. AFFICHAGE : On balance le tout dans le Bloc 3
+        output.value = resultat;
+
+    } catch (e) {
+        console.error("Erreur de connexion entre les blocs :", e);
     }
 };
+
+// --- LA COLLE (EventListeners) ---
+// Ces lignes connectent les blocs en temps réel
+document.getElementById('ad-vehicle-select').addEventListener('change', window.generateAd);
+document.getElementById('ad-template').addEventListener('input', window.generateAd);
 // ==========================================================================
 // 5. MODULE STOCK & INVENTAIRE
 // ==========================================================================
@@ -701,8 +854,7 @@ window.saveCurrentDeal = function() {
     const model = document.getElementById('model-name')?.value;
     if (!model) return alert("Modèle requis !");
 
-    // Fonction interne pour récupérer proprement les valeurs ou mettre un texte par défaut
-    const getVal = (id, fallback = "N/C") => {
+    const getVal = (id, fallback = "NC") => {
         const el = document.getElementById(id);
         return (el && el.value) ? el.value : fallback;
     };
@@ -714,8 +866,14 @@ window.saveCurrentDeal = function() {
     const deal = {
         model,
         plate: getVal('in-plate', 'N/A'),
-      km: kmValue,
-        // On garde tout comme ta base
+        km: typeof kmValue !== 'undefined' ? kmValue : 0, 
+        
+        // --- LES CORRECTIONS SONT ICI ---
+        seller_name: getVal('vendeur-nom', 'NC'),     // Vérifie bien que l'id est 'vendeur-nom'
+        seller_phone: getVal('vendeur-tel', 'NC'),    // Vérifie bien que l'id est 'vendeur-tel'
+        source: getVal('source-annonce', 'NC'),       // Vérifie bien que l'id est 'source-annonce'
+        // --------------------------------
+        
         purchase: purchase,
         repairs: repairs,
         fees: fees,
@@ -725,7 +883,7 @@ window.saveCurrentDeal = function() {
         status: "ACHETÉ",
         date: new Date().toLocaleDateString('fr-FR'),
         maintStep: "Achat",
-        checks: {...window.checks} // Conservé
+        checks: {...window.checks}
     };
 
     window.savedDeals.unshift(deal);
@@ -1048,9 +1206,12 @@ window.delIntLog = function(i, idx) {
 // CORRECTIF À APPLIQUER DANS TON MODULE PILOTAGE (TABLEAU DE BORD)
 // ==========================================================================
 window.updatePilotage = function() {
-    const data = JSON.parse(localStorage.getItem('ox_history')) || [];
-    const enStock = data.filter(d => d.status === "ACHETÉ");
-    const vendus = data.filter(d => d.status === "VENDU");
+    const saved = JSON.parse(localStorage.getItem('ox_profile_settings')) || {};
+    const welcome = document.getElementById('dash-welcome');
+    if (welcome) welcome.innerText = `Ravi de vous revoir, ${saved.companyName || 'Marchand'}.`;
+    const dateEl = document.getElementById('dash-date');
+    if (dateEl) dateEl.innerText = new Date().toLocaleDateString('fr-FR', {weekday: 'long', day: 'numeric', month: 'long'});
+
 
     // 1. Calcul de la Marge Réalisée
     const margeTotale = vendus.reduce((sum, d) => {
