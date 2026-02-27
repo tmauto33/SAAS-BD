@@ -1610,21 +1610,27 @@ window.delIntLog = async function(i, idx) { // Ajout de async
 // ==========================================================================
 const vendus = (window.savedDeals || []).filter(v => v.status === "VENDU");
 window.updatePilotage = function() {
+    // --- RÉCUPÉRATION DES DONNÉES (Fix pour éviter "vendus is not defined") ---
+    const history = JSON.parse(localStorage.getItem('ox_history')) || [];
+    const enStock = history.filter(v => v.status === "STOCK" || !v.status);
+    const vendus = history.filter(v => v.status === "VENDU");
+
+    // --- RÉGLAGES PROFIL ---
     const saved = JSON.parse(localStorage.getItem('ox_profile_settings')) || {};
     const welcome = document.getElementById('dash-welcome');
-    if (welcome) welcome.innerText = `Ravi de vous revoir, ${saved.companyName || 'Marchand'}.`;
+    if (welcome) welcome.innerText = `Ravi de vous revoir, ${saved.business_name || saved.companyName || 'Marchand'}.`;
+    
     const dateEl = document.getElementById('dash-date');
     if (dateEl) dateEl.innerText = new Date().toLocaleDateString('fr-FR', {weekday: 'long', day: 'numeric', month: 'long'});
 
-
     // 1. Calcul de la Marge Réalisée
     const margeTotale = vendus.reduce((sum, d) => {
-        const achat = parseFloat(d.purchase) || 0;
-        const frais = parseFloat(d.fees) || 0;
+        // On s'adapte aux noms de colonnes Supabase (purchase/price_buy et fees/prep_costs)
+        const achat = parseFloat(d.price_buy) || parseFloat(d.purchase) || 0;
+        const frais = parseFloat(d.prep_costs) || parseFloat(d.fees) || 0;
         const repa = parseFloat(d.repairs) || 0;
-        const prixVente = parseFloat(d.sellPrice) || 0;
+        const prixVente = parseFloat(d.sold_price) || parseFloat(d.sellPrice) || 0;
         
-        // PRK = Prix de Revient Kilométrique (Achat + tous les frais)
         const prk = achat + frais + repa;
         return sum + (prixVente - prk);
     }, 0);
@@ -1635,24 +1641,25 @@ window.updatePilotage = function() {
     if (elMarge) {
         elMarge.innerText = Math.round(margeTotale).toLocaleString() + " €";
         
-        // STYLE DYNAMIQUE
         if (margeTotale > 0) {
-            elMarge.style.color = "#10b981"; // Vert si bénéfice
+            elMarge.style.color = "#10b981"; // Vert
         } else if (margeTotale < 0) {
-            elMarge.style.color = "#ef4444"; // Rouge si perte
+            elMarge.style.color = "#ef4444"; // Rouge
         } else {
-            elMarge.style.color = "#666";    // Gris si zéro
+            elMarge.style.color = "#666";    // Gris
         }
     }
 
-    // 3. Mise à jour du Volume (ton ID kpi-stock-count)
+    // 3. Mise à jour du Volume
     const elCount = document.getElementById('kpi-stock-count');
     if (elCount) elCount.innerText = enStock.length;
     
     // 4. Mise à jour de la Valeur Stock
-    const valeurStock = enStock.reduce((sum, d) => sum + (parseFloat(d.purchase) || 0), 0);
+    const valeurStock = enStock.reduce((sum, d) => sum + (parseFloat(d.price_buy) || parseFloat(d.purchase) || 0), 0);
     const elValue = document.getElementById('kpi-stock-value');
     if (elValue) elValue.innerText = "Valeur : " + Math.round(valeurStock).toLocaleString() + " €";
+
+    console.log("📊 Pilotage mis à jour avec succès.");
 };
 // ==========================================================================
 // 7. MODULE MARKETING & IA TOOLS
@@ -3594,4 +3601,5 @@ window.initApp = async function() {
 
 // On utilise l'écouteur d'événement moderne plutôt que window.onload
 window.addEventListener('load', window.initApp);
+
 
