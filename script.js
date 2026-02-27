@@ -1025,6 +1025,7 @@ window.saveCurrentDeal = async function() { // Ajout de async
     const fees = parseFloat(document.getElementById('fees-admin')?.value) || 0;
 
     const deal = {
+        id: "ID-" + Date.now(), // Ajout d'un ID pour le Cloud
         model,
         plate: getVal('in-plate', 'N/A'),
         km: typeof kmValue !== 'undefined' ? kmValue : 0, 
@@ -1047,8 +1048,22 @@ window.saveCurrentDeal = async function() { // Ajout de async
         checks: {...window.checks}
     };
 
-    // SEUL AJOUT : Envoi vers Supabase
-    await supabaseClient.from('expertise_history').insert([deal]);
+    // SEUL AJOUT : Envoi vers Supabase avec correspondance des colonnes SQL
+    if (window.supabaseClient) {
+        await supabaseClient.from('expertise_history').insert([{
+            id: deal.id,
+            model: deal.model,
+            immat: deal.plate,        // Traduction : plate -> immat
+            km: deal.km.toString(),
+            seller_name: deal.seller_name,
+            seller_phone: deal.seller_phone,
+            source: deal.source,
+            price_buy: deal.purchase, // Traduction : purchase -> price_buy
+            prep_costs: deal.fees,    // Traduction : fees -> prep_costs
+            repairs: deal.repairs,
+            status: deal.status
+        }]);
+    }
 
     window.savedDeals.unshift(deal);
     localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
@@ -1057,7 +1072,6 @@ window.saveCurrentDeal = async function() { // Ajout de async
     if(window.updatePilotage) window.updatePilotage();
     window.renderInventory(); 
 };
-
 
 // ==========================================
 // 3. INVENTAIRE AMÉLIORÉ & OPTIMISÉ
@@ -1073,14 +1087,22 @@ window.renderInventory = function() {
     const data = JSON.parse(localStorage.getItem('ox_history')) || [];
     window.savedDeals = data;
 
-    // 2. Filtrage strict : on exclut les véhicules "VENDU"
+    // 2. Filtrage : on accepte "ACHETÉ" ou "STOCK" pour être sûr de tout voir
     const stock = data
         .map((d, index) => ({ ...d, originalIndex: index }))
-        .filter(d => d.status === "ACHETÉ");
+        .filter(d => d.status === "ACHETÉ" || d.status === "STOCK");
 
-    // 3. Rendu (la grille se nettoie et se remplit uniquement avec le stock actuel)
+    // 3. Rendu
     grid.innerHTML = stock.map((d) => {
-        const prk = toNum(d.purchase) + toNum(d.repairs) + toNum(d.fees);
+        // --- GESTION DE LA COMPATIBILITÉ DES NOMS ---
+        const prixAchat = parseFloat(d.price_buy || d.purchase || 0);
+        const fraisPrepa = parseFloat(d.prep_costs || d.fees || 0);
+        const reparation = parseFloat(d.repairs || 0);
+        
+        const prk = prixAchat + fraisPrepa + reparation;
+        const immatriculation = d.immat || d.plate || 'N/A';
+        // --------------------------------------------
+
         const imgPath = d.photoUrl || 'https://via.placeholder.com/400x200?text=Pas+de+photo';
         
         return `
@@ -1096,7 +1118,7 @@ window.renderInventory = function() {
                 </div>
                 <div style="background:#252525; padding:8px; border-radius:6px; display:flex; justify-content:space-between; font-size:0.85rem;">
                     <span>PRK: <strong>${prk.toLocaleString()} €</strong></span>
-                    <span style="color:var(--accent); font-weight:bold;">${d.plate || 'N/A'}</span>
+                    <span style="color:var(--accent); font-weight:bold;">${immatriculation}</span>
                 </div>
             </div>
         </div>`;
@@ -3590,6 +3612,7 @@ window.initApp = async function() {
 
 // On utilise l'écouteur d'événement moderne plutôt que window.onload
 window.addEventListener('load', window.initApp);
+
 
 
 
