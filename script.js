@@ -16,6 +16,7 @@ window.contacts = JSON.parse(localStorage.getItem('ox_contacts')) || [];
 window.checks = {}; // État temporaire de la checklist en cours
 
 const inspectionConfig = [
+
     { name: "Carte Grise", defVal: 0, defType: "price", cat: "Admin" },
     { name: "Contrôle Technique", defVal: 120, defType: "price", cat: "Admin" },
     { name: "Histovec", defVal: 15, defType: "points", cat: "Admin" },
@@ -179,6 +180,8 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+
 
 // Fonction pour injecter les infos dans les factures
 window.updateInvoicesWithProfile = function(data) {
@@ -382,31 +385,56 @@ window.triggerSaleProcess = function() {
 // ==========================================================================
 
 window.addVehicleToStock = function() {
+    // 1. Récupération des valeurs du formulaire
     const brand = document.getElementById('in-brand')?.value || "";
     const model = document.getElementById('in-model')?.value || "";
     const price = document.getElementById('in-price')?.value || 0;
     
-    // ON FORCE LA SAISIE ICI
+    // Récupération des infos vendeur (Section Analyse)
+    const sName = document.getElementById('v-name')?.value || "Non renseigné";
+    const sPhone = document.getElementById('v-phone')?.value || "Non renseigné";
+    const sProfile = document.getElementById('v-profile')?.value || "NC";
+
+    // 2. Saisie forcée via prompts
     const plate = prompt("Immatriculation (ex: BY-243-AC) :", "");
     const kmValue = prompt("Kilométrage (ex: 125000) :", "0");
 
+    // 3. Création de l'objet véhicule
     const newVehicle = {
         id: "ID-" + Date.now(),
         brand: brand,
         model: model,
         plate: plate || "N/C",
-        km: kmValue || "0", // On enregistre bien la valeur tapée
+        km: kmValue || "0",
+        seller_name: sName,
+        seller_phone: sPhone,
+        source: sProfile,
         purchase: parseFloat(price) || 0,
-        status: "EN STOCK",
-        date: new Date().toISOString().split('T')[0]
+        repairs: 0, 
+        fees: 0,
+        status: "ACHETÉ",
+        date: new Date().toLocaleDateString('fr-FR')
     };
 
-    // On sauvegarde et on rafraîchit tout
-    if(typeof saveAndRefresh === "function") {
-        saveAndRefresh();
+    // --- L'ÉTAPE QUI MANQUAIT : L'AJOUT DANS LA LISTE ---
+    // On s'assure que window.savedDeals existe
+    if (!window.savedDeals) {
+        window.savedDeals = JSON.parse(localStorage.getItem('ox_history')) || [];
+    }
+
+    // On ajoute le nouveau véhicule dans le tableau
+    window.savedDeals.push(newVehicle);
+
+    // 4. Sauvegarde et Rafraîchissement
+    localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
+
+    alert("Véhicule enregistré avec succès !");
+
+    // 5. Mise à jour de l'affichage sans tout casser
+    if (typeof window.renderInventory === "function") {
+        window.renderInventory();
     } else {
-        localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
-        location.reload(); 
+        location.reload(); // Si la fonction de rendu n'est pas dispo, on recharge
     }
 };
 window.triggerSaleProcess = function() {
@@ -702,90 +730,79 @@ window.updateDashboard = function() {
         avgRotation = Math.round(totalDays / sold.length);
     }
 
+    // --- FONCTION DE MISE À JOUR MULTI-CIBLES (POUR TES COPIER-COLLER) ---
+    const update = (id, value, isHTML = false) => {
+        document.querySelectorAll(`[id="${id}"]`).forEach(el => {
+            if (isHTML) el.innerHTML = value; else el.innerText = value;
+        });
+    };
+
     // 3. MISE À JOUR KPI FINANCE
-    if(document.getElementById('dash-welcome')) document.getElementById('dash-welcome').innerText = `Ravi de vous revoir, ${profile.name || 'Marchand'}. Voici l'état de votre parc.`;
-    if(document.getElementById('dash-date')) document.getElementById('dash-date').innerText = new Date().toLocaleDateString('fr-FR', {weekday: 'long', day: 'numeric', month: 'long'});
+    update('dash-welcome', `Ravi de vous revoir, ${profile.name || 'Marchand'}. Voici l'état de votre parc.`);
+    update('dash-date', new Date().toLocaleDateString('fr-FR', {weekday: 'long', day: 'numeric', month: 'long'}));
     
-    if(document.getElementById('kpi-marge')) document.getElementById('kpi-marge').innerText = `${totalMarge.toLocaleString('fr-FR')} €`;
-    if(document.getElementById('kpi-stock-value')) document.getElementById('kpi-stock-value').innerText = `${stockValue.toLocaleString('fr-FR')} €`;
-    if(document.getElementById('kpi-stock-count-detail')) document.getElementById('kpi-stock-count-detail').innerText = `${inStock.length} véhicules`;
-    if(document.getElementById('kpi-rotation')) document.getElementById('kpi-rotation').innerText = avgRotation;
+    update('kpi-marge', `${totalMarge.toLocaleString('fr-FR')} €`);
+    update('kpi-stock-value', `${stockValue.toLocaleString('fr-FR')} €`);
+    update('kpi-stock-count-detail', `${inStock.length} véhicules`);
+    update('kpi-rotation', avgRotation);
 
     const tva = totalMarge * 0.20;
-    if(document.getElementById('dash-tva-value')) document.getElementById('dash-tva-value').innerText = `- ${tva.toLocaleString('fr-FR')} €`;
-    if(document.getElementById('kpi-cash')) document.getElementById('kpi-cash').innerText = `${(totalMarge - tva).toLocaleString('fr-FR')} €`;
+    update('dash-tva-value', `- ${tva.toLocaleString('fr-FR')} €`);
+    update('kpi-cash', `${(totalMarge - tva).toLocaleString('fr-FR')} €`);
 
     // 4. OBJECTIF & BARRE DE PROGRESSION
     const progress = Math.min((totalMarge / targetMarge) * 100, 100);
-    const pBar = document.getElementById('dash-progress-bar');
-    if(pBar) pBar.style.width = progress + "%";
+    document.querySelectorAll('#dash-progress-bar').forEach(pBar => pBar.style.width = progress + "%");
     
     const statusText = progress >= 100 ? "🎯 OBJECTIF ATTEINT" : `RESTE À GÉNÉRER : ${(targetMarge - totalMarge).toLocaleString()} €`;
-    if(document.getElementById('dash-obj-status')) document.getElementById('dash-obj-status').innerText = statusText;
+    update('dash-obj-status', statusText);
 
-    // 5. LOGISTIQUE & CRM (Compteurs corrigés pour le temps réel)
-    
-    // Compteur : EN PRÉPARATION
-    if(document.getElementById('log-prep')) {
-        document.getElementById('log-prep').innerText = inStock.filter(v => 
-            v.logStatus === 'prépa' || v.status === 'EN PRÉPARATION' || v.logistique === 'En cours'
-        ).length;
-    }
+    // 5. LOGISTIQUE & CRM (Mis à jour partout simultanément)
+    update('log-prep', inStock.filter(v => 
+        v.logStatus === 'prépa' || v.status === 'EN PRÉPARATION' || v.logistique === 'En cours'
+    ).length);
 
-    // Compteur : PRESTATAIRE
-    if(document.getElementById('log-prov')) {
-        document.getElementById('log-prov').innerText = inStock.filter(v => 
-            v.logStatus === 'prestataire' || v.status === 'CHEZ LE PRESTATAIRE' || v.logistique === 'Externe'
-        ).length;
-    }
+    update('log-prov', inStock.filter(v => 
+        v.logStatus === 'prestataire' || v.status === 'CHEZ LE PRESTATAIRE' || v.logistique === 'Externe'
+    ).length);
 
-    // Compteur : PRÊT À LA VENTE
-    if(document.getElementById('log-ready')) {
-        document.getElementById('log-ready').innerText = inStock.filter(v => 
-            v.logStatus === 'prêt' || v.status === 'PRÊT À LA VENTE' || v.status === 'ACHETÉ'
-        ).length;
-    }
+    update('log-ready', inStock.filter(v => 
+        v.logStatus === 'prêt' || v.status === 'PRÊT À LA VENTE' || v.status === 'ACHETÉ'
+    ).length);
 
-    if(document.getElementById('crm-total')) document.getElementById('crm-total').innerText = contacts.length;
-    if(document.getElementById('crm-nego')) document.getElementById('crm-nego').innerText = contacts.filter(c => c.step === 'négociation').length;
+    update('crm-total', contacts.length);
+    update('crm-nego', contacts.filter(c => c.step === 'négociation').length);
 
     // 6. GRAPHIQUE DYNAMIQUE
-    const chart = document.getElementById('dash-chart-container');
-    if(chart) {
-        const last7Days = [...Array(7)].map((_, i) => {
-            const d = new Date(); d.setDate(d.getDate() - i);
-            return d.toLocaleDateString();
-        }).reverse();
-
-        chart.innerHTML = last7Days.map(dateStr => {
-            const count = sold.filter(s => new Date(s.dateVente || s.dateAction).toLocaleDateString() === dateStr).length;
-            const height = count > 0 ? (count * 40) : 5; 
-            return `<div style="flex:1; background:${count > 0 ? 'var(--accent)' : 'rgba(255,255,255,0.05)'}; height:${height}%; border-radius:4px; position:relative;" title="${count} ventes">
-                ${count > 0 ? `<span style="position:absolute; top:-20px; left:50%; transform:translateX(-50%); font-size:0.6rem; color:var(--accent);">${count}</span>` : ''}
-            </div>`;
-        }).join('');
-    }
+    const chartHTML = [...Array(7)].map((_, i) => {
+        const d = new Date(); d.setDate(d.getDate() - i);
+        const dateStr = d.toLocaleDateString();
+        const count = sold.filter(s => new Date(s.dateVente || s.dateAction).toLocaleDateString() === dateStr).length;
+        const height = count > 0 ? (count * 40) : 5; 
+        return `<div style="flex:1; background:${count > 0 ? 'var(--accent)' : 'rgba(255,255,255,0.05)'}; height:${height}%; border-radius:4px; position:relative;" title="${count} ventes">
+            ${count > 0 ? `<span style="position:absolute; top:-20px; left:50%; transform:translateX(-50%); font-size:0.6rem; color:var(--accent);">${count}</span>` : ''}
+        </div>`;
+    }).reverse().join('');
+    
+    update('dash-chart-container', chartHTML, true);
 
     // 7. SYSTÈME D'ALERTES
-    const alertsBox = document.getElementById('dash-alerts');
-    if(alertsBox) {
-        let alerts = [];
-        const stagnant = inStock.filter(v => (new Date() - new Date(v.dateAchat || v.dateAction)) / 86400000 > 30);
-        if(stagnant.length > 0) alerts.push(`🚗 ${stagnant.length} véhicules stagnant (+30j)`);
-        
-        const inPrepCount = inStock.filter(v => v.logStatus === 'prépa' || v.status === 'EN PRÉPARATION').length;
-        if(inPrepCount > 2) alerts.push(`🔧 Atelier surchargé (${inPrepCount} en cours)`);
+    let alerts = [];
+    const stagnant = inStock.filter(v => (new Date() - new Date(v.dateAchat || v.dateAction)) / 86400000 > 30);
+    if(stagnant.length > 0) alerts.push(`🚗 ${stagnant.length} véhicules stagnant (+30j)`);
+    
+    const inPrepCount = inStock.filter(v => v.logStatus === 'prépa' || v.status === 'EN PRÉPARATION').length;
+    if(inPrepCount > 2) alerts.push(`🔧 Atelier surchargé (${inPrepCount} en cours)`);
+    if(progress < 30 && new Date().getDate() > 20) alerts.push(`📉 Retard critique sur l'objectif`);
 
-        if(progress < 30 && new Date().getDate() > 20) alerts.push(`📉 Retard critique sur l'objectif`);
+    const finalAlertsHTML = alerts.map(a => `
+        <div style="padding:10px; background:rgba(255,255,255,0.03); border-radius:8px; border-left:3px solid #f59e0b; font-size:0.7rem; color:#ccc;">${a}</div>
+    `).join('') || "<div style='color:#22c55e; font-size:0.75rem;'>✅ Aucune anomalie détectée</div>";
 
-        alertsBox.innerHTML = alerts.map(a => `
-            <div style="padding:10px; background:rgba(255,255,255,0.03); border-radius:8px; border-left:3px solid #f59e0b; font-size:0.7rem; color:#ccc;">${a}</div>
-        `).join('') || "<div style='color:#22c55e; font-size:0.75rem;'>✅ Aucune anomalie détectée</div>";
-    }
+    update('dash-alerts', finalAlertsHTML, true);
 
     if (window.lucide) lucide.createIcons();
 };
-
 // ==========================================================================
 // 5. MODULE ANNONCE
 // ==========================================================================
@@ -926,7 +943,7 @@ window.renderInventory = function() {
                 <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:10px;">
                     <div>
                         <strong style="font-size:1.1rem;">${d.brand || ''} ${d.model || 'Véhicule'}</strong><br>
-                        <small style="color:#888;">${d.year || 'NC'} • ${d.mileage || 0} km</small>
+                        <small style="color:#888;">${d.year || 'NC'} • ${d.km || d.mileage || 0} km</small>
                     </div>
                 </div>
                 <div style="background:#252525; padding:8px; border-radius:6px; display:flex; justify-content:space-between; font-size:0.85rem;">
@@ -938,25 +955,64 @@ window.renderInventory = function() {
     }).join('');
 };
 
+
+window.deleteVehicle = function(index) {
+    if (confirm("Supprimer ce véhicule définitivement ?")) {
+        window.savedDeals.splice(index, 1);
+        localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
+        
+        const modal = document.getElementById('modal-overlay');
+        if (modal) modal.remove();
+        
+        if (window.renderInventory) window.renderInventory();
+        else location.reload();
+    }
+};
+
+
+
+
 window.showVehicleDetails = function(index) {
     const d = window.savedDeals[index];
     if (!d) return;
 
     const prk = toNum(d.purchase) + toNum(d.repairs) + toNum(d.fees);
+    
     const existing = document.getElementById('modal-overlay');
     if (existing) existing.remove();
 
+    // On vérifie si les infos sont à remplir (NC ou vide)
+    const isMissing = (!d.seller_name || d.seller_name === "NC" || d.seller_name === "Non renseigné");
+
+    const contactContent = isMissing ? `
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <input type="text" id="edit-name-${index}" placeholder="Nom du vendeur" value="${d.seller_name !== 'NC' ? (d.seller_name || '') : ''}" style="padding:6px; border:1px solid #ccc; border-radius:4px; font-size:0.8rem;">
+            <input type="text" id="edit-phone-${index}" placeholder="Téléphone" value="${d.seller_phone || ''}" style="padding:6px; border:1px solid #ccc; border-radius:4px; font-size:0.8rem;">
+            <input type="text" id="edit-address-${index}" placeholder="Adresse / Ville" value="${d.address || ''}" style="padding:6px; border:1px solid #ccc; border-radius:4px; font-size:0.8rem;">
+            <input type="text" id="edit-reason-${index}" placeholder="Raison de la vente" value="${d.reason || ''}" style="padding:6px; border:1px solid #ccc; border-radius:4px; font-size:0.8rem;">
+            <select id="edit-pay-${index}" style="padding:6px; border:1px solid #ccc; border-radius:4px; font-size:0.8rem;">
+                <option value="">Moyen de paiement...</option>
+                <option value="Virement" ${d.payment_method === 'Virement' ? 'selected' : ''}>Virement</option>
+                <option value="Chèque de banque" ${d.payment_method === 'Chèque de banque' ? 'selected' : ''}>Chèque de banque</option>
+                <option value="Espèces" ${d.payment_method === 'Espèces' ? 'selected' : ''}>Espèces</option>
+            </select>
+            <button onclick="window.quickUpdateContact(${index})" style="background:#333; color:white; border:none; border-radius:4px; padding:8px; font-size:0.75rem; cursor:pointer; font-weight:bold;">ENREGISTRER LE DOSSIER</button>
+        </div>
+    ` : `
+        <div style="margin-top:5px; font-size:0.9rem;">Vendeur: <strong>${d.seller_name}</strong></div>
+        <div style="margin-top:2px; font-size:0.9rem;">Tél: <strong>${d.seller_phone || 'NC'}</strong></div>
+        ${d.address ? `<div style="margin-top:4px; font-size:0.85rem; color:#555;">📍 ${d.address}</div>` : ''}
+        ${d.reason ? `<div style="margin-top:4px; font-size:0.85rem; color:#555;">💬 ${d.reason}</div>` : ''}
+        ${d.payment_method ? `<div style="margin-top:4px; font-size:0.85rem; color:#555;">💳 ${d.payment_method}</div>` : ''}
+        <button onclick="window.resetContact(${index})" style="margin-top:10px; background:none; border:none; color:#2563eb; text-decoration:underline; font-size:0.75rem; cursor:pointer; padding:0; font-weight:bold;">✏️ Modifier les infos</button>
+    `;
+
     const detailHtml = `
         <div id="modal-overlay" onclick="this.remove()" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; display:flex; align-items:center; justify-content:center; padding:15px;">
-            <div class="card" onclick="event.stopPropagation()" style="width:100%; max-width:550px; background:white; color:#333; padding:0; border-radius:12px; overflow:hidden;">
+            <div class="card" onclick="event.stopPropagation()" style="width:100%; max-width:550px; background:white; color:#333; padding:0; border-radius:12px; overflow:hidden; font-family: sans-serif;">
                 
                 <div id="photo-container" style="height:200px; background:url('${d.photoUrl || ''}') center/cover #eee; position:relative;">
                     <button onclick="document.getElementById('modal-overlay').remove()" style="position:absolute; top:15px; right:15px; background:white; border:none; border-radius:50%; width:30px; height:30px; cursor:pointer; font-weight:bold;">&times;</button>
-                    
-                    <label style="position:absolute; bottom:10px; right:10px; background:rgba(0,0,0,0.7); color:white; padding:5px 12px; border-radius:20px; font-size:0.8rem; cursor:pointer;">
-                        📷 Ajouter/Modifier photo
-                        <input type="file" accept="image/*" style="display:none;" onchange="window.updateVehiclePhoto(event, ${index})">
-                    </label>
                 </div>
 
                 <div style="padding:20px;">
@@ -968,25 +1024,101 @@ window.showVehicleDetails = function(index) {
                             <small style="color:#888; font-weight:bold;">SOLDE FINANCIER</small>
                             <div style="margin-top:5px;">Achat: <strong>${toNum(d.purchase).toLocaleString()} €</strong></div>
                             <div style="margin-top:2px;">Travaux: <strong>${toNum(d.repairs).toLocaleString()} €</strong></div>
-                            <div style="margin-top:5px; border-top:1px solid #ddd; color:var(--accent); font-weight:bold; padding-top:5px;">PRK: ${prk.toLocaleString()} €</div>
+                            <div style="margin-top:5px; border-top:1px solid #ddd; color:#e63946; font-weight:bold; padding-top:5px;">PRK: ${prk.toLocaleString()} €</div>
                         </div>
                         <div style="background:#f4f4f4; padding:12px; border-radius:8px;">
-                            <small style="color:#888; font-weight:bold;">INFOS ANALYSE</small>
-                            <div style="margin-top:5px;">Vendeur: <strong>${d.seller_name || 'NC'}</strong></div>
-                            <div style="margin-top:2px;">Tél: <strong>${d.seller_phone || 'NC'}</strong></div>
-                            <div style="margin-top:2px;">Source: <strong>${d.source || 'NC'}</strong></div>
+                            <small style="color:#888; font-weight:bold;">INFOS COMPLÉMENTAIRES</small>
+                            ${contactContent}
                         </div>
                     </div>
 
-                    <button onclick="window.archiveSold(${index})" style="width:100%; padding:15px; background:#10b981; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:1.1rem;">
-                        MARQUER COMME VENDU
-                    </button>
+                    <div style="display:flex; gap:10px;">
+                        <button onclick="window.archiveSold(${index})" style="flex:5; padding:15px; background:#10b981; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:1.1rem;">
+                            MARQUER COMME VENDU
+                        </button>
+                        <button onclick="window.deleteVehicle(${index})" style="flex:1; padding:15px; background:#fee2e2; color:#ef4444; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:1.1rem;">
+                            🗑️
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>`;
     document.body.insertAdjacentHTML('beforeend', detailHtml);
 };
 
+window.quickUpdateContact = function(index) {
+    const nameVal = document.getElementById(`edit-name-${index}`).value;
+    const phoneVal = document.getElementById(`edit-phone-${index}`).value;
+    const addressVal = document.getElementById(`edit-address-${index}`).value;
+    const reasonVal = document.getElementById(`edit-reason-${index}`).value;
+    const payVal = document.getElementById(`edit-pay-${index}`).value;
+
+    if (!nameVal) {
+        alert("Le nom est obligatoire pour enregistrer.");
+        return;
+    }
+
+    // 1. MISE À JOUR DU VÉHICULE DANS LE STOCK
+    const vehicle = window.savedDeals[index];
+    vehicle.seller_name = nameVal;
+    vehicle.seller_phone = phoneVal;
+    vehicle.address = addressVal;
+    vehicle.reason = reasonVal;
+    vehicle.payment_method = payVal;
+
+    // Sécurité pour éviter le "undefined" dans le CRM
+    const vMarque = vehicle.brand || vehicle.marque || "";
+    const vModele = vehicle.model || vehicle.modele || "Véhicule";
+    const fullVehicleName = `${vMarque} ${vModele}`.trim();
+
+    // 2. INJECTION DANS TON CRM (savedCustomers)
+    const existingIndex = window.savedCustomers.findIndex(c => 
+        (c.name.toLowerCase() === nameVal.toLowerCase()) && c.type === "VENTE"
+    );
+
+    const customerData = {
+        name: nameVal,
+        phone: phoneVal,
+        type: "VENTE",
+        status: "CONCLU",
+        date: new Date().toLocaleDateString('fr-FR'),
+        vehicle: fullVehicleName, // Nom propre sans undefined
+        notes: `Raison: ${reasonVal || 'NC'} | Payé par: ${payVal || 'NC'} | 📍 ${addressVal || 'NC'}`,
+        budget: vehicle.purchase 
+    };
+
+    if (existingIndex !== -1) {
+        window.savedCustomers[existingIndex] = customerData;
+    } else {
+        window.savedCustomers.push(customerData);
+    }
+
+    // 3. SAUVEGARDE GLOBALE
+    localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
+    localStorage.setItem('ox_customers', JSON.stringify(window.savedCustomers));
+
+    // 4. RAFRAÎCHISSEMENT
+    window.showVehicleDetails(index);
+    if (window.renderCustomers) window.renderCustomers();
+    
+    alert(`Vendeur "${nameVal}" enregistré dans le stock et le CRM !`);
+};
+
+// FONCTION POUR PERMETTRE LA MODIFICATION
+window.resetContact = function(index) {
+    // On force l'état "Missing" pour afficher le formulaire de saisie
+    const vehicle = window.savedDeals[index];
+    const oldName = vehicle.seller_name;
+    
+    // On vide temporairement le nom en mémoire vive pour que showVehicleDetails affiche le formulaire
+    const tempName = vehicle.seller_name;
+    vehicle.seller_name = ""; 
+    
+    window.showVehicleDetails(index);
+    
+    // On remet le nom au cas où l'utilisateur ferme sans enregistrer
+    vehicle.seller_name = tempName; 
+};
 // ==========================================
 // FONCTION PHOTO
 // ==========================================
@@ -1011,39 +1143,92 @@ window.updateVehiclePhoto = function(event, index) {
 };
 
 window.archiveSold = function(index) {
-    // 1. Récupérer le véhicule
     const v = window.savedDeals[index];
     if (!v) return;
 
-    // 2. Demander les infos (Exactement comme ton bouton vert)
-    const p = prompt("Prix de vente final pour " + v.model + " :");
-    if (p === null || p === "") return; // Annulation si vide
+    // 1. On ferme l'ancienne modal
+    const oldModal = document.getElementById('modal-overlay');
+    if (oldModal) oldModal.remove();
 
-    const d = prompt("Date de vente (AAAA-MM-JJ) :", new Date().toISOString().split('T')[0]);
+    // 2. Création de la modal de saisie (Acheteur + Prix)
+    const saleHtml = `
+        <div id="modal-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:10000; display:flex; align-items:center; justify-content:center; padding:15px;">
+            <div class="card" onclick="event.stopPropagation()" style="width:100%; max-width:450px; background:white; color:#333; padding:25px; border-radius:12px; font-family:sans-serif;">
+                <h2 style="margin-top:0; color:#10b981;">🎉 Finaliser la vente</h2>
+                <p style="font-size:0.9rem; color:#666;">Véhicule : <strong>${v.brand} ${v.model}</strong></p>
+                
+                <div style="display:flex; flex-direction:column; gap:10px; margin:20px 0;">
+                    <label style="font-size:0.75rem; font-weight:bold; color:#888;">INFOS ACHETEUR</label>
+                    <input type="text" id="buyer-name" placeholder="Nom de l'acheteur" style="padding:10px; border:1px solid #ccc; border-radius:6px;">
+                    <input type="text" id="buyer-phone" placeholder="Téléphone" style="padding:10px; border:1px solid #ccc; border-radius:6px;">
+                    
+                    <label style="font-size:0.75rem; font-weight:bold; color:#888; margin-top:5px;">DÉTAILS VENTE</label>
+                    <input type="number" id="sale-price" placeholder="Prix de vente final (€)" style="padding:10px; border:1px solid #ccc; border-radius:6px;">
+                    <input type="date" id="sale-date" value="${new Date().toISOString().split('T')[0]}" style="padding:10px; border:1px solid #ccc; border-radius:6px;">
+                </div>
 
-    // 3. Application de la "Recette" du Dashboard
-    // On utilise soldPrice et non sellPrice pour que le calcul ne soit plus inversé
-    v.soldPrice = toNum(p); 
-    v.date_out = d || new Date().toISOString();
+                <div style="display:flex; gap:10px;">
+                    <button onclick="document.getElementById('modal-overlay').remove()" style="flex:1; padding:12px; background:#eee; border:none; border-radius:8px; cursor:pointer;">Annuler</button>
+                    <button onclick="window.confirmFinalSale(${index})" style="flex:2; padding:12px; background:#10b981; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">VALIDER LA VENTE</button>
+                </div>
+            </div>
+        </div>`;
+    document.body.insertAdjacentHTML('beforeend', saleHtml);
+};
+
+window.confirmFinalSale = function(index) {
+    const v = window.savedDeals[index];
+    const bName = document.getElementById('buyer-name').value;
+    const bPhone = document.getElementById('buyer-phone').value;
+    const sPrice = document.getElementById('sale-price').value;
+    const sDate = document.getElementById('sale-date').value;
+
+    if (!bName || !sPrice) {
+        alert("Le nom et le prix sont obligatoires.");
+        return;
+    }
+
+    // Sécurité pour construire le nom du véhicule sans undefined
+    const vMarque = v.brand || v.marque || "";
+    const vModele = v.model || v.modele || "Véhicule";
+    const fullVehicleName = `${vMarque} ${vModele}`.trim();
+
+    // 1. Application de la Recette Dashboard
+    v.soldPrice = toNum(sPrice);
+    v.date_out = sDate || new Date().toISOString();
     v.status = "VENDU";
     v.maintStep = "Vendu";
+    v.buyer_name = bName;
 
-    // 4. Sauvegarde et Rafraîchissement global
-    // On utilise ta fonction saveAndRefresh() qui marche sur le dashboard
+    // 2. Enregistrement dans le CRM (Acheteur)
+    const buyerContact = {
+        name: bName,
+        phone: bPhone,
+        type: "ACHAT",
+        status: "CONCLU",
+        date: new Date().toLocaleDateString('fr-FR'),
+        vehicle: fullVehicleName, // Utilisation du nom propre
+        notes: `Achat conclu à ${sPrice}€`,
+        budget: sPrice
+    };
+    
+    window.savedCustomers.push(buyerContact);
+    localStorage.setItem('ox_customers', JSON.stringify(window.savedCustomers));
+
+    // 3. Sauvegarde et Rafraîchissement global
     if (typeof saveAndRefresh === "function") {
         saveAndRefresh();
     } else {
-        // Sécurité si saveAndRefresh n'est pas accessible ici
         localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
-        window.renderInventory();
-        if (typeof window.updatePilotage === "function") window.updatePilotage();
+        if (window.renderInventory) window.renderInventory();
     }
 
-    // 5. Fermer le modal de l'inventaire
+    // 4. Nettoyage modal et rafraîchissement CRM
     const modal = document.getElementById('modal-overlay');
     if (modal) modal.remove();
-    
-    alert("✅ Vente enregistrée avec succès !");
+    if (window.renderCustomers) window.renderCustomers();
+
+    alert("✅ Vente enregistrée et acheteur ajouté au CRM !");
 };
 
 // 6. MODULE LOGISTIQUE (AVANCEMENT)
@@ -1068,90 +1253,86 @@ window.renderMaintenance = function() {
     const list = document.getElementById('maintenance-list');
     if (!list) return;
 
-    // 1. Récupération des données fraîches depuis le localStorage
+    // 1. Récupération des données
     const data = JSON.parse(localStorage.getItem('ox_history')) || [];
-    window.savedDeals = data; // Synchronisation variable globale
+    window.savedDeals = data; 
     
-    // 2. Filtrage : Uniquement les véhicules en stock (Statut ACHETÉ)
     const stock = data
         .map((d, index) => ({ ...d, realIdx: index }))
         .filter(d => d.status === "ACHETÉ");
 
-    // 3. Initialisation des compteurs globaux
+    // 2. Initialisation des compteurs
     let prepCount = 0;
     let externalCount = 0;
     let readyCount = 0;
     let totalInvested = 0;
 
-    // 4. Calcul des compteurs et génération du HTML des cartes
+    // 3. Calcul et génération du HTML des cartes
     list.innerHTML = stock.map((d) => {
         const i = d.realIdx;
-        
-        // Calcul financier (Prix achat + Frais + Interventions)
         const totalInt = (d.interventions || []).reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0);
         const prk = (parseFloat(d.purchase) || 0) + (parseFloat(d.fees) || 0) + totalInt;
         
-        // Cumul pour le compteur global
         totalInvested += prk;
 
-        // Tri pour les compteurs du haut (Logique selon maintStep)
         const step = (d.maintStep || 'ACHAT').toUpperCase();
         if (step === 'ACHAT' || step === 'NETTOYAGE') prepCount++;
         else if (step === 'ATELIER' || step === 'CARROSSERIE') externalCount++;
         else if (step === 'PRÊT') readyCount++;
 
-        // Rendu de la carte individuelle
         return `
         <div class="card" style="background:#1a1a1a; border-left: 4px solid #6366f1; padding:15px; margin-bottom:12px; border-radius:8px;">
             <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
                 <span style="font-size:0.65rem; color:#aaa; background:#252525; padding:2px 8px; border-radius:10px;">${d.date || 'Date NC'}</span>
                 <span style="font-size:0.7rem; color:#6366f1; font-weight:bold; text-transform:uppercase;">● ${d.maintStep || 'ACHAT'}</span>
             </div>
-            
             <h3 style="margin:0; font-size:1.1rem; color:white;">${d.brand || ''} ${d.model}</h3>
             <p style="color:#6366f1; font-weight:bold; font-size:0.95rem; margin:5px 0;">PRK Actuel : ${prk.toLocaleString()} €</p>
-
             <div style="margin-top:12px; display:flex; gap:4px; flex-wrap:wrap;">
                 ${['Achat', 'Nettoyage', 'Atelier', 'Carrosserie', 'Prêt'].map(stepName => `
                     <button onclick="window.updateMaintStep(${i}, '${stepName}')" 
                         style="flex:1; font-size:0.65rem; padding:6px 2px; border-radius:4px; border:none; 
-                        background:${d.maintStep === stepName ? '#6366f1' : '#252525'}; 
-                        color:white; cursor:pointer; transition: all 0.2s;">
+                        background:${d.maintStep === stepName ? '#6366f1' : '#252525'}; color:white;">
                         ${stepName}
                     </button>
                 `).join('')}
             </div>
-
             <div style="margin-top:15px; display:flex; gap:5px;">
                 <input type="text" id="t-${i}" placeholder="Réparation..." style="flex:2; background:#111; border:1px solid #333; color:white; font-size:0.8rem; padding:6px; border-radius:4px;">
                 <input type="number" id="p-${i}" placeholder="€" style="flex:1; background:#111; border:1px solid #333; color:white; font-size:0.8rem; padding:6px; border-radius:4px;">
-                <button onclick="window.addIntLog(${i})" style="background:#6366f1; color:white; border:none; padding:0 12px; border-radius:4px; cursor:pointer; font-weight:bold;">+</button>
+                <button onclick="window.addIntLog(${i})" style="background:#6366f1; color:white; border:none; padding:0 12px; border-radius:4px;">+</button>
             </div>
-
             <div style="margin-top:12px; font-size:0.8rem; color:#bbb; background:#222; border-radius:6px; padding: ${(d.interventions || []).length > 0 ? '8px' : '0'};">
                 ${(d.interventions || []).map((int, idx) => `
-                    <div style="display:flex; justify-content:space-between; border-bottom:1px solid #333; padding:5px 0; align-items:center;">
+                    <div style="display:flex; justify-content:space-between; border-bottom:1px solid #333; padding:5px 0;">
                         <span>${int.label}</span>
-                        <span style="color:white;">
-                            <strong>${parseFloat(int.price).toLocaleString()} €</strong> 
-                            <button onclick="window.delIntLog(${i}, ${idx})" style="color:#ef4444; background:none; border:none; cursor:pointer; font-size:1.1rem; margin-left:8px; line-height:1;">×</button>
-                        </span>
+                        <span><strong>${parseFloat(int.price).toLocaleString()} €</strong> 
+                        <button onclick="window.delIntLog(${i}, ${idx})" style="color:#ef4444; background:none; border:none; margin-left:8px;">×</button></span>
                     </div>
                 `).join('')}
             </div>
         </div>`;
     }).join('');
 
-    // 5. Mise à jour des compteurs HTML (Dashboard du haut)
-    const updateEl = (id, val) => {
-        const el = document.getElementById(id);
-        if (el) el.innerText = val;
+    // --- LA PARTIE QUI CORRIGE TON PROBLÈME DE DOUBLONS ---
+    const updateAllInstances = (id, val) => {
+        // querySelectorAll trouve TOUS les éléments avec cet ID, même s'ils sont en double
+        const elements = document.querySelectorAll(`[id="${id}"]`);
+        elements.forEach(el => {
+            el.innerText = val;
+        });
     };
 
-    updateEl('maint-count-prep', prepCount);
-    updateEl('maint-count-external', externalCount);
-    updateEl('maint-count-ready', readyCount);
-    updateEl('maint-total-invested', totalInvested.toLocaleString() + " €");
+    // On met à jour toutes les cartes, peu importe l'onglet
+    updateAllInstances('maint-count-prep', prepCount);
+    updateAllInstances('maint-count-external', externalCount);
+    updateAllInstances('maint-count-ready', readyCount);
+    updateAllInstances('maint-total-invested', totalInvested.toLocaleString() + " €");
+    
+    // On force aussi les IDs du dashboard si ils sont différents
+    updateAllInstances('log-prep', prepCount);
+    updateAllInstances('log-prov', externalCount);
+    updateAllInstances('log-ready', readyCount);
 };
 
 // ==========================================================================
@@ -1468,7 +1649,7 @@ window.handleTypeChange = function(type) {
     }
 };
 
-// --- SAUVEGARDE AVEC AUTOMATISATION STRICTE (PRIX + DATE + PILOTAGE) ---
+// --- SAUVEGARDE AVEC AUTOMATISATION STRICTE ---
 window.saveCustomer = function() {
     const type = document.getElementById('cust-type').value;
     const vehicleModel = document.getElementById('cust-vehicle').value;
@@ -1488,53 +1669,44 @@ window.saveCustomer = function() {
         date: new Date().toLocaleDateString('fr-FR')
     };
 
-    // SI ACHAT/REPRISE : ON LANCE LA RECETTE DE VENTE IMMEDIATEMENT
+    // LOGIQUE DE VENTE AUTOMATIQUE
     if ((type === "ACHAT" || type === "REPRISE") && vehicleModel && vehicleModel !== "Autre") {
-        const vIdx = window.savedDeals.findIndex(v => v.model === vehicleModel && v.status === "ACHETÉ");
+        const vIdx = (window.savedDeals || []).findIndex(v => v.model === vehicleModel && v.status === "ACHETÉ");
         
         if (vIdx !== -1) {
             const v = window.savedDeals[vIdx];
-
-            // 1. Demander les infos
             const p = prompt("Vente via CRM : Prix de vente final pour " + v.model + " :");
-            if (p === null || p === "") return; 
+            if (p !== null && p !== "") {
+                const d = prompt("Date de vente (AAAA-MM-JJ) :", new Date().toISOString().split('T')[0]);
+                v.soldPrice = parseFloat(p); 
+                v.date_out = d || new Date().toISOString();
+                v.status = "VENDU";
+                v.maintStep = "Vendu";
 
-            const d = prompt("Date de vente (AAAA-MM-JJ) :", new Date().toISOString().split('T')[0]);
-
-            // 2. Application de la logique Pilotage
-            v.soldPrice = parseFloat(p); 
-            v.date_out = d || new Date().toISOString();
-            v.status = "VENDU";
-            v.maintStep = "Vendu";
-
-            // 3. Sauvegarde et Rafraîchissement global
-            if (typeof saveAndRefresh === "function") {
-                saveAndRefresh();
-                if (typeof window.renderInventory === "function") window.renderInventory();
-            } else {
                 localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
+                data.status = "CONCLU";
+
                 if (typeof window.updatePilotage === "function") window.updatePilotage();
                 if (typeof window.renderMaintenance === "function") window.renderMaintenance();
             }
-            
-            // On force le statut client en CONCLU puisque la vente est faite
-            data.status = "CONCLU";
         }
-    } // <-- C'était ici : une seule accolade fermait tout, il en fallait deux.
+    }
 
-    // On enregistre le client
+    // Sauvegarde client
     window.savedCustomers.push(data);
     localStorage.setItem('ox_customers', JSON.stringify(window.savedCustomers));
     
     // Fermeture propre de la modal
     const modal = document.getElementById('customer-modal');
-    if(modal) modal.classList.remove('active'); 
+    if(modal) modal.remove(); 
     
     window.renderCustomers();
+};
 
+// --- RENDU ET SYNCHRONISATION ---
+window.renderCustomers = function() {
     const buyerList = document.getElementById('buyer-list');
     const sellerList = document.getElementById('seller-list');
-    if(!buyerList || !sellerList) return;
 
     let nego = 0, buyersCount = 0, sellersCount = 0;
     window.savedCustomers.forEach(c => {
@@ -1543,13 +1715,20 @@ window.saveCustomer = function() {
         if(c.type === "VENTE") sellersCount++;
     });
 
-    document.getElementById('crm-total').innerText = window.savedCustomers.length;
-    document.getElementById('crm-nego').innerText = nego;
-    document.getElementById('crm-buyers').innerText = buyersCount;
-    document.getElementById('crm-sellers').innerText = sellersCount;
+    // MISE À JOUR SYNCHRONISÉE PARTOUT (ID DOUBLONS)
+    const updateAll = (id, val) => {
+        document.querySelectorAll(`[id="${id}"]`).forEach(el => el.innerText = val);
+    };
+
+    updateAll('crm-total', window.savedCustomers.length);
+    updateAll('crm-nego', nego);
+    updateAll('crm-buyers', buyersCount);
+    updateAll('crm-sellers', sellersCount);
+
+    if(!buyerList || !sellerList) return;
 
     const buildCard = (c, i) => `
-        <div class="card" style="background:#1a1a1a; border-left: 4px solid ${c.type === 'VENTE' ? '#ef4444' : 'var(--success)'};">
+        <div class="card" style="background:#1a1a1a; border-left: 4px solid ${c.type === 'VENTE' ? '#ef4444' : 'var(--success)'}; margin-bottom:12px;">
             <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
                 <span style="font-size:0.65rem; background:#333; padding:2px 8px; border-radius:10px;">${c.date}</span>
                 <span style="font-size:0.7rem; color:${c.status === 'CHAUD' ? '#f59e0b' : (c.status === 'CONCLU' ? 'var(--success)' : '#aaa')}; font-weight:bold;">● ${c.status}</span>
