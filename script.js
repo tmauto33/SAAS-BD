@@ -1608,6 +1608,7 @@ window.delIntLog = async function(i, idx) { // Ajout de async
 // ==========================================================================
 // CORRECTIF À APPLIQUER DANS TON MODULE PILOTAGE (TABLEAU DE BORD)
 // ==========================================================================
+const vendus = (window.savedDeals || []).filter(v => v.status === "VENDU");
 window.updatePilotage = function() {
     const saved = JSON.parse(localStorage.getItem('ox_profile_settings')) || {};
     const welcome = document.getElementById('dash-welcome');
@@ -3593,3 +3594,4 @@ window.initApp = async function() {
 
 // On utilise l'écouteur d'événement moderne plutôt que window.onload
 window.addEventListener('load', window.initApp);
+
