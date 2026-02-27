@@ -2235,34 +2235,72 @@ window.updatePoliceTable = function() {
 // 3. AUTO-COMPLÉTION ET AJOUT MANUEL
 // ==========================================
 
-window.addManualPoliceEntry = function() {
-    const immat = prompt("Entrez l'immatriculation (Format AA-123-BB) :");
-    if(!immat) return;
+window.updatePoliceTable = function() {
+    const tableBody = document.getElementById('police-table-body');
+    if (!tableBody) return;
 
-    const existing = window.savedDeals.find(d => d.immat && d.immat.replace(/\s/g,'').toLowerCase() === immat.replace(/\s/g,'').toLowerCase());
+    const data = window.savedDeals || [];
     
-    const brand = existing ? existing.brand : prompt("Marque :", "");
-    const model = existing ? existing.model : prompt("Modèle :", "");
+    tableBody.innerHTML = data.map((v, index) => {
+        // 1. Sécurité pour la DATE D'ENTRÉE (Achat)
+        // On cherche dans toutes les clés possibles que ton système pourrait utiliser
+        const dateEntree = v.date_in || v.date_buy || v.purchase_date || v.date || 'Non renseignée';
 
-    const manualEntry = {
-        id: Date.now(),
-        brand: brand,
-        model: model,
-        immat: immat.toUpperCase(),
-        date_buy: new Date().toLocaleDateString('fr-FR'),
-        sellerName: prompt("Nom du Vendeur (Origine) :", existing ? (existing.sellerName || existing.provenance) : ""),
-        status: "STOCK",
-        purchase: existing ? existing.buyPrice : 0,
-        vin: existing ? existing.vin : "",
-        file_cg: existing ? existing.file_cg : null,
-        file_cession: existing ? existing.file_cession : null
-    };
+        // 2. Calculs financiers
+        const purchase = parseFloat(v.purchase) || 0;
+        const repairs = parseFloat(v.repairs) || 0;
+        const fees = parseFloat(v.fees) || 0;
+        const prk = purchase + repairs + fees;
+        const soldPrice = parseFloat(v.soldPrice) || 0;
 
-    window.savedDeals.push(manualEntry);
-    localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
-    window.updatePoliceTable();
+        // 3. Détection de l'origine
+        const isPro = (v.seller_name || "").toLowerCase().match(/garage|sarl|sas|auto|negoce/);
+        const origineType = isPro ? "🏢 PRO" : "👤 PART";
+
+        return `
+            <tr style="border-bottom: 1px solid #222; color: #eee;">
+                <td style="padding:12px;">${index + 1}</td>
+                
+                <td style="padding:12px; color: #34d399; font-weight: bold;">
+                    ${dateEntree}
+                </td>
+                
+                <td style="padding:12px;">
+                    <strong style="color:var(--accent); font-size:0.9rem; letter-spacing:1px;">
+                        ${v.plate || v.immat || 'NC'}
+                    </strong>
+                </td>
+                
+                <td style="padding:12px;">
+                    <div style="font-weight:bold; color:white;">${v.brand || ''} ${v.model || ''}</div>
+                    <div style="font-size:0.75rem; color:#aaa;">${v.km ? v.km.toLocaleString() : '0'} KM</div>
+                </td>
+                
+                <td style="padding:12px;">
+                    <div style="font-size:0.7rem; color:#888; margin-bottom:2px;">${origineType}</div>
+                    <div style="text-transform:uppercase; font-size:0.8rem;">${v.seller_name || 'NC'}</div>
+                </td>
+                
+                <td style="padding:12px;">
+                    <div style="font-weight:bold;">${purchase.toLocaleString()} €</div>
+                    <div style="font-size:0.7rem; color:var(--accent);">PRK: ${prk.toLocaleString()} €</div>
+                </td>
+                
+                <td style="padding:12px;">
+                    <div style="font-weight:bold; color:#fff;">${v.buyer_name || (v.status === 'VENDU' ? 'Inconnu' : 'EN STOCK')}</div>
+                    <div style="font-size:0.75rem; color:#666;">${v.date_out || '-'}</div>
+                </td>
+                
+                <td style="padding:12px;">
+                    <button onclick="window.generateInvoice('${v.id}')" 
+                            style="background:#2563eb; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:0.7rem; font-weight:bold;">
+                        📄 FACTURE
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
 };
-
 // ==========================================
 // 4. GESTION DES FICHIERS (BASE64)
 // ==========================================
@@ -2347,16 +2385,36 @@ window.generateInvoice = function(dealId) {
     const deal = window.savedDeals.find(d => d.id == dealId);
     if(!deal) return alert("Véhicule introuvable");
 
+    // --- RECHERCHE ET PRÉREMPLISSAGE DU CLIENT (Blindé) ---
+    // On cherche toutes les appellations possibles dans ton système
+    let clientName = deal.buyerName || deal.buyer_name || deal.acheteur || "M. / Mme Client";
+    let buyerAddress = deal.buyerAddress || deal.buyer_address || deal.adresse || "...";
+    let buyerPhone = deal.buyerPhone || deal.buyer_phone || deal.telephone || "";
+
+    // Si l'adresse n'est pas trouvée directement, on fouille le CRM
+    if ((buyerAddress === "..." || !buyerAddress) && clientName !== "M. / Mme Client" && window.savedCustomers) {
+        const customer = window.savedCustomers.find(c => 
+            c.name && clientName && c.name.toLowerCase().trim() === clientName.toLowerCase().trim()
+        );
+        if (customer) {
+            buyerPhone = customer.phone || customer.telephone || buyerPhone;
+            // On vérifie si l'adresse est dans les notes (format 📍) ou le champ adresse
+            if (customer.notes && customer.notes.includes('📍')) {
+                buyerAddress = customer.notes.split('📍')[1].trim();
+            } else {
+                buyerAddress = customer.address || customer.adresse || buyerAddress;
+            }
+        }
+    }
+
     const profile = window.getProfileData(); 
-    
-    // Récupération du logo depuis les réglages
     const savedSettings = JSON.parse(localStorage.getItem('ox_profile_settings')) || {};
     const logoUrl = savedSettings.logoUrl || "";
 
     const win = window.open('', '_blank');
     
     win.document.write(`
-        <html><head><title>Facture_${deal.model}</title>
+        <html><head><title>Facture_${deal.model || 'Vehicule'}</title>
         <style>
             body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; color: #1a1a1a; line-height: 1.6; position: relative; }
             .ox-badge { position: absolute; top: 10px; right: 40px; font-size: 0.7rem; color: #ccc; font-weight: bold; letter-spacing: 1px; }
@@ -2393,7 +2451,7 @@ window.generateInvoice = function(dealId) {
                     ${logoUrl ? `<div class="logo-area"><img src="${logoUrl}" alt="Logo"></div>` : ''}
                     <h1 style="margin:0; font-size:2.5rem; color:#000;">FACTURE</h1>
                     <p>Référence : <span contenteditable="true">INV-${deal.id}</span></p>
-                    <p>Date : <span contenteditable="true">${deal.saleDate || new Date().toLocaleDateString('fr-FR')}</span></p>
+                    <p>Date : <span contenteditable="true">${deal.saleDate || deal.date_out || new Date().toLocaleDateString('fr-FR')}</span></p>
                 </div>
                 <div style="text-align:right">
                     <div style="font-size: 1.2rem; font-weight: bold; color: #22c55e;">${profile.name}</div>
@@ -2415,8 +2473,9 @@ window.generateInvoice = function(dealId) {
                 <div class="client-box">
                     <strong style="color:#555; font-size:0.75rem; text-transform:uppercase;">Facturé à</strong><br>
                     <div contenteditable="true">
-                        <strong>${deal.buyerName || "M. / Mme Client"}</strong><br>
-                        Adresse : ...<br>
+                        <strong>${clientName}</strong><br>
+                        ${buyerPhone ? 'Tél : ' + buyerPhone + '<br>' : ''}
+                        Adresse : ${buyerAddress !== "..." ? buyerAddress : "À compléter..."}<br>
                         Détails : ${deal.notes || "Vente Véhicule Occasion"}
                     </div>
                 </div>
@@ -2433,12 +2492,12 @@ window.generateInvoice = function(dealId) {
                 <tbody id="invoice-body">
                     <tr>
                         <td contenteditable="true">
-                            <strong style="font-size:1.1rem;">${deal.brand} ${deal.model}</strong><br>
-                            Kilométrage : ${deal.km || 'NC'} km | VIN : ${deal.vin || 'Non renseigné'}
+                            <strong style="font-size:1.1rem;">${deal.brand || deal.marque || ''} ${deal.model || deal.modele || ''}</strong><br>
+                            Kilométrage : ${deal.km || 'NC'} km | Immatriculation : ${deal.immat || deal.plate || deal.immatriculation || 'Non renseignée'}
                         </td>
-                        <td contenteditable="true" style="font-weight:bold;">${deal.immat}</td>
+                        <td contenteditable="true" style="font-weight:bold;">${deal.immat || deal.plate || deal.immatriculation || 'A COMPLÉTER'}</td>
                         <td style="text-align: right;">
-                            <span contenteditable="true" class="price-val" onblur="updateTotal()">${deal.soldPrice || 0}</span> €
+                            <span contenteditable="true" class="price-val" onblur="updateTotal()">${deal.soldPrice || deal.prix_vente || 0}</span> €
                         </td>
                     </tr>
                 </tbody>
@@ -2446,7 +2505,7 @@ window.generateInvoice = function(dealId) {
 
             <div class="total-section">
                 <p style="margin:0; font-size: 0.9rem;">TOTAL À PAYER</p>
-                <div class="total-amount"><span id="total-val">${(deal.soldPrice || 0).toLocaleString('fr-FR')}</span> €</div>
+                <div class="total-amount"><span id="total-val">${(deal.soldPrice || deal.prix_vente || 0).toLocaleString('fr-FR')}</span> €</div>
             </div>
 
             <div class="cachet-area">
@@ -2478,7 +2537,6 @@ window.generateInvoice = function(dealId) {
     `);
     win.document.close();
 };
-
 // ==========================================
 // 6. MODIFICATION ET COMPTABILITÉ
 // ==========================================
