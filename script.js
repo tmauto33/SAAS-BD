@@ -6,17 +6,47 @@ const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 
 // Initialisation corrigée : on utilise 'supabase' directement
 const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+
+
 // ==========================================================================
 // 1. ÉTAT GLOBAL ET CONFIGURATION
 // ==========================================================================
-window.configExpertise = JSON.parse(localStorage.getItem('ox_config')) || {};
-window.savedDeals = JSON.parse(localStorage.getItem('ox_history')) || [];
-window.expenses = JSON.parse(localStorage.getItem('ox_expenses')) || [];
-window.contacts = JSON.parse(localStorage.getItem('ox_contacts')) || [];
-window.checks = {}; // État temporaire de la checklist en cours
+window.savedDeals = [];
+window.expenses = [];
+window.contacts = [];
+window.configExpertise = JSON.parse(localStorage.getItem('ox_config')) || {}; // Correction ici
+
+// Nouvelle fonction pour synchroniser avec Supabase sans bloquer l'interface
+async function syncFromSupabase() {
+    console.log("Synchronisation avec Supabase en cours...");
+    try {
+        // 1. Charger les véhicules (Deals)
+        const { data: deals, error: err1 } = await supabaseClient.from('deals').select('*');
+        if (!err1) window.savedDeals = deals || [];
+
+        // 2. Charger les dépenses (Expenses)
+        const { data: exp, error: err2 } = await supabaseClient.from('expenses').select('*');
+        if (!err2) window.expenses = exp || [];
+
+        // 3. Charger les contacts (CRM)
+        const { data: ctc, error: err3 } = await supabaseClient.from('customers').select('*');
+        if (!err3) window.contacts = ctc || [];
+
+        console.log("Synchronisation terminée !");
+        
+        // On rafraîchit l'affichage
+        if (typeof renderTable === "function") renderTable(); 
+        if (typeof updateStats === "function") updateStats();
+        if (typeof renderCRM === "function") renderCRM();
+    } catch (e) {
+        console.error("Erreur de connexion base de données :", e);
+    }
+}
+
+// Lancement au chargement sans bloquer le reste du script
+syncFromSupabase();
 
 const inspectionConfig = [
-
     { name: "Carte Grise", defVal: 0, defType: "price", cat: "Admin" },
     { name: "Contrôle Technique", defVal: 120, defType: "price", cat: "Admin" },
     { name: "Histovec", defVal: 15, defType: "points", cat: "Admin" },
@@ -139,37 +169,82 @@ window.switchTab = function(id, btn) {
 };
 
 // --- 1. DÉCLARATION PRIORITAIRE (EN HAUT DU FICHIER) ---
-window.saveProfile = function() {
-    console.log("Bouton cliqué");
-    
-    // On récupère les éléments
-    const getVal = (id) => document.getElementById(id)?.value || "";
-    
-    const data = {
-        companyName: getVal('biz-name'),
-        siret: getVal('biz-siret'),
-        tvaIntra: getVal('biz-tva'),
-        phone: getVal('biz-phone'),
-        web: getVal('biz-web'),
-        address: getVal('biz-address'),
-        footer: getVal('biz-footer'),
-        logo: document.getElementById('user-logo-preview')?.src || ""
-    };
+// --- DÉCLARATION DU PROFIL (CORRIGÉE POUR SUPABASE) ---
+window.saveProfile = async function() { // Ajout de async pour le Cloud
+    console.log("Bouton cliqué");
+    
+    // On récupère les éléments
+    const getVal = (id) => document.getElementById(id)?.value || "";
+    
+    const data = {
+        companyName: getVal('biz-name'),
+        siret: getVal('biz-siret'),
+        tvaIntra: getVal('biz-tva'),
+        phone: getVal('biz-phone'),
+        web: getVal('biz-web'),
+        address: getVal('biz-address'),
+        footer: getVal('biz-footer'),
+        logo: document.getElementById('user-logo-preview')?.src || ""
+    };
 
-    localStorage.setItem('ox_profile_settings', JSON.stringify(data));
-    
-    if (document.getElementById('display-biz-name')) {
-        document.getElementById('display-biz-name').innerText = data.companyName || "Mon Enseigne";
+    // SAUVEGARDE CLOUD (SUPABASE)
+    const { error } = await supabaseClient
+        .from('profile_settings')
+        .upsert([{
+            id: 1, // On force l'ID 1 pour n'avoir qu'un seul profil
+            garage_name: data.companyName,
+            siret: data.siret,
+            tva: data.tvaIntra,
+            phone: data.phone,
+            web: data.web,
+            address: data.address,
+            notes: data.footer,
+            logo_url: data.logo
+        }]);
+
+    if (error) {
+        console.error("Erreur de sauvegarde Cloud:", error.message);
     }
 
-    alert("✅ Profil enregistré !");
+    // ON GARDE TA LOGIQUE D'ORIGINE SANS LA MODIFIER
+    localStorage.setItem('ox_profile_settings', JSON.stringify(data));
+    
+    if (document.getElementById('display-biz-name')) {
+        document.getElementById('display-biz-name').innerText = data.companyName || "Mon Enseigne";
+    }
+
+    alert("✅ Profil enregistré !");
 };
 
 // --- 2. CHARGEMENT AU DÉMARRAGE ---
-window.addEventListener('DOMContentLoaded', () => {
-    const saved = JSON.parse(localStorage.getItem('ox_profile_settings'));
+window.addEventListener('DOMContentLoaded', async () => { // Ajout de async
+    // 1. Tenter de charger depuis Supabase d'abord
+    const { data: cloudSaved, error } = await supabaseClient
+        .from('profile_settings')
+        .select('*')
+        .eq('id', 1)
+        .single();
+
+    // 2. Utiliser les données Cloud, sinon le localStorage (ta logique d'origine)
+    let saved = null;
+    if (cloudSaved) {
+        // On convertit les noms de la base vers tes noms de variables
+        saved = {
+            companyName: cloudSaved.garage_name,
+            siret: cloudSaved.siret,
+            tvaIntra: cloudSaved.tva,
+            phone: cloudSaved.phone,
+            web: cloudSaved.web,
+            address: cloudSaved.address,
+            footer: cloudSaved.notes
+        };
+    } else {
+        saved = JSON.parse(localStorage.getItem('ox_profile_settings'));
+    }
+
     if (!saved) return;
 
+    // 3. TON CODE D'ORIGINE (Strictement identique)
     const ids = ['biz-name', 'biz-siret', 'biz-tva', 'biz-phone', 'biz-web', 'biz-address', 'biz-footer'];
     ids.forEach(id => {
         const el = document.getElementById(id);
@@ -179,6 +254,11 @@ window.addEventListener('DOMContentLoaded', () => {
             el.value = saved[key] || "";
         }
     });
+
+    // Mise à jour visuelle du nom si l'élément existe
+    if (document.getElementById('display-biz-name')) {
+        document.getElementById('display-biz-name').innerText = saved.companyName || "Mon Enseigne";
+    }
 });
 
 
@@ -214,8 +294,32 @@ window.updateInvoicesWithProfile = function(data) {
 };
 
 // Chargement automatique au démarrage de la page
-window.addEventListener('load', () => {
-    const saved = JSON.parse(localStorage.getItem('ox_profile_settings'));
+window.addEventListener('load', async () => { // Ajout de async
+    // 1. Récupération depuis Supabase (prioritaire)
+    const { data: cloudSaved, error } = await supabaseClient
+        .from('profile_settings')
+        .select('*')
+        .eq('id', 1)
+        .single();
+
+    // 2. Conversion des données Cloud ou secours sur localStorage (ta logique)
+    let saved = null;
+    if (cloudSaved) {
+        saved = {
+            companyName: cloudSaved.garage_name,
+            siret: cloudSaved.siret,
+            tvaIntra: cloudSaved.tva,
+            phone: cloudSaved.phone,
+            web: cloudSaved.web,
+            address: cloudSaved.address,
+            footer: cloudSaved.notes,
+            logo: cloudSaved.logo_url
+        };
+    } else {
+        saved = JSON.parse(localStorage.getItem('ox_profile_settings'));
+    }
+
+    // 3. TON CODE D'ORIGINE (Structure conservée)
     if (saved) {
         // Remplir le formulaire de réglages
         const fields = {
@@ -250,15 +354,8 @@ window.addEventListener('load', () => {
 // ==========================================================================
 // ==========================================================================
 // 1. CONFIGURATION & DONNÉES
-// ==========================================================================
-window.savedDeals = JSON.parse(localStorage.getItem('ox_history')) || [];
+// =========================================================================
 
-// Utilitaire pour transformer n'importe quoi en nombre (enlève "€", les espaces, etc.)
-const toNum = (val) => {
-    if (!val) return 0;
-    const n = parseFloat(String(val).replace(/[^0-9.-]+/g, ""));
-    return isNaN(n) ? 0 : n;
-};
 
 // ==========================================================================
 // 2. LE DASHBOARD (TON CODE OPTIMISÉ)
@@ -384,57 +481,64 @@ window.triggerSaleProcess = function() {
 // 3. ACTIONS (AJOUT, VENTE, RESET)
 // ==========================================================================
 
-window.addVehicleToStock = function() {
-    // 1. Récupération des valeurs du formulaire
-    const brand = document.getElementById('in-brand')?.value || "";
-    const model = document.getElementById('in-model')?.value || "";
-    const price = document.getElementById('in-price')?.value || 0;
-    
-    // Récupération des infos vendeur (Section Analyse)
-    const sName = document.getElementById('v-name')?.value || "Non renseigné";
-    const sPhone = document.getElementById('v-phone')?.value || "Non renseigné";
-    const sProfile = document.getElementById('v-profile')?.value || "NC";
+window.addVehicleToStock = async function() { // Ajout de async pour Supabase
+    // 1. Récupération des valeurs du formulaire
+    const brand = document.getElementById('in-brand')?.value || "";
+    const model = document.getElementById('in-model')?.value || "";
+    const price = document.getElementById('in-price')?.value || 0;
+    
+    // Récupération des infos vendeur (Section Analyse)
+    const sName = document.getElementById('v-name')?.value || "Non renseigné";
+    const sPhone = document.getElementById('v-phone')?.value || "Non renseigné";
+    const sProfile = document.getElementById('v-profile')?.value || "NC";
 
-    // 2. Saisie forcée via prompts
-    const plate = prompt("Immatriculation (ex: BY-243-AC) :", "");
-    const kmValue = prompt("Kilométrage (ex: 125000) :", "0");
+    // 2. Saisie forcée via prompts
+    const plate = prompt("Immatriculation (ex: BY-243-AC) :", "");
+    const kmValue = prompt("Kilométrage (ex: 125000) :", "0");
 
-    // 3. Création de l'objet véhicule
-    const newVehicle = {
-        id: "ID-" + Date.now(),
-        brand: brand,
-        model: model,
-        plate: plate || "N/C",
-        km: kmValue || "0",
-        seller_name: sName,
-        seller_phone: sPhone,
-        source: sProfile,
-        purchase: parseFloat(price) || 0,
-        repairs: 0, 
-        fees: 0,
-        status: "ACHETÉ",
-        date: new Date().toLocaleDateString('fr-FR')
-    };
+    // 3. Création de l'objet véhicule
+    const newVehicle = {
+        // Suppression du ID manuel car Supabase le génère tout seul (uuid)
+        brand: brand,
+        model: model,
+        immat: plate || "N/C", // "immat" correspond au nom de ta colonne SQL
+        km: kmValue || "0",
+        price_buy: parseFloat(price) || 0, // "price_buy" correspond au SQL
+        status: "En Stock",
+        notes: "Vendeur: " + sName + " (" + sPhone + ")"
+    };
 
-    // --- L'ÉTAPE QUI MANQUAIT : L'AJOUT DANS LA LISTE ---
-    // On s'assure que window.savedDeals existe
-    if (!window.savedDeals) {
-        window.savedDeals = JSON.parse(localStorage.getItem('ox_history')) || [];
-    }
+    // --- ENVOI VERS SUPABASE ---
+    const { data, error } = await supabaseClient
+        .from('expertise_history')
+        .insert([newVehicle])
+        .select();
 
-    // On ajoute le nouveau véhicule dans le tableau
-    window.savedDeals.push(newVehicle);
-
-    // 4. Sauvegarde et Rafraîchissement
-    localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
-
-    alert("Véhicule enregistré avec succès !");
-
-    // 5. Mise à jour de l'affichage sans tout casser
-    if (typeof window.renderInventory === "function") {
-        window.renderInventory();
+    if (error) {
+        console.error("Erreur de sauvegarde Cloud:", error.message);
+        alert("Erreur lors de l'enregistrement sur le serveur.");
     } else {
-        location.reload(); // Si la fonction de rendu n'est pas dispo, on recharge
+        // --- TA LOGIQUE DE MISE À JOUR LOCALE ---
+        if (!window.savedDeals) {
+            window.savedDeals = [];
+        }
+
+        // On ajoute le véhicule retourné par Supabase (avec son vrai ID)
+        if (data && data[0]) {
+            window.savedDeals.push(data[0]);
+        }
+
+        // 4. Sauvegarde (on garde le localStorage en secours) et Rafraîchissement
+        localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
+
+        alert("✅ Véhicule enregistré avec succès dans le Cloud !");
+
+        // 5. Mise à jour de l'affichage
+        if (typeof window.renderInventory === "function") {
+            window.renderInventory();
+        } else {
+            location.reload();
+        }
     }
 };
 window.triggerSaleProcess = function() {
@@ -458,18 +562,58 @@ window.triggerSaleProcess = function() {
     }
 };
 
-window.resetAllData = function() {
-    if (confirm("Supprimer TOUTES les données ?")) {
+window.resetAllData = async function() { // Ajout de async pour pouvoir attendre Supabase
+    if (confirm("Supprimer TOUTES les données ? (Cette action videra aussi le Cloud)")) {
+        
+        // 1. SUPPRESSION SUR SUPABASE
+        // On demande à Supabase de supprimer toutes les lignes de la table expertise_history
+        const { error } = await supabaseClient
+            .from('expertise_history')
+            .delete()
+            .neq('id', '00000000-0000-0000-0000-000000000000'); // Astuce pour tout supprimer
+
+        if (error) {
+            console.error("Erreur lors du reset Cloud:", error.message);
+            alert("Erreur lors de la suppression sur le serveur.");
+            return;
+        }
+
+        // 2. TA LOGIQUE D'ORIGINE (Mise à jour locale)
         window.savedDeals = [];
         localStorage.removeItem('ox_history');
-        window.updateDashboard();
+        
+        // Optionnel : On vide aussi les autres données si nécessaire
+        // localStorage.removeItem('ox_expenses');
+        // window.expenses = [];
+
+        if (typeof window.updateDashboard === "function") {
+            window.updateDashboard();
+        }
+        
+        if (typeof window.renderInventory === "function") {
+            window.renderInventory();
+        }
+
+        alert("✅ Toutes les données ont été supprimées avec succès.");
     }
 };
 
-function saveAndRefresh() {
-    localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
-    window.updateDashboard();
-}
+window.saveAndRefresh = function() {
+    // 1. Sauvegarde locale (Sécurité en cas de coupure internet)
+    localStorage.setItem('ox_history', JSON.stringify(window.savedDeals || []));
+
+    // 2. Mise à jour visuelle (Ta logique d'origine)
+    if (typeof window.updateDashboard === "function") {
+        window.updateDashboard();
+    }
+    
+    // 3. Rafraîchissement du tableau si la fonction existe
+    if (typeof window.renderInventory === "function") {
+        window.renderInventory();
+    }
+
+    console.log("Interface synchronisée.");
+};
 
 // Lancement
 document.addEventListener('DOMContentLoaded', () => window.updateDashboard());
@@ -480,68 +624,79 @@ document.addEventListener('DOMContentLoaded', () => window.updateDashboard());
 // ==========================================================================
 // SAUVEGARDE DEPUIS L'ANALYSE (VERSION ROBUSTE - FIX NC)
 // ==========================================================================
-window.saveAnalysisFolder = function() {
-    console.log("🚀 Tentative de sauvegarde...");
+window.saveAnalysisFolder = async function() { // Ajout de async
+    console.log("🚀 Tentative de sauvegarde...");
 
-    // 1. Récupération des éléments
-    const statusSelect = document.querySelector('.contact-card select') || document.getElementById('in-analysis-status');
-    const allInputs = document.querySelectorAll('input');
-    
-    // On nettoie la valeur pour enlever les émojis potentiels qui bloquent le test
-    const currentStatus = statusSelect?.value.toUpperCase() || "";
+    // 1. Récupération des éléments
+    const statusSelect = document.querySelector('.contact-card select') || document.getElementById('in-analysis-status');
+    const allInputs = document.querySelectorAll('input');
+    
+    // On nettoie la valeur pour enlever les émojis potentiels qui bloquent le test
+    const currentStatus = statusSelect?.value.toUpperCase() || "";
 
-    // 2. Création de l'objet de base (On garde tes allInputs[0] et [1])
-    let deal = {
-        id: "ID-" + Date.now(),
-        model: allInputs[1]?.value || "Modèle inconnu",
-        plate: allInputs[0]?.value || "N/A",
+    // 2. Création de l'objet de base (On garde tes allInputs[0] et [1])
+    let deal = {
+        // L'ID sera géré par Supabase (UUID)
+        model: allInputs[1]?.value || "Modèle inconnu",
+        immat: allInputs[0]?.value || "N/A", // 'immat' pour matcher ta colonne SQL
+        
+        // --- AJOUT UNIQUEMENT DE CES LIGNES POUR FIXER LE "NC" ---
+        seller_name: document.getElementById('vendeur-nom')?.value || "NC",
+        seller_phone: document.getElementById('vendeur-tel')?.value || "NC",
+        source: document.getElementById('source-annonce')?.value || "NC",
+        // -------------------------------------------------------
+
+        price_buy: 0, // 'price_buy' pour matcher le SQL
+        km: "0", 
+        status: currentStatus,
+        created_at: new Date().toISOString() // Format date SQL
+    };
+
+    // 3. LOGIQUE DE TRI : On vérifie si le mot "ACHETÉ" est présent
+    if (currentStatus.includes("ACHETÉ") || currentStatus.includes("ACHETE")) {
+        // Demande du prix
+        const p = prompt(`💰 Prix d'achat final pour ${deal.model} ?`, "0");
+        if (p === null) return; // Annulation
+
+        // Demande du kilométrage
+        const k = prompt(`🛣️ Kilométrage réel pour ${deal.model} ?`, "0");
+        if (k === null) return; // Annulation
+
+        deal.price_buy = parseFloat(p.replace(/\s/g, '')) || 0;
+        deal.km = k; 
+        deal.status = "ACHETÉ"; 
+        
+        alert("✅ Véhicule ajouté au stock !");
+    } 
+    // Sinon, si c'est un refus ou une attente
+    else {
+        const reason = prompt("📝 Raison du refus/attente :");
+        if (reason === null) return; 
+        
+        deal.notes = reason || "N/C"; // 'notes' pour stocker la raison en SQL
+        alert(`📁 Dossier classé : ${currentStatus}`);
+    }
+
+    // --- SAUVEGARDE CLOUD (SUPABASE) ---
+    const { data, error } = await supabaseClient
+        .from('expertise_history')
+        .insert([deal])
+        .select();
+
+    if (error) {
+        console.error("Erreur Cloud:", error.message);
+    } else {
+        // 4. Sauvegarde physique et mise à jour locale
+        if (data && data[0]) {
+            window.savedDeals.unshift(data[0]);
+        }
         
-        // --- AJOUT UNIQUEMENT DE CES LIGNES POUR FIXER LE "NC" ---
-        seller_name: document.getElementById('vendeur-nom')?.value || "NC",
-        seller_phone: document.getElementById('vendeur-tel')?.value || "NC",
-        source: document.getElementById('source-annonce')?.value || "NC",
-        // -------------------------------------------------------
-
-        purchase: 0,
-        km: "0", 
-        status: currentStatus,
-        date: new Date().toLocaleDateString('fr-FR')
-    };
-
-    // 3. LOGIQUE DE TRI : On vérifie si le mot "ACHETÉ" est présent
-    if (currentStatus.includes("ACHETÉ") || currentStatus.includes("ACHETE")) {
-        // Demande du prix
-        const p = prompt(`💰 Prix d'achat final pour ${deal.model} ?`, "0");
-        if (p === null) return; // Annulation
-
-        // Demande du kilométrage
-        const k = prompt(`🛣️ Kilométrage réel pour ${deal.model} ?`, "0");
-        if (k === null) return; // Annulation
-
-        deal.purchase = parseFloat(p.replace(/\s/g, '')) || 0;
-        deal.km = k; 
-        deal.status = "ACHETÉ"; 
+        localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
         
-        window.savedDeals.unshift(deal);
-        alert("✅ Véhicule ajouté au stock !");
-    } 
-    // Sinon, si c'est un refus ou une attente
-    else {
-        const reason = prompt("📝 Raison du refus/attente :");
-        if (reason === null) return; 
-        
-        deal.reason = reason || "N/C";
-        window.savedDeals.unshift(deal);
-        alert(`📁 Dossier classé : ${currentStatus}`);
+        if (typeof window.renderInventory === "function") window.renderInventory();
+        if (typeof window.updateDashboard === "function") window.updateDashboard();
     }
-
-    // 4. Sauvegarde physique
-    localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
-    
-    if (typeof window.renderInventory === "function") window.renderInventory();
-    if (typeof window.updateDashboard === "function") window.updateDashboard();
 };
-
 // ==========================================================================
 // 1. GESTION DE L'EXPERTISE & CLICS
 // ==========================================================================
@@ -867,7 +1022,7 @@ document.getElementById('ad-template').addEventListener('input', window.generate
 // ==========================================================================
 // 5. MODULE STOCK & INVENTAIRE
 // ==========================================================================
-window.saveCurrentDeal = function() {
+window.saveCurrentDeal = async function() { // Ajout de async
     const model = document.getElementById('model-name')?.value;
     if (!model) return alert("Modèle requis !");
 
@@ -886,9 +1041,9 @@ window.saveCurrentDeal = function() {
         km: typeof kmValue !== 'undefined' ? kmValue : 0, 
         
         // --- LES CORRECTIONS SONT ICI ---
-        seller_name: getVal('vendeur-nom', 'NC'),     // Vérifie bien que l'id est 'vendeur-nom'
-        seller_phone: getVal('vendeur-tel', 'NC'),    // Vérifie bien que l'id est 'vendeur-tel'
-        source: getVal('source-annonce', 'NC'),       // Vérifie bien que l'id est 'source-annonce'
+        seller_name: getVal('vendeur-nom', 'NC'),     
+        seller_phone: getVal('vendeur-tel', 'NC'),    
+        source: getVal('source-annonce', 'NC'),       
         // --------------------------------
         
         purchase: purchase,
@@ -903,6 +1058,9 @@ window.saveCurrentDeal = function() {
         checks: {...window.checks}
     };
 
+    // SEUL AJOUT : Envoi vers Supabase
+    await supabaseClient.from('expertise_history').insert([deal]);
+
     window.savedDeals.unshift(deal);
     localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
     alert("✅ Véhicule ajouté au stock !");
@@ -910,6 +1068,7 @@ window.saveCurrentDeal = function() {
     if(window.updatePilotage) window.updatePilotage();
     window.renderInventory(); 
 };
+
 
 // ==========================================
 // 3. INVENTAIRE AMÉLIORÉ & OPTIMISÉ
@@ -956,8 +1115,18 @@ window.renderInventory = function() {
 };
 
 
-window.deleteVehicle = function(index) {
+window.deleteVehicle = async function(index) { // Ajout de async
     if (confirm("Supprimer ce véhicule définitivement ?")) {
+        // --- AJOUT CLOUD ---
+        const dealToDelete = window.savedDeals[index];
+        if (dealToDelete && dealToDelete.id) {
+            await supabaseClient
+                .from('expertise_history')
+                .delete()
+                .eq('id', dealToDelete.id);
+        }
+        // -------------------
+
         window.savedDeals.splice(index, 1);
         localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
         
@@ -1046,7 +1215,7 @@ window.showVehicleDetails = function(index) {
     document.body.insertAdjacentHTML('beforeend', detailHtml);
 };
 
-window.quickUpdateContact = function(index) {
+window.quickUpdateContact = async function(index) { // Ajout de async
     const nameVal = document.getElementById(`edit-name-${index}`).value;
     const phoneVal = document.getElementById(`edit-phone-${index}`).value;
     const addressVal = document.getElementById(`edit-address-${index}`).value;
@@ -1093,6 +1262,19 @@ window.quickUpdateContact = function(index) {
         window.savedCustomers.push(customerData);
     }
 
+    // --- MISE À JOUR SUPABASE (SEUL AJOUT) ---
+    if (vehicle.id) {
+        await supabaseClient
+            .from('expertise_history')
+            .update({
+                seller_name: nameVal,
+                seller_phone: phoneVal,
+                notes: `Raison: ${reasonVal} | Payé par: ${payVal} | Adresse: ${addressVal}`
+            })
+            .eq('id', vehicle.id);
+    }
+    // -----------------------------------------
+
     // 3. SAUVEGARDE GLOBALE
     localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
     localStorage.setItem('ox_customers', JSON.stringify(window.savedCustomers));
@@ -1127,11 +1309,22 @@ window.updateVehiclePhoto = function(event, index) {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = async function(e) { // Ajout de async ici
         const base64Image = e.target.result;
         
         // Sauvegarde de l'image dans la base de données locale
         window.savedDeals[index].photoUrl = base64Image;
+        
+        // --- MISE À JOUR SUPABASE (SEUL AJOUT) ---
+        const vehicle = window.savedDeals[index];
+        if (vehicle && vehicle.id) {
+            await supabaseClient
+                .from('expertise_history')
+                .update({ photo_url: base64Image })
+                .eq('id', vehicle.id);
+        }
+        // -----------------------------------------
+
         localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
         
         // Mise à jour visuelle immédiate du modal et de la grille derrière
@@ -1176,7 +1369,7 @@ window.archiveSold = function(index) {
     document.body.insertAdjacentHTML('beforeend', saleHtml);
 };
 
-window.confirmFinalSale = function(index) {
+window.confirmFinalSale = async function(index) { // Ajout de async
     const v = window.savedDeals[index];
     const bName = document.getElementById('buyer-name').value;
     const bPhone = document.getElementById('buyer-phone').value;
@@ -1194,11 +1387,26 @@ window.confirmFinalSale = function(index) {
     const fullVehicleName = `${vMarque} ${vModele}`.trim();
 
     // 1. Application de la Recette Dashboard
+    const toNum = (val) => parseFloat(val) || 0; // Petite helper si non définie ailleurs
     v.soldPrice = toNum(sPrice);
     v.date_out = sDate || new Date().toISOString();
     v.status = "VENDU";
     v.maintStep = "Vendu";
     v.buyer_name = bName;
+
+    // --- MISE À JOUR SUPABASE (SEUL AJOUT) ---
+    if (v.id) {
+        await supabaseClient
+            .from('expertise_history')
+            .update({
+                status: "VENDU",
+                price_sale: toNum(sPrice),
+                date_sale: sDate || new Date().toISOString(),
+                buyer_name: bName
+            })
+            .eq('id', v.id);
+    }
+    // -----------------------------------------
 
     // 2. Enregistrement dans le CRM (Acheteur)
     const buyerContact = {
@@ -1316,20 +1524,17 @@ window.renderMaintenance = function() {
 
     // --- LA PARTIE QUI CORRIGE TON PROBLÈME DE DOUBLONS ---
     const updateAllInstances = (id, val) => {
-        // querySelectorAll trouve TOUS les éléments avec cet ID, même s'ils sont en double
         const elements = document.querySelectorAll(`[id="${id}"]`);
         elements.forEach(el => {
             el.innerText = val;
         });
     };
 
-    // On met à jour toutes les cartes, peu importe l'onglet
     updateAllInstances('maint-count-prep', prepCount);
     updateAllInstances('maint-count-external', externalCount);
     updateAllInstances('maint-count-ready', readyCount);
     updateAllInstances('maint-total-invested', totalInvested.toLocaleString() + " €");
     
-    // On force aussi les IDs du dashboard si ils sont différents
     updateAllInstances('log-prep', prepCount);
     updateAllInstances('log-prov', externalCount);
     updateAllInstances('log-ready', readyCount);
@@ -1339,16 +1544,7 @@ window.renderMaintenance = function() {
 // ACTIONS (FONCTIONS APPELÉES PAR LES BOUTONS)
 // ==========================================================================
 
-window.updateMaintStep = function(i, step) {
-    let data = JSON.parse(localStorage.getItem('ox_history')) || [];
-    if (!data[i]) return;
-    
-    data[i].maintStep = step;
-    localStorage.setItem('ox_history', JSON.stringify(data));
-    window.renderMaintenance(); // Rafraîchissement global immédiat
-};
-
-window.addIntLog = function(i) {
+window.addIntLog = async function(i) { // Ajout de async
     const labelInput = document.getElementById(`t-${i}`);
     const priceInput = document.getElementById(`p-${i}`);
     
@@ -1366,18 +1562,44 @@ window.addIntLog = function(i) {
     // Mise à jour pour les autres modules (Trésorerie/Pilotage)
     data[i].repairs = data[i].interventions.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0);
 
+    // --- MISE À JOUR SUPABASE (SEUL AJOUT) ---
+    if (data[i].id) {
+        await supabaseClient
+            .from('expertise_history')
+            .update({ 
+                interventions: data[i].interventions,
+                repairs: data[i].repairs 
+            })
+            .eq('id', data[i].id);
+    }
+    // -----------------------------------------
+
     localStorage.setItem('ox_history', JSON.stringify(data));
+    window.savedDeals = data; // Synchronisation variable globale
     window.renderMaintenance(); // Rafraîchissement global immédiat
 };
 
-window.delIntLog = function(i, idx) {
+window.delIntLog = async function(i, idx) { // Ajout de async
     let data = JSON.parse(localStorage.getItem('ox_history')) || [];
     if (!data[i] || !data[i].interventions) return;
 
     data[i].interventions.splice(idx, 1);
     data[i].repairs = data[i].interventions.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0);
     
+    // --- MISE À JOUR SUPABASE (SEUL AJOUT) ---
+    if (data[i].id) {
+        await supabaseClient
+            .from('expertise_history')
+            .update({ 
+                interventions: data[i].interventions,
+                repairs: data[i].repairs 
+            })
+            .eq('id', data[i].id);
+    }
+    // -----------------------------------------
+
     localStorage.setItem('ox_history', JSON.stringify(data));
+    window.savedDeals = data; // Synchronisation variable globale
     window.renderMaintenance(); // Rafraîchit tout (cartes + compteurs)
 };
 // ==========================================
@@ -1465,15 +1687,36 @@ window.renderConfigEditor = function() {
         </div>`;
     }).join('');
 };
-
-window.updateConfigVal = function(name, val) {
+window.updateConfigVal = async function(name, val) { // Ajout de async
     window.configExpertise[name].val = parseFloat(val) || 0;
     localStorage.setItem('ox_config', JSON.stringify(window.configExpertise));
-};
 
-window.updateConfigType = function(name, type) {
+    // --- MISE À JOUR SUPABASE (AJOUT SYNCHRO) ---
+    // On sauvegarde l'objet de configuration complet dans une table dédiée
+    if (window.supabaseClient) {
+        await supabaseClient
+            .from('app_settings')
+            .upsert({ 
+                id: 'global_config', // Clé unique pour tes réglages
+                settings_data: window.configExpertise 
+            });
+    }
+    // --------------------------------------------
+};
+window.updateConfigType = async function(name, type) { // Ajout de async
     window.configExpertise[name].type = type;
     localStorage.setItem('ox_config', JSON.stringify(window.configExpertise));
+
+    // --- MISE À JOUR SUPABASE (AJOUT SYNCHRO) ---
+    if (window.supabaseClient) {
+        await supabaseClient
+            .from('app_settings')
+            .upsert({ 
+                id: 'global_config', 
+                settings_data: window.configExpertise 
+            });
+    }
+    // --------------------------------------------
 };
 
 // ==========================================================================
@@ -1562,7 +1805,25 @@ window.updateNegoLogic = function() {
 // ==========================================================================
 
 // Initialisation des clients
+// 1. On garde l'initialisation locale par défaut
 window.savedCustomers = JSON.parse(localStorage.getItem('ox_customers')) || [];
+
+// 2. AJOUT : Fonction de synchronisation Cloud au démarrage
+window.loadCustomersFromCloud = async function() {
+    if (!window.supabaseClient) return;
+
+    const { data, error } = await supabaseClient
+        .from('customers') // Nom de ta table clients
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (!error && data) {
+        window.savedCustomers = data;
+        localStorage.setItem('ox_customers', JSON.stringify(data));
+        // Si tu as une fonction de rendu pour la liste clients :
+        if (window.renderCustomerList) window.renderCustomerList();
+    }
+};
 
 // --- OUVERTURE MODAL AVEC LIAISON STOCK ---
 window.openCustomerModal = function() {
@@ -1650,7 +1911,7 @@ window.handleTypeChange = function(type) {
 };
 
 // --- SAUVEGARDE AVEC AUTOMATISATION STRICTE ---
-window.saveCustomer = function() {
+window.saveCustomer = async function() { // Ajout de async
     const type = document.getElementById('cust-type').value;
     const vehicleModel = document.getElementById('cust-vehicle').value;
     const name = document.getElementById('cust-name').value;
@@ -1683,6 +1944,19 @@ window.saveCustomer = function() {
                 v.status = "VENDU";
                 v.maintStep = "Vendu";
 
+                // --- MISE À JOUR SUPABASE (VÉHICULE) ---
+                if (v.id) {
+                    await supabaseClient
+                        .from('expertise_history')
+                        .update({ 
+                            soldPrice: v.soldPrice, 
+                            date_out: v.date_out, 
+                            status: v.status, 
+                            maintStep: v.maintStep 
+                        })
+                        .eq('id', v.id);
+                }
+
                 localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
                 data.status = "CONCLU";
 
@@ -1692,7 +1966,12 @@ window.saveCustomer = function() {
         }
     }
 
-    // Sauvegarde client
+    // --- SAUVEGARDE SUPABASE (CLIENT) ---
+    if (window.supabaseClient) {
+        await supabaseClient.from('customers').insert([data]);
+    }
+
+    // Sauvegarde client locale
     window.savedCustomers.push(data);
     localStorage.setItem('ox_customers', JSON.stringify(window.savedCustomers));
     
@@ -1759,8 +2038,19 @@ window.renderCustomers = function() {
     sellerList.innerHTML = sellersHTML.length ? sellersHTML.map(item => buildCard(item.c, item.i)).join('') : '<p style="opacity:0.3; font-size:0.8rem;">Aucun vendeur</p>';
 };
 
-window.deleteCustomer = function(i) {
+window.deleteCustomer = async function(i) { // Ajout de async
     if(confirm("Supprimer ce contact ?")) {
+        const customerToDelete = window.savedCustomers[i];
+
+        // --- SUPPRESSION SUPABASE ---
+        if (window.supabaseClient && customerToDelete.id) {
+            await supabaseClient
+                .from('customers')
+                .delete()
+                .eq('id', customerToDelete.id);
+        }
+        // ----------------------------
+
         window.savedCustomers.splice(i, 1);
         localStorage.setItem('ox_customers', JSON.stringify(window.savedCustomers));
         window.renderCustomers();
@@ -1769,7 +2059,27 @@ window.deleteCustomer = function(i) {
 // ==========================================================================
 // TRESORIE
 // ==========================================================================
+// 1. Initialisation locale (vitesse d'affichage)
 window.savedExpenses = JSON.parse(localStorage.getItem('ox_expenses')) || [];
+
+// 2. AJOUT : Fonction de synchronisation Cloud
+window.loadExpensesFromCloud = async function() {
+    if (!window.supabaseClient) return;
+
+    const { data, error } = await supabaseClient
+        .from('expenses') // Ta table des dépenses fixes
+        .select('*')
+        .order('date', { ascending: false });
+
+    if (!error && data) {
+        window.savedExpenses = data;
+        localStorage.setItem('ox_expenses', JSON.stringify(data));
+        
+        // Rafraîchir l'interface si nécessaire
+        if (window.renderExpenses) window.renderExpenses();
+        if (window.updatePilotage) window.updatePilotage();
+    }
+};
 
 // --- FONCTION UTILITAIRE POUR NETTOYER LES CHIFFRES ---
 // Transforme "17 000", "17.000" ou "17,000" en le nombre 17000
@@ -1905,7 +2215,7 @@ window.updateFinance = function() {
 
 // --- ACTIONS ---
 
-window.addExpense = function() {
+window.addExpense = async function() { // Ajout de async
     const nameInput = document.getElementById('expense-name');
     const amountInput = document.getElementById('expense-amount');
     const catInput = document.getElementById('expense-cat');
@@ -1920,6 +2230,14 @@ window.addExpense = function() {
         date: new Date().toLocaleDateString('fr-FR')
     };
 
+    // --- MISE À JOUR SUPABASE ---
+    if (window.supabaseClient) {
+        await supabaseClient
+            .from('expenses')
+            .insert([newExpense]);
+    }
+    // ----------------------------
+
     window.savedExpenses.push(newExpense);
     localStorage.setItem('ox_expenses', JSON.stringify(window.savedExpenses));
     
@@ -1929,8 +2247,19 @@ window.addExpense = function() {
     window.updateFinance();
 };
 
-window.deleteExpense = function(idx) {
+window.deleteExpense = async function(idx) { // Ajout de async
     if (confirm("Supprimer cette charge ?")) {
+        const expenseToDelete = window.savedExpenses[idx];
+
+        // --- MISE À JOUR SUPABASE ---
+        if (window.supabaseClient && expenseToDelete.id) {
+            await supabaseClient
+                .from('expenses')
+                .delete()
+                .eq('id', expenseToDelete.id);
+        }
+        // ----------------------------
+
         window.savedExpenses.splice(idx, 1);
         localStorage.setItem('ox_expenses', JSON.stringify(window.savedExpenses));
         window.updateFinance();
@@ -2332,23 +2661,44 @@ window.manageFiles = function(dealId) {
     document.body.insertAdjacentHTML('beforeend', modalHTML);
 };
 
-window.saveFile = function(dealId, type) {
+window.saveFile = async function(dealId, type) { // Ajout de async
     const input = document.getElementById(type === 'cg' ? 'file-cg' : 'file-cession');
     const file = input.files[0];
     if(!file) return;
 
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const index = window.savedDeals.findIndex(d => d.id == dealId);
-        if(index !== -1) {
-            window.savedDeals[index]['file_' + type] = e.target.result;
-            localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
-            alert("Document " + (type === 'cg' ? 'Carte Grise' : 'Cession') + " mis à jour !");
-            document.getElementById('file-modal').remove();
-            window.updatePoliceTable();
-        }
-    };
-    reader.readAsDataURL(file);
+    // --- ENVOI VERS SUPABASE STORAGE ---
+    const fileExt = file.name.split('.').pop();
+    const filePath = `${dealId}_${type}_${Date.now()}.${fileExt}`;
+
+    if (window.supabaseClient) {
+        // 1. Upload du fichier dans le bucket 'ox_documents'
+        const { error: uploadError } = await supabaseClient
+            .storage
+            .from('ox_documents')
+            .upload(filePath, file);
+
+        if (uploadError) return alert("Erreur upload : " + uploadError.message);
+
+        // 2. Mise à jour de la base de données
+        const updateData = {};
+        updateData['file_' + type] = filePath;
+
+        await supabaseClient
+            .from('expertise_history')
+            .update(updateData)
+            .eq('id', dealId);
+    }
+    // -----------------------------------
+
+    // Mise à jour locale (on stocke le chemin du fichier, plus l'image entière)
+    const index = window.savedDeals.findIndex(d => d.id == dealId);
+    if(index !== -1) {
+        window.savedDeals[index]['file_' + type] = filePath;
+        localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
+        alert("Document " + (type === 'cg' ? 'Carte Grise' : 'Cession') + " synchronisé !");
+        document.getElementById('file-modal').remove();
+        window.updatePoliceTable();
+    }
 };
 
 // ==========================================
@@ -2541,7 +2891,7 @@ window.generateInvoice = function(dealId) {
 // 6. MODIFICATION ET COMPTABILITÉ
 // ==========================================
 
-window.editPoliceEntry = function(dealId) {
+window.editPoliceEntry = async function(dealId) { // Ajout de async
     const index = window.savedDeals.findIndex(d => d.id == dealId);
     if (index === -1) return;
     const deal = window.savedDeals[index];
@@ -2552,16 +2902,26 @@ window.editPoliceEntry = function(dealId) {
     const nPrice = prompt("Prix de vente final (€) :", deal.soldPrice);
     const nClient = prompt("Nom du client :", deal.buyerName);
 
-    if (nBrand !== null) window.savedDeals[index].brand = nBrand;
-    if (nModel !== null) window.savedDeals[index].model = nModel;
-    if (nImmat !== null) window.savedDeals[index].immat = nImmat.toUpperCase();
-    if (nPrice !== null) window.savedDeals[index].soldPrice = parseFloat(nPrice);
-    if (nClient !== null) window.savedDeals[index].buyerName = nClient;
+    // Préparation des changements pour le Cloud
+    const updates = {};
+    if (nBrand !== null) { deal.brand = nBrand; updates.brand = nBrand; }
+    if (nModel !== null) { deal.model = nModel; updates.model = nModel; }
+    if (nImmat !== null) { deal.immat = nImmat.toUpperCase(); updates.immat = deal.immat; }
+    if (nPrice !== null) { deal.soldPrice = parseFloat(nPrice); updates.soldPrice = deal.soldPrice; }
+    if (nClient !== null) { deal.buyerName = nClient; updates.buyerName = nClient; }
+
+    // --- MISE À JOUR SUPABASE ---
+    if (window.supabaseClient && Object.keys(updates).length > 0) {
+        await supabaseClient
+            .from('expertise_history')
+            .update(updates)
+            .eq('id', dealId);
+    }
+    // ----------------------------
 
     localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
     window.updatePoliceTable();
 };
-
 window.openHistovec = function() {
     window.open('https://histovec.interieur.gouv.fr/histovec/accueil', '_blank');
 };
@@ -2940,11 +3300,25 @@ window.clearFullHistory = function() {
     }
 };
 
-window.editDeal = function(id) {
+window.editDeal = async function(id) { // Ajout de async
     if (!id || id === 'undefined') return alert("Impossible de modifier ce dossier (ID manquant).");
     
     const nouveauKm = prompt("Entrez le kilométrage réel du véhicule :");
     if (nouveauKm !== null) {
+        // --- MISE À JOUR SUPABASE ---
+        if (window.supabaseClient) {
+            const { error } = await supabaseClient
+                .from('expertise_history')
+                .update({ km: nouveauKm })
+                .eq('id', id);
+
+            if (error) {
+                console.error("Erreur Cloud:", error.message);
+                return alert("Erreur de synchronisation Cloud.");
+            }
+        }
+        // ----------------------------
+
         let history = JSON.parse(localStorage.getItem('ox_history')) || [];
         const index = history.findIndex(v => v.id === id);
         
@@ -2953,15 +3327,27 @@ window.editDeal = function(id) {
             localStorage.setItem('ox_history', JSON.stringify(history));
             window.updateHistory();
         } else {
-            alert("Erreur : Dossier introuvable.");
+            alert("Erreur : Dossier introuvable localement.");
         }
     }
 };
 
 // --- INITIALISATION AU CHARGEMENT ---
-document.addEventListener('DOMContentLoaded', () => {
-    // Petit délai pour laisser le temps aux données de charger
-    setTimeout(() => window.updateHistory('all'), 100);
+document.addEventListener('DOMContentLoaded', async () => {
+    // 1. Initialisation de la synchronisation Cloud
+    if (typeof window.initApp === 'function') {
+        console.log("☁️ Synchronisation Oxynov en cours...");
+        await window.initApp(); 
+    }
+
+    // 2. Une fois les données récupérées, on affiche l'historique
+    // On garde un léger délai pour assurer que l'UI est prête
+    setTimeout(() => {
+        if (typeof window.updateHistory === 'function') {
+            window.updateHistory('all');
+        }
+        console.log("✅ Application prête et synchronisée.");
+    }, 100);
 });
 
 // Ajout du CSS nécessaire
@@ -2991,7 +3377,7 @@ window.getBizSettings = function() {
 };
 
 // --- SAUVEGARDE GLOBALE (Version Corrigée) ---
-window.saveAllOptions = function() {
+window.saveAllOptions = async function() { // Ajout de async
     console.log("Démarrage de la sauvegarde...");
 
     // 1. Sauvegarde de la grille de prix (Sécurisée)
@@ -3005,7 +3391,7 @@ window.saveAllOptions = function() {
         console.error("Erreur dans saveCustomPrices:", e);
     }
 
-    // 2. Sauvegarde des nouveaux paramètres business (Sécurisée avec des '?' pour éviter les crashs)
+    // 2. Sauvegarde des nouveaux paramètres business
     try {
         const bizSettings = {
             targetProfit: document.getElementById('target-profit')?.value || "2000",
@@ -3015,14 +3401,25 @@ window.saveAllOptions = function() {
             stateTax: document.getElementById('state-tax')?.value || "11"
         };
 
+        // --- SAUVEGARDE SUPABASE ---
+        if (window.supabaseClient) {
+            const { error } = await supabaseClient
+                .from('app_settings')
+                .upsert({ 
+                    id: 'business_config', 
+                    settings: bizSettings,
+                    updated_at: new Date() 
+                });
+
+            if (error) console.error("Erreur Cloud Settings:", error.message);
+        }
+        // ----------------------------
+
         localStorage.setItem('ox_business_settings', JSON.stringify(bizSettings));
-        
-        // On sauvegarde aussi l'objectif de marge séparément si ton app l'utilise ailleurs
         localStorage.setItem('targetProfit', bizSettings.targetProfit);
 
         alert("🚀 Tous les réglages ont été synchronisés !");
         
-        // Relancer les calculs si la fonction existe
         if (typeof window.runCalculations === 'function') {
             window.runCalculations();
         }
@@ -3053,8 +3450,27 @@ window.exportDatabase = function() {
 };
 
 // --- RESET COMPLET ---
-window.resetApp = function() {
-    if(confirm("ATTENTION : Cela va effacer TOUT votre stock et vos réglages définitivement. Continuer ?")) {
+window.resetApp = async function() { // Ajout de async
+    if(confirm("⚠️ ACTION IRRÉVERSIBLE : Cela va effacer TOUT votre stock Cloud, vos clients et vos réglages définitivement. Continuer ?")) {
+        
+        // --- SUPPRESSION CLOUD (SUPABASE) ---
+        if (window.supabaseClient) {
+            try {
+                // On supprime tout le contenu des tables principales
+                await Promise.all([
+                    supabaseClient.from('expertise_history').delete().neq('id', '0'),
+                    supabaseClient.from('customers').delete().neq('id', '0'),
+                    supabaseClient.from('expenses').delete().neq('id', '0'),
+                    supabaseClient.from('app_settings').delete().neq('id', '0')
+                ]);
+            } catch (e) {
+                console.error("Erreur lors de la suppression Cloud:", e);
+                alert("Erreur lors de la suppression des données Cloud.");
+            }
+        }
+        // ------------------------------------
+
+        // Vidage du cache local et redémarrage
         localStorage.clear();
         location.reload();
     }
@@ -3128,12 +3544,52 @@ window.goToHome = function() {
 // ==========================================================================
 // 9. INITIALISATION
 // ==========================================================================
-window.initApp = function() {
+window.initApp = async function() {
+    console.log("🚀 Initialisation d'Oxynov Cloud...");
+
+    // 1. CHARGEMENT DES DONNÉES DEPUIS SUPABASE
+    if (window.supabaseClient) {
+        try {
+            // On récupère tout en parallèle pour gagner du temps
+            const [historyRes, customersRes, expensesRes, settingsRes] = await Promise.all([
+                supabaseClient.from('expertise_history').select('*'),
+                supabaseClient.from('customers').select('*'),
+                supabaseClient.from('expenses').select('*'),
+                supabaseClient.from('app_settings').select('*').eq('id', 'business_config').single()
+            ]);
+
+            // 2. MISE À JOUR DU STOCKAGE LOCAL (pour la fluidité des autres fonctions)
+            if (historyRes.data) {
+                localStorage.setItem('ox_history', JSON.stringify(historyRes.data));
+                window.savedDeals = historyRes.data; // Mise à jour de la variable globale
+            }
+            if (customersRes.data) localStorage.setItem('ox_customers', JSON.stringify(customersRes.data));
+            if (expensesRes.data) {
+                localStorage.setItem('ox_expenses', JSON.stringify(expensesRes.data));
+                window.savedExpenses = expensesRes.data;
+            }
+            if (settingsRes.data) {
+                localStorage.setItem('ox_business_settings', JSON.stringify(settingsRes.data.settings));
+            }
+
+            console.log("✅ Données synchronisées avec succès.");
+        } catch (err) {
+            console.error("❌ Erreur de synchronisation au démarrage:", err);
+        }
+    }
+
+    // 3. LANCEMENT DE L'INTERFACE (Tes fonctions d'origine)
+    if (typeof window.loadOptions === 'function') window.loadOptions();
+    if (typeof window.updateHistory === 'function') window.updateHistory('all');
+    if (typeof window.updateFinancials === 'function') window.updateFinancials();
+    
     window.renderExpertise();
     window.updatePilotage();
-    // On s'assure que si on est sur l'onglet négo, les calculs sont faits
     window.runCalculations(); 
+    
+    // 4. NAVIGATION PAR DÉFAUT
     window.switchTab('pilotage');
 };
 
-window.onload = window.initApp;
+// On utilise l'écouteur d'événement moderne plutôt que window.onload
+window.addEventListener('load', window.initApp);
