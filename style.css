@@ -765,69 +765,6 @@ main.v-main {
     color: white; 
 }
 
-/* ==========================================================================
-   OPTIMISATION MOBILE ÉLITE (CARTE BLANCHE)
-   ========================================================================== */
-
-/* --- CONFIGURATION ORDINATEUR (Par défaut) --- */
-.mobile-top-bar { display: none; } /* On cache le bouton sur PC */
-
-/* --- CONFIGURATION TÉLÉPHONE --- */
-@media (max-width: 1024px) {
-    /* 1. Affichage de la barre du haut */
-    .mobile-top-bar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 10px 15px;
-        background: #0a0a0c;
-        border-bottom: 1px solid #1f1f23;
-        position: fixed;
-        top: 0; left: 0; width: 100%;
-        z-index: 9999;
-    }
-
-    .hamburger-btn {
-        background: #1a1a1e;
-        border: 1px solid #333;
-        color: white;
-        padding: 8px;
-        border-radius: 8px;
-        cursor: pointer;
-    }
-
-    /* 2. La Sidebar devient un tiroir caché à gauche */
-    .sidebar {
-        position: fixed !important;
-        top: 0;
-        left: -100% !important; /* On la sort de l'écran */
-        width: 280px !important;
-        height: 100% !important;
-        background: #0f0f12 !important;
-        z-index: 10000;
-        transition: transform 0.3s ease;
-        display: flex !important;
-        box-shadow: 15px 0 50px rgba(0,0,0,0.8);
-    }
-
-    /* Quand on clique sur le bouton, on ajoute cette classe */
-    .sidebar.show-mobile {
-        transform: translateX(100%); /* Elle glisse vers la droite */
-    }
-
-    /* 3. On ajuste le contenu pour qu'il commence sous la barre */
-    .main-content {
-        margin-left: 0 !important;
-        margin-top: 60px !important;
-        padding: 15px !important;
-    }
-
-    /* 4. Cartes en 1 seule colonne pour être lisibles */
-    .dashboard-grid, .stats-container {
-        grid-template-columns: 1fr !important;
-        gap: 15px !important;
-    }
-}
 
     /* 4. Barre IA : Version "Bouton Flottant" sur Mobile */
     .ia-status-bar {
@@ -1076,3 +1013,4 @@ select option {
         display: none; /* Géré par JS */
     }
 }
+
