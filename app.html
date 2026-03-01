@@ -13,12 +13,35 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
- <div class="mobile-header">
-    <button class="menu-toggle" onclick="toggleMenu()">
-        <i data-lucide="menu"></i>
-    </button>
-    <div class="mobile-logo">OX<span>PRO</span></div>
+<div class="mobile-top-bar" style="display:none;">
+    <div class="logo"><i data-lucide="zap"></i> OX<span>PRO</span></div>
+    <div class="profile-trigger-mobile" onclick="switchTab('profil', this)">
+        <i data-lucide="user"></i>
+    </div>
 </div>
+
+<style>
+@media (max-width: 1024px) {
+    .mobile-top-bar {
+        display: flex !important;
+        position: fixed;
+        top: 0; left: 0; width: 100%;
+        height: 60px;
+        background: #08080a;
+        z-index: 9998;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 20px;
+        border-bottom: 1px solid #1f1f25;
+    }
+    .profile-trigger-mobile {
+        width: 35px; height: 35px;
+        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        border-radius: 8px;
+        display: flex; align-items: center; justify-content: center; color: white;
+    }
+}
+</style>
   
   <div class="app-container">
    <aside class="sidebar">
@@ -1016,3 +1039,4 @@ N'hésitez pas à nous contacter pour plus d'informations ou pour convenir d'un 
     </script>
 </body>
 </html>
+
