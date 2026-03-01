@@ -856,50 +856,90 @@ select option {
     body, html { margin: 0; padding: 0; width: 100%; overflow-x: hidden !important; background-color: #08080a !important; }
 
     .header-mobile {
-        display: flex !important; align-items: center; justify-content: space-between;
-        padding: 0 15px; background: #0d0d0f; position: fixed; top: 0; left: 0;
-        width: 100%; height: 70px; z-index: 10000; border-bottom: 2px solid #1f1f22; box-sizing: border-box;
-    }
-
-    /* Bouton Menu - On force sa visibilité au-dessus de tout */
-    .menu-toggle {
-        background: #1a1a1e; border: 1px solid #333; border-radius: 10px;
-        width: 45px; height: 45px; display: flex !important; align-items: center; justify-content: center;
-        z-index: 30000 !important; position: relative; cursor: pointer;
-    }
-
-    .logo-app-mobile { position: absolute; left: 50%; transform: translateX(-50%); font-weight: 800; font-size: 1.3rem; color: #fff; }
-
-    /* La Sidebar : Correction Majeure ici */
-    .sidebar {
-        display: flex !important; /* On force le flex pour que l'animation fonctionne */
-        position: fixed !important; top: 0; left: 0 !important;
-        width: 100vw !important; height: 100vh !important; height: 100dvh !important;
-        z-index: 25000 !important; background: #08080a !important;
-        flex-direction: column !important; padding: 100px 20px 40px 20px !important;
+        display: flex !important; 
+        align-items: center; 
+        justify-content: space-between;
+        padding: 0 15px; 
+        background: #0d0d0f; 
+        position: fixed; 
+        top: 0; 
+        left: 0;
+        width: 100%; 
+        height: 70px; 
+        /* On le met plus haut que la sidebar pour que le bouton reste cliquable même menu ouvert */
+        z-index: 30000 !important; 
+        border-bottom: 2px solid #1f1f22; 
         box-sizing: border-box;
-        
-        /* État caché : on la pousse hors de l'écran (vers le haut) */
+        pointer-events: auto !important;
+    }
+
+    /* Bouton Menu - Priorité Ultime */
+    .menu-toggle {
+        background: #1a1a1e; 
+        border: 1px solid #333; 
+        border-radius: 10px;
+        width: 45px; 
+        height: 45px; 
+        display: flex !important; 
+        align-items: center; 
+        justify-content: center;
+        z-index: 31000 !important; 
+        position: relative; 
+        cursor: pointer !important;
+        pointer-events: auto !important; /* Force la réception du clic */
+    }
+
+    .logo-app-mobile { 
+        position: absolute; 
+        left: 50%; 
+        transform: translateX(-50%); 
+        font-weight: 800; 
+        font-size: 1.3rem; 
+        color: #fff; 
+        z-index: 1;
+    }
+
+    /* La Sidebar : Légèrement en dessous du header pour ne pas bloquer le bouton */
+    .sidebar {
+        display: flex !important; 
+        position: fixed !important; 
+        top: 0; 
+        left: 0 !important;
+        width: 100vw !important; 
+        height: 100vh !important; 
+        height: 100dvh !important;
+        z-index: 25000 !important; 
+        background: #08080a !important;
+        flex-direction: column !important; 
+        padding: 100px 20px 40px 20px !important;
+        box-sizing: border-box;
         transform: translateY(-100%); 
         opacity: 0;
         visibility: hidden;
         transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+        pointer-events: none; /* Ne bloque rien quand elle est fermée */
     }
 
-    /* État ouvert */
     .sidebar.is-menu-open {
         transform: translateY(0) !important;
         opacity: 1 !important;
         visibility: visible !important;
+        pointer-events: auto; /* Redevient cliquable quand elle est ouverte */
     }
 
-    /* Contenu principal */
-    .main-content { margin-left: 0 !important; margin-top: 70px !important; padding: 20px !important; width: 100% !important; box-sizing: border-box; }
+    /* Contenu principal - On baisse son z-index pour qu'il ne passe pas devant le header */
+    .main-content { 
+        margin-left: 0 !important; 
+        margin-top: 70px !important; 
+        padding: 20px !important; 
+        width: 100% !important; 
+        box-sizing: border-box; 
+        position: relative;
+        z-index: 10 !important;
+    }
     
     /* Stats & Nav */
     .sidebar nav { display: flex !important; flex-direction: column !important; justify-content: center !important; align-items: center !important; gap: 15px !important; }
     .nav-item { width: 100% !important; max-width: 340px; padding: 20px !important; background: #121217 !important; border: 1px solid #1f1f25 !important; color: #fff !important; text-align: center; border-radius: 15px !important; }
-    .dashboard-grid, .stats-container { display: flex !important; flex-direction: column !important; gap: 15px !important; }
-    .stat-card { width: 100% !important; background: #121217 !important; border-radius: 18px !important; padding: 20px !important; border: 1px solid #1f1f25 !important; }
 }
 
