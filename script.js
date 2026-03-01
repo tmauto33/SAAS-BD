@@ -3125,30 +3125,28 @@ window.goToHome = function() {
     if(firstBtn) firstBtn.click(); 
 };
 
-function toggleMobileMenu() {
+function toggleMenu() {
     const sidebar = document.querySelector('.sidebar');
-    sidebar.classList.toggle('active');
+    sidebar.classList.toggle('open');
     
-    // Change l'icône du bouton
-    const icon = document.querySelector('.mobile-menu-trigger i');
-    if (sidebar.classList.contains('active')) {
+    // Change l'icône entre Menu et X
+    const icon = document.querySelector('.menu-toggle i');
+    if (sidebar.classList.contains('open')) {
         icon.setAttribute('data-lucide', 'x');
     } else {
-        icon.setAttribute('data-lucide', 'layout-grid');
+        icon.setAttribute('data-lucide', 'menu');
     }
-    lucide.createIcons(); // Rafraîchit l'icône Lucide
+    lucide.createIcons();
 }
 
-// Ferme le menu automatiquement quand on clique sur un onglet
+// Optionnel : Fermer le menu quand on clique sur une section
 document.querySelectorAll('.nav-item').forEach(item => {
     item.addEventListener('click', () => {
-        if (window.innerWidth <= 1024) {
-            document.querySelector('.sidebar').classList.remove('active');
-            document.querySelector('.mobile-menu-trigger i').setAttribute('data-lucide', 'layout-grid');
-            lucide.createIcons();
-        }
+        document.querySelector('.sidebar').classList.remove('open');
     });
 });
+
+
 // ==========================================================================
 // 9. INITIALISATION
 // ==========================================================================
@@ -3161,4 +3159,3 @@ window.initApp = function() {
 };
 
 window.onload = window.initApp;
-
