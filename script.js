@@ -3125,27 +3125,26 @@ window.goToHome = function() {
     if(firstBtn) firstBtn.click(); 
 };
 
-function toggleMenu() {
+function toggleSidebar() {
     const sidebar = document.querySelector('.sidebar');
-    sidebar.classList.toggle('open');
+    sidebar.classList.toggle('show-mobile');
     
-    // Change l'icône entre Menu et X
-    const icon = document.querySelector('.menu-toggle i');
-    if (sidebar.classList.contains('open')) {
-        icon.setAttribute('data-lucide', 'x');
+    // Change l'icône (Menu vers X)
+    const btnIcon = document.querySelector('.hamburger-btn i');
+    if (sidebar.classList.contains('show-mobile')) {
+        btnIcon.setAttribute('data-lucide', 'x');
     } else {
-        icon.setAttribute('data-lucide', 'menu');
+        btnIcon.setAttribute('data-lucide', 'menu');
     }
     lucide.createIcons();
 }
 
-// Optionnel : Fermer le menu quand on clique sur une section
+// Optionnel : Ferme le menu quand on clique sur un lien de navigation
 document.querySelectorAll('.nav-item').forEach(item => {
     item.addEventListener('click', () => {
-        document.querySelector('.sidebar').classList.remove('open');
+        document.querySelector('.sidebar').classList.remove('show-mobile');
     });
 });
-
 
 // ==========================================================================
 // 9. INITIALISATION
@@ -3159,3 +3158,4 @@ window.initApp = function() {
 };
 
 window.onload = window.initApp;
+
