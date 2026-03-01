@@ -909,6 +909,69 @@ select option {
     color: white;
     padding: 10px;
 }
+/* --- CONFIGURATION ORDINATEUR (Par défaut) --- */
+.header-mobile { display: none; } /* Cacher le header mobile sur grand écran */
 
+/* --- CONFIGURATION TÉLÉPHONE (Media Query) --- */
+@media (max-width: 1024px) {
+    /* 1. Afficher le Header Mobile */
+    .header-mobile {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 15px;
+        background: #0d0d0f; /* Couleur de fond sombre de votre app */
+        position: fixed;
+        top: 0; left: 0; width: 100%;
+        z-index: 10000;
+        border-bottom: 1px solid #1f1f22;
+    }
 
+    .menu-toggle {
+        background: none; border: none; padding: 5px; cursor: pointer;
+    }
 
+    .hamburger-icon {
+        width: 25px; /* Ajustez la taille de l'icône au besoin */
+        height: auto;
+    }
+
+    /* 2. Transformer la Sidebar en Tiroir Caché */
+    .sidebar {
+        position: fixed !important;
+        top: 0;
+        left: -100% !important; /* Totalement cachée à gauche par défaut */
+        width: 280px !important;
+        height: 100% !important;
+        z-index: 9999;
+        transition: transform 0.3s ease-in-out; /* Animation douce */
+        display: flex !important;
+        flex-direction: column !important;
+        background: #08080a !important; /* Couleur de fond de la sidebar */
+    }
+
+    /* Quand on clique sur le bouton, on ajoute cette classe via JS */
+    .sidebar.is-menu-open {
+        transform: translateX(100%); /* Elle glisse vers la droite */
+    }
+
+    /* 3. On ajuste le contenu principal pour qu'il ne soit pas écrasé */
+    .main-content {
+        margin-left: 0 !important;
+        margin-top: 60px !important; /* Laisse la place au header mobile */
+        padding: 15px !important;
+        width: 100% !important;
+    }
+
+    /* Rendre les cartes plus petites (1 seule colonne pour être lisibles) */
+    .dashboard-grid, .stats-container {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 15px !important;
+    }
+    
+    .stat-card {
+        width: 100% !important;
+        padding: 15px !important;
+    }
+}
