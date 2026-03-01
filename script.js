@@ -3125,24 +3125,22 @@ window.goToHome = function() {
     if(firstBtn) firstBtn.click(); 
 };
 
-function toggleSidebar() {
+// Fonction pour ouvrir/fermer le menu mobile
+function toggleMenu() {
     const sidebar = document.querySelector('.sidebar');
-    sidebar.classList.toggle('show-mobile');
     
-    // Change l'icône (Menu vers X)
-    const btnIcon = document.querySelector('.hamburger-btn i');
-    if (sidebar.classList.contains('show-mobile')) {
-        btnIcon.setAttribute('data-lucide', 'x');
-    } else {
-        btnIcon.setAttribute('data-lucide', 'menu');
-    }
-    lucide.createIcons();
+    // On ajoute ou on enlève la classe CSS qui déclenche l'animation
+    sidebar.classList.toggle('is-menu-open');
 }
 
-// Optionnel : Ferme le menu quand on clique sur un lien de navigation
+// Optionnel : Fermer le menu automatiquement quand on clique sur une section
+// pour naviguer, pour éviter de le faire manuellement à chaque fois.
 document.querySelectorAll('.nav-item').forEach(item => {
     item.addEventListener('click', () => {
-        document.querySelector('.sidebar').classList.remove('show-mobile');
+        // Seulement sur mobile
+        if (window.innerWidth <= 1024) {
+            document.querySelector('.sidebar').classList.remove('is-menu-open');
+        }
     });
 });
 
@@ -3158,4 +3156,5 @@ window.initApp = function() {
 };
 
 window.onload = window.initApp;
+
 
