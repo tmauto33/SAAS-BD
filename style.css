@@ -913,65 +913,166 @@ select option {
 .header-mobile { display: none; } /* Cacher le header mobile sur grand écran */
 
 /* --- CONFIGURATION TÉLÉPHONE (Media Query) --- */
+/* ==========================================================================
+   VERSION MOBILE OPTIMISÉE (APPLICATION NATIVE)
+   ============================================================ */
+
 @media (max-width: 1024px) {
-    /* 1. Afficher le Header Mobile */
+    /* 1. Reset & Structure */
+    body {
+        overflow-x: hidden;
+        background-color: #08080a !important;
+    }
+
+    /* 2. Header Mobile Fixe */
     .header-mobile {
-        display: flex;
+        display: flex !important;
         align-items: center;
         justify-content: space-between;
         padding: 10px 15px;
-        background: #0d0d0f; /* Couleur de fond sombre de votre app */
+        background: #0d0d0f;
         position: fixed;
-        top: 0; left: 0; width: 100%;
+        top: 0; 
+        left: 0; 
+        width: 100%;
+        height: 60px;
         z-index: 10000;
         border-bottom: 1px solid #1f1f22;
+        box-sizing: border-box;
     }
 
     .menu-toggle {
-        background: none; border: none; padding: 5px; cursor: pointer;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid #333;
+        padding: 8px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .hamburger-icon {
-        width: 25px; /* Ajustez la taille de l'icône au besoin */
+        width: 22px;
         height: auto;
+        filter: invert(1); /* Si l'icône est noire, elle devient blanche */
     }
 
-    /* 2. Transformer la Sidebar en Tiroir Caché */
+    /* 3. Sidebar : Mode Plein Écran (Overlay) */
     .sidebar {
         position: fixed !important;
         top: 0;
-        left: -100% !important; /* Totalement cachée à gauche par défaut */
-        width: 280px !important;
-        height: 100% !important;
-        z-index: 9999;
-        transition: transform 0.3s ease-in-out; /* Animation douce */
+        left: 0 !important;
+        width: 100% !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        z-index: 20000 !important;
+        background: #08080a !important;
         display: flex !important;
         flex-direction: column !important;
-        background: #08080a !important; /* Couleur de fond de la sidebar */
+        padding: 40px 20px !important;
+        box-sizing: border-box;
+        
+        /* Animation : On part du haut vers le bas */
+        transform: translateY(-100%);
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    /* Quand on clique sur le bouton, on ajoute cette classe via JS */
     .sidebar.is-menu-open {
-        transform: translateX(100%); /* Elle glisse vers la droite */
+        transform: translateY(0);
+        opacity: 1;
+        visibility: visible;
     }
 
-    /* 3. On ajuste le contenu principal pour qu'il ne soit pas écrasé */
+    /* Logo et bouton fermer dans le menu plein écran */
+    .sidebar::before {
+        content: "OX PRO";
+        display: block;
+        text-align: center;
+        font-weight: 800;
+        font-size: 1.5rem;
+        color: #fff;
+        margin-bottom: 40px;
+    }
+
+    /* 4. Navigation au centre du menu plein écran */
+    .sidebar nav {
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: center !important;
+        flex-grow: 1;
+        gap: 12px !important;
+    }
+
+    .nav-item {
+        width: 100% !important;
+        max-width: 320px;
+        padding: 16px !important;
+        justify-content: center !important;
+        font-size: 1.1rem !important;
+        border-radius: 12px !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        margin: 0 !important;
+        transition: transform 0.2s;
+    }
+
+    .nav-item:active {
+        transform: scale(0.95);
+        background: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    /* 5. Contenu Principal Ajusté */
     .main-content {
         margin-left: 0 !important;
-        margin-top: 60px !important; /* Laisse la place au header mobile */
+        margin-top: 60px !important;
         padding: 15px !important;
         width: 100% !important;
+        box-sizing: border-box;
     }
 
-    /* Rendre les cartes plus petites (1 seule colonne pour être lisibles) */
-    .dashboard-grid, .stats-container {
-        display: grid !important;
-        grid-template-columns: 1fr !important;
+    /* Titres de sections */
+    .main-content h1 {
+        font-size: 1.5rem !important;
+        margin-bottom: 20px !important;
+    }
+
+    /* 6. Grilles et Cartes (Mode 1 Colonne) */
+    .dashboard-grid, .stats-container, .grid-container {
+        display: flex !important;
+        flex-direction: column !important;
         gap: 15px !important;
     }
-    
+
     .stat-card {
         width: 100% !important;
-        padding: 15px !important;
+        padding: 20px !important;
+        border-radius: 16px !important;
+        background: #121217 !important;
+        box-sizing: border-box;
+    }
+
+    .stat-card .value {
+        font-size: 1.3rem !important; /* Pour les gros chiffres (314M€) */
+        word-break: break-all;
+        line-height: 1.2;
+    }
+
+    /* 7. Barre de bénéfice Expertise (Mobile) */
+    .votre-classe-barre-danger {
+        position: fixed !important;
+        bottom: 20px !important;
+        left: 15px !important;
+        right: 15px !important;
+        width: auto !important;
+        padding: 12px !important;
+        background: rgba(25, 25, 30, 0.95) !important;
+        backdrop-filter: blur(10px);
+        border-radius: 12px !important;
+        z-index: 5000;
+        display: none; /* Géré par JS */
     }
 }
