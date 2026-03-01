@@ -4,19 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>OptimizeX PRO</title>
-    
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-    <script src="app.js" defer></script>
 </head>
 <body>
-    </body>
-</html>
  
   <div class="app-container">
    <aside class="sidebar">
@@ -47,6 +43,24 @@
         </div>
     </div>
 
+    <div id="google_translate_element" style="margin-bottom: 20px; padding-left: 5px;"></div>
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'fr', 
+                includedLanguages: 'en,es,de,it,pt', 
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    <style>
+        .goog-te-gadget-simple { background: #1a1a1a !important; border: 1px solid #333 !important; border-radius: 8px !important; padding: 5px !important; }
+        .goog-te-gadget-simple span { color: #fff !important; font-size: 12px !important; }
+        .goog-te-banner-frame.skiptranslate { display: none !important; }
+        body { top: 0px !important; }
+    </style>
     <style>
         .profile-trigger:hover {
             transform: rotate(5deg) scale(1.1);
@@ -58,32 +72,50 @@
     </style>
 
     <nav>
-          
-              <button class="nav-item active" onclick="switchTab('pilotage',this)">
-    <i data-lucide="layout-grid"></i> <span>Pilotage</span>
-</button>
-<button class="nav-item" onclick="switchTab('analyse', this)">
-    <i data-lucide="search"></i> <span>Analyse</span>
-</button>
-             
-                <button class="nav-item" onclick="switchTab('expertise', this)"><i data-lucide="clipboard-check"></i> <span>Expertise</span></button>
-                <button class="nav-item" onclick="switchTab('nego', this)"><i data-lucide="trending-down"></i> <span>Négo</span></button>
-                <button class="nav-item" onclick="switchTab('annonce', this)"><i data-lucide="megaphone"></i> <span>Annonce</span></button>
-              <button class="nav-item" onclick="switchTab('inventaire', this)">
-    <i data-lucide="car"></i> <span>Inventaire</span></button>
-              <button class="nav-item" onclick="switchTab('maintenance', this)">
-    <i data-lucide="wrench"></i> <span>Logistique</span></button>
-              <button class="nav-item" onclick="switchTab('crm', this)">
-    <i data-lucide="users"></i> <span>CRM Clients</span></button>
-              <button class="nav-item" onclick="switchTab('finance', this)">
-    <i data-lucide="landmark"></i> <span>Trésorerie</span></button>
-              <button class="nav-item" onclick="switchTab('admin', this)">
-    <i data-lucide="file-text"></i> <span>Admin & Légal</span></button>
-              
-              <button class="nav-item" onclick="switchTab('dashboard', this)"><i data-lucide="database"></i> <span>Historique</span></button>  
-              <button class="nav-item" onclick="switchTab('options', this)"><i data-lucide="settings"></i> <span>Options</span></button>
-                
-            </nav>
+
+
+<nav>
+    <button class="nav-item" onclick="switchTab('expertise', this)">
+        <i data-lucide="clipboard-check"></i> 
+        <span data-i18n="nav_expertise">Expertise</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('nego', this)">
+        <i data-lucide="trending-down"></i> 
+        <span data-i18n="nav_nego">Négo</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('annonce', this)">
+        <i data-lucide="megaphone"></i> 
+        <span data-i18n="nav_annonce">Annonce</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('inventaire', this)">
+        <i data-lucide="car"></i> 
+        <span data-i18n="nav_inventaire">Inventaire</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('maintenance', this)">
+        <i data-lucide="wrench"></i> 
+        <span data-i18n="nav_logistique">Logistique</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('crm', this)">
+        <i data-lucide="users"></i> 
+        <span data-i18n="nav_crm">CRM Clients</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('finance', this)">
+        <i data-lucide="landmark"></i> 
+        <span data-i18n="nav_tresorerie">Trésorerie</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('admin', this)">
+        <i data-lucide="file-text"></i> 
+        <span data-i18n="nav_admin">Admin & Légal</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('dashboard', this)">
+        <i data-lucide="database"></i> 
+        <span data-i18n="nav_historique">Historique</span>
+    </button>  
+    <button class="nav-item" onclick="switchTab('options', this)">
+        <i data-lucide="settings"></i> 
+        <span data-i18n="nav_options">Options</span>
+    </button>
+</nav>
         </aside>
 
         <main class="main-content">
