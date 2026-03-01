@@ -3137,28 +3137,39 @@ window.goToHome = function() {
     if(firstBtn) firstBtn.click(); 
 };
 
-function toggleMenu() {
+// On s'assure que la fonction est accessible partout
+window.toggleMenu = function() {
+    console.log("Tentative d'ouverture du menu...");
     const sidebar = document.querySelector('.sidebar');
-    const iconContainer = document.querySelector('#menu-icon-container');
-    
-    if (!sidebar) return console.error("Sidebar non trouvée !");
+    const container = document.querySelector('#menu-icon-container');
 
-    // On bascule la classe
+    if (!sidebar) {
+        console.error("ERREUR : L'élément .sidebar n'existe pas dans le HTML");
+        return;
+    }
+
     sidebar.classList.toggle('is-menu-open');
 
-    // On force l'affichage en fonction de l'état
     if (sidebar.classList.contains('is-menu-open')) {
-        sidebar.style.display = 'flex'; // On s'assure qu'elle n'est pas en display:none
-        if (iconContainer) iconContainer.innerHTML = '<i data-lucide="x"></i>';
+        if (container) container.innerHTML = '<i data-lucide="x"></i>';
         document.body.style.overflow = 'hidden';
     } else {
-        // On attend la fin de l'animation pour remettre le scroll si besoin
-        if (iconContainer) iconContainer.innerHTML = '<i data-lucide="menu"></i>';
+        if (container) container.innerHTML = '<i data-lucide="menu"></i>';
         document.body.style.overflow = '';
     }
-    
+
     if (window.lucide) lucide.createIcons();
-}
+};
+
+// Fermeture auto lors du clic sur une section
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.nav-item')) {
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebar && sidebar.classList.contains('is-menu-open')) {
+            window.toggleMenu();
+        }
+    }
+});
 // ==========================================================================
 // 9. INITIALISATION
 // ==========================================================================
@@ -3171,6 +3182,7 @@ window.initApp = function() {
 };
 
 window.onload = window.initApp;
+
 
 
 
