@@ -613,78 +613,78 @@ document.addEventListener('DOMContentLoaded', () => window.updateDashboard());
 // ==========================================================================
 // SAUVEGARDE DEPUIS L'ANALYSE (VERSION ROBUSTE - FIX NC)
 // ==========================================================================
-window.saveAnalysisFolder = async function() { // Ajout de async
-    console.log("🚀 Tentative de sauvegarde...");
+window.saveAnalysisFolder = async function() { 
+    console.log("🚀 Tentative de sauvegarde...");
 
-    // 1. Récupération des éléments
-    const statusSelect = document.querySelector('.contact-card select') || document.getElementById('in-analysis-status');
-    const allInputs = document.querySelectorAll('input');
-    
-    // On nettoie la valeur pour enlever les émojis potentiels qui bloquent le test
-    const currentStatus = statusSelect?.value.toUpperCase() || "";
+    // 1. Récupération des éléments
+    const statusSelect = document.querySelector('.contact-card select') || document.getElementById('in-analysis-status');
+    const allInputs = document.querySelectorAll('input');
+    
+    const currentStatus = statusSelect?.value.toUpperCase() || "";
 
-    // 2. Création de l'objet de base (On garde tes allInputs[0] et [1])
-    let deal = {
-        // L'ID sera géré par Supabase (UUID)
-        model: allInputs[1]?.value || "Modèle inconnu",
-        immat: allInputs[0]?.value || "N/A", // 'immat' pour matcher ta colonne SQL
-        
-        // --- AJOUT UNIQUEMENT DE CES LIGNES POUR FIXER LE "NC" ---
-        seller_name: document.getElementById('vendeur-nom')?.value || "NC",
-        seller_phone: document.getElementById('vendeur-tel')?.value || "NC",
-        source: document.getElementById('source-annonce')?.value || "NC",
-        // -------------------------------------------------------
+    // 2. Création de l'objet (On réintègre l'ID pour assurer le coup)
+    let deal = {
+        id: "ID-" + Date.now(), // On génère l'ID ici pour éviter l'erreur "Missing ID"
+        model: allInputs[1]?.value || "Modèle inconnu",
+        immat: allInputs[0]?.value || "N/A", 
+        
+        seller_name: document.getElementById('vendeur-nom')?.value || "NC",
+        seller_phone: document.getElementById('vendeur-tel')?.value || "NC",
+        source: document.getElementById('source-annonce')?.value || "NC",
 
-        price_buy: 0, // 'price_buy' pour matcher le SQL
-        km: "0", 
-        status: currentStatus,
-        created_at: new Date().toISOString() // Format date SQL
-    };
+        price_buy: 0, 
+        km: "0", 
+        status: currentStatus,
+        created_at: new Date().toISOString() 
+    };
 
-    // 3. LOGIQUE DE TRI : On vérifie si le mot "ACHETÉ" est présent
-    if (currentStatus.includes("ACHETÉ") || currentStatus.includes("ACHETE")) {
-        // Demande du prix
-        const p = prompt(`💰 Prix d'achat final pour ${deal.model} ?`, "0");
-        if (p === null) return; // Annulation
+    // 3. LOGIQUE DE TRI
+    if (currentStatus.includes("ACHETÉ") || currentStatus.includes("ACHETE")) {
+        const p = prompt(`💰 Prix d'achat final pour ${deal.model} ?`, "0");
+        if (p === null) return; 
 
-        // Demande du kilométrage
-        const k = prompt(`🛣️ Kilométrage réel pour ${deal.model} ?`, "0");
-        if (k === null) return; // Annulation
+        const k = prompt(`🛣️ Kilométrage réel pour ${deal.model} ?`, "0");
+        if (k === null) return; 
 
-        deal.price_buy = parseFloat(p.replace(/\s/g, '')) || 0;
-        deal.km = k; 
-        deal.status = "ACHETÉ"; 
-        
-        alert("✅ Véhicule ajouté au stock !");
-    } 
-    // Sinon, si c'est un refus ou une attente
-    else {
-        const reason = prompt("📝 Raison du refus/attente :");
-        if (reason === null) return; 
-        
-        deal.notes = reason || "N/C"; // 'notes' pour stocker la raison en SQL
-        alert(`📁 Dossier classé : ${currentStatus}`);
-    }
+        deal.price_buy = parseFloat(p.replace(/\s/g, '')) || 0;
+        deal.km = k; 
+        deal.status = "ACHETÉ"; 
+        
+        alert("✅ Véhicule ajouté au stock !");
+    } 
+    else {
+        const reason = prompt("📝 Raison du refus/attente :");
+        if (reason === null) return; 
+        
+        deal.notes = reason || "N/C"; 
+        alert(`📁 Dossier classé : ${currentStatus}`);
+    }
 
     // --- SAUVEGARDE CLOUD (SUPABASE) ---
+    // On s'assure que savedDeals est initialisé pour éviter le plantage unshift
+    if (!window.savedDeals) window.savedDeals = JSON.parse(localStorage.getItem('ox_history')) || [];
+
     const { data, error } = await supabaseClient
         .from('expertise_history')
         .insert([deal])
         .select();
 
     if (error) {
-        console.error("Erreur Cloud:", error.message);
-    } else {
-        // 4. Sauvegarde physique et mise à jour locale
-        if (data && data[0]) {
-            window.savedDeals.unshift(data[0]);
-        }
-        
+        console.error("❌ Erreur Cloud:", error.message);
+        // Optionnel : On sauvegarde quand même en local même si le cloud échoue
+        window.savedDeals.unshift(deal);
         localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
-        
-        if (typeof window.renderInventory === "function") window.renderInventory();
-        if (typeof window.updateDashboard === "function") window.updateDashboard();
+        alert("⚠️ Sauvegardé en local uniquement (Erreur Cloud)");
+    } else {
+        // 4. Succès : On met à jour le local avec la donnée propre du serveur
+        window.savedDeals.unshift(data[0] || deal);
+        localStorage.setItem('ox_history', JSON.stringify(window.savedDeals));
+        console.log("✅ Synchronisation réussie !");
     }
+
+    // Mise à jour interface
+    if (typeof window.renderInventory === "function") window.renderInventory();
+    if (typeof window.updateDashboard === "function") window.updateDashboard();
 };
 // ==========================================================================
 // 1. GESTION DE L'EXPERTISE & CLICS
@@ -3612,6 +3612,7 @@ window.initApp = async function() {
 
 // On utilise l'écouteur d'événement moderne plutôt que window.onload
 window.addEventListener('load', window.initApp);
+
 
 
 
