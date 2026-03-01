@@ -13,7 +13,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
- 
+ <div class="mobile-header">
+    <button class="menu-toggle" onclick="toggleMenu()">
+        <i data-lucide="menu"></i>
+    </button>
+    <div class="mobile-logo">OX<span>PRO</span></div>
+</div>
+  
   <div class="app-container">
    <aside class="sidebar">
     <div class="sidebar-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; padding: 5px;">
@@ -75,6 +81,12 @@
 
 
 <nav>
+   <button class="nav-item active" onclick="switchTab('pilotage',this)">
+    <i data-lucide="layout-grid"></i> <span>Pilotage</span>
+</button>
+<button class="nav-item" onclick="switchTab('analyse', this)">
+    <i data-lucide="search"></i> <span>Analyse</span>
+</button>
     <button class="nav-item" onclick="switchTab('expertise', this)">
         <i data-lucide="clipboard-check"></i> 
         <span data-i18n="nav_expertise">Expertise</span>
