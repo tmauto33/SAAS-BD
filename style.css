@@ -851,95 +851,164 @@ select option {
 /* ==========================================================================
    VERSION MOBILE ULTIME - OX PRO (PLEIN ÉCRAN & CENTRAGE TOTAL)
    ========================================================================== */
+
 @media (max-width: 1024px) {
-    /* Reset & Header */
-    body, html { margin: 0; padding: 0; width: 100%; overflow-x: hidden !important; background-color: #08080a !important; }
+    /* 1. Reset Global pour éviter les décalages */
+    body, html {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        overflow-x: hidden !important;
+        background-color: #08080a !important;
+    }
 
+    /* 2. Header Mobile : Imposant et Centré */
     .header-mobile {
-        display: flex !important; 
-        align-items: center; 
+        display: flex !important;
+        align-items: center;
         justify-content: space-between;
-        padding: 0 15px; 
-        background: #0d0d0f; 
-        position: fixed; 
-        top: 0; 
+        padding: 0 15px;
+        background: #0d0d0f;
+        position: fixed;
+        top: 0;
         left: 0;
-        width: 100%; 
-        height: 70px; 
-        /* On le met plus haut que la sidebar pour que le bouton reste cliquable même menu ouvert */
-        z-index: 30000 !important; 
-        border-bottom: 2px solid #1f1f22; 
+        width: 100%;
+        height: 70px; /* Plus haut pour la visibilité */
+        z-index: 10000;
+        border-bottom: 2px solid #1f1f22;
         box-sizing: border-box;
-        pointer-events: auto !important;
     }
 
-    /* Bouton Menu - Priorité Ultime */
+    .logo-app-mobile {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%); /* Centrage mathématique parfait */
+        font-weight: 800;
+        font-size: 1.3rem;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
     .menu-toggle {
-        background: #1a1a1e; 
-        border: 1px solid #333; 
+        background: #1a1a1e;
+        border: 1px solid #333;
+        padding: 0;
         border-radius: 10px;
-        width: 45px; 
-        height: 45px; 
-        display: flex !important; 
-        align-items: center; 
+        cursor: pointer;
+        width: 45px;
+        height: 45px;
+        display: flex;
+        align-items: center;
         justify-content: center;
-        z-index: 31000 !important; 
-        position: relative; 
-        cursor: pointer !important;
-        pointer-events: auto !important; /* Force la réception du clic */
+        z-index: 10001;
     }
 
-    .logo-app-mobile { 
-        position: absolute; 
-        left: 50%; 
-        transform: translateX(-50%); 
-        font-weight: 800; 
-        font-size: 1.3rem; 
-        color: #fff; 
-        z-index: 1;
+    .hamburger-icon {
+        width: 24px;
+        height: auto;
     }
 
-    /* La Sidebar : Légèrement en dessous du header pour ne pas bloquer le bouton */
+    /* 3. Sidebar : Le Menu Plein Écran (Overlay) */
     .sidebar {
-        display: flex !important; 
-        position: fixed !important; 
-        top: 0; 
+        position: fixed !important;
+        top: 0;
         left: 0 !important;
-        width: 100vw !important; 
-        height: 100vh !important; 
+        width: 100vw !important;
+        height: 100vh !important;
         height: 100dvh !important;
-        z-index: 25000 !important; 
+        z-index: 20000 !important;
         background: #08080a !important;
-        flex-direction: column !important; 
-        padding: 100px 20px 40px 20px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        padding: 80px 20px 40px 20px !important; /* Espace pour le header */
         box-sizing: border-box;
-        transform: translateY(-100%); 
+        
+        /* Animation : Zoom Arrière pour l'effet App */
         opacity: 0;
         visibility: hidden;
-        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
-        pointer-events: none; /* Ne bloque rien quand elle est fermée */
+        transform: scale(1.05);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .sidebar.is-menu-open {
-        transform: translateY(0) !important;
         opacity: 1 !important;
         visibility: visible !important;
-        pointer-events: auto; /* Redevient cliquable quand elle est ouverte */
+        transform: scale(1) !important;
     }
 
-    /* Contenu principal - On baisse son z-index pour qu'il ne passe pas devant le header */
-    .main-content { 
-        margin-left: 0 !important; 
-        margin-top: 70px !important; 
-        padding: 20px !important; 
-        width: 100% !important; 
-        box-sizing: border-box; 
-        position: relative;
-        z-index: 10 !important;
+    /* Navigation centrée dans le menu */
+    .sidebar nav {
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: center !important;
+        flex-grow: 1;
+        gap: 12px !important;
     }
-    
-    /* Stats & Nav */
-    .sidebar nav { display: flex !important; flex-direction: column !important; justify-content: center !important; align-items: center !important; gap: 15px !important; }
-    .nav-item { width: 100% !important; max-width: 340px; padding: 20px !important; background: #121217 !important; border: 1px solid #1f1f25 !important; color: #fff !important; text-align: center; border-radius: 15px !important; }
+
+    .nav-item {
+        width: 100% !important;
+        max-width: 340px;
+        padding: 20px !important;
+        justify-content: center !important;
+        font-size: 1.2rem !important;
+        font-weight: 600;
+        border-radius: 15px !important;
+        background: #121217 !important;
+        border: 1px solid #1f1f25 !important;
+        margin: 0 !important;
+        color: #fff !important;
+        text-align: center;
+    }
+
+    /* 4. Contenu Principal */
+    .main-content {
+        margin-left: 0 !important;
+        margin-top: 70px !important;
+        padding: 20px !important;
+        width: 100% !important;
+        box-sizing: border-box;
+    }
+
+    /* 5. Cartes de Statistiques (Optimisées pour les grands chiffres) */
+    .dashboard-grid, .stats-container {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 15px !important;
+    }
+
+    .stat-card {
+        width: 100% !important;
+        padding: 20px !important;
+        border-radius: 18px !important;
+        background: #121217 !important;
+        border: 1px solid #1f1f25 !important;
+        box-sizing: border-box;
+    }
+
+    .stat-card .value {
+        font-size: 1.5rem !important;
+        margin-top: 8px;
+        word-break: break-all; /* Évite que le "314M€" sorte de la carte */
+    }
+
+    /* 6. La barre de bénéfice (Flottante et centrée) */
+    /* Assure-toi d'utiliser la bonne classe ici */
+    .barre-estimation-rentabilite { 
+        position: fixed !important;
+        bottom: 25px !important;
+        left: 5% !important;
+        width: 90% !important;
+        background: rgba(18, 18, 23, 0.98) !important;
+        backdrop-filter: blur(15px);
+        border: 2px solid #22c55e !important;
+        border-radius: 16px !important;
+        padding: 15px !important;
+        z-index: 9000;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+        box-sizing: border-box;
+        display: none; /* Toujours géré par JS */
+    }
 }
-
