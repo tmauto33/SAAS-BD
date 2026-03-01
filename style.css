@@ -765,77 +765,121 @@ main.v-main {
     color: white; 
 }
 
-/* --- CONFIGURATION MOBILE (Media Query) --- */
+/* ==========================================================================
+   OPTIMISATION MOBILE ÉLITE (CARTE BLANCHE)
+   ========================================================================== */
+
 @media (max-width: 1024px) {
-    
-    /* 1. On cache la sidebar par défaut et on la transforme en tiroir */
+    /* 1. Structure Globale */
+    body {
+        overflow-x: hidden;
+        background-color: #08080a !important;
+    }
+
+    .app-container {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+    }
+
+    /* 2. Sidebar transformée en Barre de Navigation Basse */
     .sidebar {
         position: fixed !important;
-        top: 0;
-        left: -100% !important; /* Totalement cachée à gauche */
-        width: 280px !important;
-        height: 100% !important;
-        z-index: 10000;
-        transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 10px 0 30px rgba(0,0,0,0.5);
-    }
-
-    /* Classe ajoutée par JS pour ouvrir le menu */
-    .sidebar.active {
+        bottom: 0 !important;
         left: 0 !important;
-    }
-
-    /* 2. Affichage du Header Mobile */
-    .mobile-header {
+        width: 100% !important;
+        height: 70px !important;
+        flex-direction: row !important;
+        background: rgba(15, 15, 20, 0.95) !important;
+        backdrop-filter: blur(15px);
+        border-right: none !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 0 5px !important;
+        z-index: 9999;
+        justify-content: space-around;
         display: flex !important;
+    }
+
+    /* Cache le header original dans la nav pour gagner de la place */
+    .sidebar-header, #google_translate_element {
+        display: none !important;
+    }
+
+    /* 3. Items de Navigation style "App Mobile" */
+    nav {
+        display: flex !important;
+        flex-direction: row !important;
+        width: 100%;
+        justify-content: space-around;
         align-items: center;
-        justify-content: space-between;
-        background: #0f0f12;
-        padding: 12px 15px;
-        position: fixed;
-        top: 0; width: 100%;
-        z-index: 9000;
-        border-bottom: 1px solid #222;
     }
 
-    .menu-btn {
-        background: #1a1a1a;
-        border: 1px solid #333;
-        color: white;
-        padding: 8px;
-        border-radius: 8px;
+    .nav-item {
+        flex-direction: column !important;
+        gap: 5px !important;
+        padding: 8px 0 !important;
+        margin: 0 !important;
+        font-size: 10px !important;
+        background: transparent !important;
+        color: #888 !important;
+        min-width: 60px;
     }
 
-    /* 3. On réajuste le contenu principal (plus de marge à gauche) */
+    .nav-item.active {
+        color: #22c55e !important;
+        background: transparent !important;
+    }
+
+    .nav-item i {
+        width: 22px !important;
+        height: 22px !important;
+        margin: 0 !important;
+    }
+
+    /* 4. Nouveau Header Mobile Fixe */
     .main-content {
         margin-left: 0 !important;
-        margin-top: 65px !important; /* Laisse la place au header mobile */
-        padding: 15px !important;
+        padding: 80px 15px 100px 15px !important; /* Espace pour header et nav */
         width: 100% !important;
     }
 
-    /* 4. Cartes de statistiques : On les passe en 1 seule colonne ou 2 petites */
+    /* 5. Cartes de Statistiques Ultra-Optimisées */
     .dashboard-grid, .stats-container {
         display: grid !important;
-        grid-template-columns: 1fr !important; /* Une carte par ligne pour la lisibilité */
-        gap: 15px !important;
+        grid-template-columns: repeat(2, 1fr) !important; /* 2 cartes par ligne */
+        gap: 12px !important;
     }
 
     .stat-card {
-        width: 100% !important;
-        padding: 20px !important;
+        padding: 12px !important;
+        background: #121217 !important;
+        border: 1px solid #1f1f25 !important;
+        border-radius: 16px !important;
     }
 
-    /* 5. On agrandit les boutons pour les doigts */
-    .nav-item {
-        padding: 15px !important;
-        font-size: 1rem !important;
+    .stat-card .value {
+        font-size: 1.1rem !important; /* Ajuste les gros montants (314M€) */
+        word-break: break-word;
+        line-height: 1.2;
     }
-}
 
-/* Cache le header mobile sur ordinateur */
-@media (min-width: 1025px) {
-    .mobile-header { display: none; }
+    .stat-card h3 {
+        font-size: 0.7rem !important;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* 6. Correction des Tableaux */
+    .table-container {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        background: #121217;
+        border-radius: 12px;
+    }
+
+    table {
+        min-width: 600px; /* Force le scroll horizontal propre */
+    }
 }
     /* 4. Barre IA : Version "Bouton Flottant" sur Mobile */
     .ia-status-bar {
@@ -917,4 +961,5 @@ select option {
     color: white;
     padding: 10px;
 }
+
 
