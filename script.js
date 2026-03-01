@@ -3137,20 +3137,26 @@ window.goToHome = function() {
     if(firstBtn) firstBtn.click(); 
 };
 
-
 function toggleMenu() {
     const sidebar = document.querySelector('.sidebar');
     const iconContainer = document.querySelector('#menu-icon-container');
     
+    if (!sidebar) return console.error("Sidebar non trouvée !");
+
+    // On bascule la classe
     sidebar.classList.toggle('is-menu-open');
 
+    // On force l'affichage en fonction de l'état
     if (sidebar.classList.contains('is-menu-open')) {
-        iconContainer.innerHTML = '<i data-lucide="x"></i>';
+        sidebar.style.display = 'flex'; // On s'assure qu'elle n'est pas en display:none
+        if (iconContainer) iconContainer.innerHTML = '<i data-lucide="x"></i>';
         document.body.style.overflow = 'hidden';
     } else {
-        iconContainer.innerHTML = '<i data-lucide="menu"></i>';
+        // On attend la fin de l'animation pour remettre le scroll si besoin
+        if (iconContainer) iconContainer.innerHTML = '<i data-lucide="menu"></i>';
         document.body.style.overflow = '';
     }
+    
     if (window.lucide) lucide.createIcons();
 }
 // ==========================================================================
@@ -3165,6 +3171,7 @@ window.initApp = function() {
 };
 
 window.onload = window.initApp;
+
 
 
 
