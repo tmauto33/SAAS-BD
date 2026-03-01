@@ -135,6 +135,29 @@ window.switchTab = function(id, btn) {
             iaBar.style.display = 'none';
         }
     }
+    // 2. FERMETURE AUTOMATIQUE DU MENU (Nouveau)
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar && sidebar.classList.contains('is-menu-open')) {
+        // On retire la classe pour cacher le menu plein écran
+        sidebar.classList.remove('is-menu-open');
+        
+        // On réactive le scroll sur la page
+        document.body.style.overflow = '';
+
+        // On remet l'icône "hamburger" (si tu utilises Lucide)
+        const iconContainer = document.querySelector('#menu-icon-container');
+        if (iconContainer) {
+            iconContainer.innerHTML = '<i data-lucide="menu"></i>';
+            if (window.lucide) lucide.createIcons();
+        }
+    }
+
+    // 3. GESTION DE LA BARRE DE DANGER (Optionnel - selon ta demande précédente)
+    const dangerBar = document.querySelector('.barre-estimation-rentabilite');
+    if (dangerBar) {
+        dangerBar.style.display = (tabId === 'expertise' || tabId === 'nego') ? 'flex' : 'none';
+    }
+}
 
     if (window.lucide) lucide.createIcons();
 };
@@ -3177,6 +3200,7 @@ window.initApp = function() {
 };
 
 window.onload = window.initApp;
+
 
 
 
