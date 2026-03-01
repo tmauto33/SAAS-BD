@@ -765,44 +765,60 @@ main.v-main {
     color: white; 
 }
 
-/* ==========================================================================
-   OPTIMISATION MOBILE (VRAIE APP NATIVE) - À METTRE TOUT À LA FIN DU CSS
-   ========================================================================== */
-/* =============================================================
-   VERSION MOBILE (S'applique uniquement sous 1024px)
-   ============================================================= */
+/* Cache le header mobile sur ordinateur */
+.mobile-header { display: none; }
+
 @media (max-width: 1024px) {
-    
-    /* 1. On transforme la sidebar en barre horizontale en haut ou en bas */
+    /* 1. Afficher le header mobile */
+    .mobile-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 20px;
+        background: #111;
+        position: fixed;
+        top: 0; width: 100%; z-index: 3000;
+        border-bottom: 1px solid #222;
+    }
+
+    .menu-toggle {
+        background: none; border: none; color: white; cursor: pointer;
+    }
+
+    /* 2. Transformer la Sidebar en Menu Déroulant */
     .sidebar {
-        width: 100% !important;
-        height: 60px !important;
         position: fixed !important;
-        bottom: 0; /* On la met en bas pour le pouce */
-        flex-direction: row !important;
-        z-index: 9999;
-        padding: 0 10px !important;
+        top: 60px; /* Juste sous le mobile-header */
+        left: -100% !important; /* Caché par défaut à gauche */
+        width: 80% !important;
+        height: calc(100% - 60px) !important;
+        transition: 0.3s ease-in-out;
+        z-index: 2500;
+        background: #0a0a0a !important;
+        display: flex !important;
+        flex-direction: column !important;
     }
 
-    /* 2. On réduit la taille des cartes pour qu'elles rentrent */
-    .stat-card {
-        width: 100% !important;
-        margin: 5px 0 !important;
-        padding: 10px !important;
+    /* Quand on ajoute la classe .open via JS */
+    .sidebar.open {
+        left: 0 !important;
     }
 
-    /* 3. On cache les éléments inutiles sur mobile */
-    .logo span, .user-name {
-        display: none !important;
-    }
-
-    /* 4. On ajuste le contenu principal pour qu'il ne soit pas caché par la barre */
+    /* 3. Ajuster le contenu pour qu'il ne soit pas écrasé */
     .main-content {
         margin-left: 0 !important;
-        padding: 10px !important;
-        padding-bottom: 80px !important; /* Marge pour la barre du bas */
+        margin-top: 70px !important;
+        padding: 15px !important;
+    }
+
+    /* Rendre les cartes plus petites (2 par ligne) */
+    .stats-container {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
     }
 }
+
     /* 4. Barre IA : Version "Bouton Flottant" sur Mobile */
     .ia-status-bar {
         width: calc(100% - 20px) !important;
@@ -883,6 +899,3 @@ select option {
     color: white;
     padding: 10px;
 }
-
-
-
