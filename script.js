@@ -3159,6 +3159,35 @@ function toggleMenu() {
         lucide.createIcons();
     }
 }
+document.addEventListener('DOMContentLoaded', () => {
+    const menuBtn = document.querySelector('.menu-toggle');
+    const sidebar = document.querySelector('.sidebar');
+    const iconContainer = document.querySelector('#menu-icon-container');
+
+    // 1. GESTION DU CLIC SUR LE BOUTON
+    if (menuBtn && sidebar) {
+        menuBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation(); // Empêche le clic de traverser le bouton
+
+            // Basculer l'état du menu
+            const isOpen = sidebar.classList.toggle('is-menu-open');
+
+            // Changer l'icône (Menu / X)
+            if (iconContainer) {
+                iconContainer.innerHTML = isOpen 
+                    ? '<i data-lucide="x"></i>' 
+                    : '<i data-lucide="menu"></i>';
+                
+                // Relancer Lucide pour dessiner la nouvelle icône
+                if (window.lucide) lucide.createIcons();
+            }
+
+            // Bloquer le scroll derrière le menu
+            document.body.style.overflow = isOpen ? 'hidden' : '';
+        });
+    }
+
 
 // 3. FERMETURE AUTO AU CLIC
 // On sélectionne tous tes liens de navigation
@@ -3188,6 +3217,7 @@ window.initApp = function() {
 };
 
 window.onload = window.initApp;
+
 
 
 
