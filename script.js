@@ -3138,46 +3138,41 @@ window.goToHome = function() {
     }
 };
 
-// Fonction Menu "Blindée"
-window.toggleMenu = function() {
+function toggleMenu() {
     const sidebar = document.querySelector('.sidebar');
-    const container = document.querySelector('#menu-icon-container');
-
-    if (!sidebar) return;
-
+    const iconContainer = document.querySelector('#menu-icon-container');
+    
+    // 1. Ouvre ou ferme la sidebar
     sidebar.classList.toggle('is-menu-open');
 
-    // Gestion de l'icône et du scroll
-    const isOpen = sidebar.classList.contains('is-menu-open');
-    if (container) {
-        container.innerHTML = isOpen ? '<i data-lucide="x"></i>' : '<i data-lucide="menu"></i>';
+    // 2. Change l'icône (Menu <-> X)
+    if (sidebar.classList.contains('is-menu-open')) {
+        iconContainer.innerHTML = '<i data-lucide="x"></i>';
+        document.body.style.overflow = 'hidden'; // Empêche le scroll derrière
+    } else {
+        iconContainer.innerHTML = '<i data-lucide="menu"></i>';
+        document.body.style.overflow = ''; // Réactive le scroll
     }
-    document.body.style.overflow = isOpen ? 'hidden' : '';
-
-    if (window.lucide) lucide.createIcons();
-};
-
-// INITIALISATION AU CHARGEMENT
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Force le clic sur le bouton menu
-    const menuBtn = document.querySelector('.menu-toggle');
-    if (menuBtn) {
-        menuBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            window.toggleMenu();
-        });
+    
+    // Relance Lucide pour afficher la nouvelle icône
+    if (window.lucide) {
+        lucide.createIcons();
     }
+}
 
-    // 2. Fermeture auto quand on clique sur une section
-    document.addEventListener('click', (e) => {
-        const navItem = e.target.closest('.nav-item');
-        if (navItem) {
-            const sidebar = document.querySelector('.sidebar');
-            if (sidebar && sidebar.classList.contains('is-menu-open')) {
-                // On laisse un mini délai pour que l'utilisateur voit le clic
-                setTimeout(() => window.toggleMenu(), 100);
-            }
+// 3. FERMETURE AUTO AU CLIC
+// On sélectionne tous tes liens de navigation
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+        const sidebar = document.querySelector('.sidebar');
+        
+        // Si on est sur mobile et que le menu est ouvert
+        if (sidebar.classList.contains('is-menu-open')) {
+            // On appelle la fonction pour fermer
+            toggleMenu(); 
+            
+            // La page choisie s'ouvrira normalement car 
+            // ton code switchTab est déjà lié au clic
         }
     });
 });
@@ -3193,6 +3188,7 @@ window.initApp = function() {
 };
 
 window.onload = window.initApp;
+
 
 
 
