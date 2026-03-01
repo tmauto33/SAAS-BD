@@ -3125,7 +3125,30 @@ window.goToHome = function() {
     if(firstBtn) firstBtn.click(); 
 };
 
+function toggleMobileMenu() {
+    const sidebar = document.querySelector('.sidebar');
+    sidebar.classList.toggle('active');
+    
+    // Change l'icône du bouton
+    const icon = document.querySelector('.mobile-menu-trigger i');
+    if (sidebar.classList.contains('active')) {
+        icon.setAttribute('data-lucide', 'x');
+    } else {
+        icon.setAttribute('data-lucide', 'layout-grid');
+    }
+    lucide.createIcons(); // Rafraîchit l'icône Lucide
+}
 
+// Ferme le menu automatiquement quand on clique sur un onglet
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+        if (window.innerWidth <= 1024) {
+            document.querySelector('.sidebar').classList.remove('active');
+            document.querySelector('.mobile-menu-trigger i').setAttribute('data-lucide', 'layout-grid');
+            lucide.createIcons();
+        }
+    });
+});
 // ==========================================================================
 // 9. INITIALISATION
 // ==========================================================================
@@ -3138,3 +3161,4 @@ window.initApp = function() {
 };
 
 window.onload = window.initApp;
+
