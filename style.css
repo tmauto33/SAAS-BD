@@ -849,168 +849,168 @@ select option {
 /* --- CONFIGURATION ORDINATEUR (Par défaut) --- */
 .header-mobile { display: none; } /* Cacher le header mobile sur grand écran */
 
-/* --- CONFIGURATION TÉLÉPHONE (Media Query) --- */
 /* ==========================================================================
-   VERSION MOBILE OPTIMISÉE (APPLICATION NATIVE)
-   ============================================================ */
+   VERSION MOBILE ULTIME - OX PRO (CORRIGÉE & CENTRÉE)
+   ========================================================================== */
 
 @media (max-width: 1024px) {
-    /* 1. Reset & Structure */
+    /* 1. Reset Global Mobile */
     body {
-        overflow-x: hidden;
+        overflow-x: hidden !important;
         background-color: #08080a !important;
+        margin: 0;
+        padding: 0;
     }
 
-    /* 2. Header Mobile Fixe */
+    /* 2. Header Mobile : Ultra Visible & Centré */
     .header-mobile {
         display: flex !important;
         align-items: center;
         justify-content: space-between;
-        padding: 10px 15px;
+        padding: 0 20px;
         background: #0d0d0f;
         position: fixed;
-        top: 0; 
-        left: 0; 
+        top: 0;
+        left: 0;
         width: 100%;
-        height: 60px;
+        height: 70px; /* Plus haut pour être mieux vu */
         z-index: 10000;
-        border-bottom: 1px solid #1f1f22;
+        border-bottom: 2px solid #1f1f22;
         box-sizing: border-box;
     }
 
+    .logo-app-mobile {
+        font-weight: 800;
+        font-size: 1.4rem;
+        color: #fff;
+        text-align: center;
+        flex-grow: 1; /* Centre le logo entre le menu et le spacer */
+    }
+
+    .logo-app-mobile span {
+        color: #22c55e; /* Ton vert d'accentuation */
+    }
+
     .menu-toggle {
-        background: rgba(255, 255, 255, 0.05);
+        background: #1a1a1e;
         border: 1px solid #333;
-        padding: 8px;
-        border-radius: 8px;
+        padding: 10px;
+        border-radius: 10px;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
+        width: 45px;
+        height: 45px;
     }
 
     .hamburger-icon {
-        width: 22px;
+        width: 25px;
         height: auto;
-        filter: invert(1); /* Si l'icône est noire, elle devient blanche */
     }
 
-    /* 3. Sidebar : Mode Plein Écran (Overlay) */
+    /* 3. Sidebar : Menu Plein Écran (Overlay) */
     .sidebar {
         position: fixed !important;
         top: 0;
         left: 0 !important;
-        width: 100% !important;
+        width: 100vw !important;
         height: 100vh !important;
         height: 100dvh !important;
         z-index: 20000 !important;
         background: #08080a !important;
         display: flex !important;
         flex-direction: column !important;
-        padding: 40px 20px !important;
+        padding: 60px 25px !important;
         box-sizing: border-box;
         
-        /* Animation : On part du haut vers le bas */
-        transform: translateY(-100%);
+        /* Animation : Apparition fluide */
         opacity: 0;
         visibility: hidden;
+        transform: scale(1.1);
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .sidebar.is-menu-open {
-        transform: translateY(0);
-        opacity: 1;
-        visibility: visible;
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: scale(1) !important;
     }
 
-    /* Logo et bouton fermer dans le menu plein écran */
-    .sidebar::before {
-        content: "OX PRO";
-        display: block;
-        text-align: center;
-        font-weight: 800;
-        font-size: 1.5rem;
-        color: #fff;
-        margin-bottom: 40px;
-    }
-
-    /* 4. Navigation au centre du menu plein écran */
+    /* Navigation au centre du menu */
     .sidebar nav {
         display: flex !important;
         flex-direction: column !important;
         justify-content: center !important;
         align-items: center !important;
         flex-grow: 1;
-        gap: 12px !important;
+        gap: 15px !important;
     }
 
     .nav-item {
         width: 100% !important;
-        max-width: 320px;
-        padding: 16px !important;
+        max-width: 350px;
+        padding: 22px !important; /* Très grand pour le confort tactile */
         justify-content: center !important;
-        font-size: 1.1rem !important;
-        border-radius: 12px !important;
-        background: rgba(255, 255, 255, 0.05) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        font-size: 1.3rem !important;
+        font-weight: 600;
+        border-radius: 15px !important;
+        background: #121217 !important;
+        border: 1px solid #1f1f25 !important;
         margin: 0 !important;
-        transition: transform 0.2s;
+        color: #fff !important;
     }
 
-    .nav-item:active {
-        transform: scale(0.95);
-        background: rgba(255, 255, 255, 0.1) !important;
+    .nav-item.active {
+        border-color: #22c55e !important;
+        background: rgba(34, 197, 94, 0.1) !important;
     }
 
-    /* 5. Contenu Principal Ajusté */
+    /* 4. Contenu Principal */
     .main-content {
         margin-left: 0 !important;
-        margin-top: 60px !important;
-        padding: 15px !important;
+        margin-top: 70px !important; /* Aligné sur la hauteur du header */
+        padding: 20px !important;
         width: 100% !important;
         box-sizing: border-box;
     }
 
-    /* Titres de sections */
-    .main-content h1 {
-        font-size: 1.5rem !important;
-        margin-bottom: 20px !important;
-    }
-
-    /* 6. Grilles et Cartes (Mode 1 Colonne) */
-    .dashboard-grid, .stats-container, .grid-container {
+    /* 5. Cartes de Statistiques (1 Colonne, pleine largeur) */
+    .dashboard-grid, .stats-container {
         display: flex !important;
         flex-direction: column !important;
-        gap: 15px !important;
+        gap: 20px !important;
     }
 
     .stat-card {
         width: 100% !important;
-        padding: 20px !important;
-        border-radius: 16px !important;
+        padding: 25px !important;
+        border-radius: 20px !important;
         background: #121217 !important;
+        border: 1px solid #1f1f25 !important;
         box-sizing: border-box;
     }
 
     .stat-card .value {
-        font-size: 1.3rem !important; /* Pour les gros chiffres (314M€) */
+        font-size: 1.6rem !important; /* Très lisible */
+        margin-top: 10px;
         word-break: break-all;
-        line-height: 1.2;
     }
 
-    /* 7. Barre de bénéfice Expertise (Mobile) */
+    /* 6. Barre de bénéfice flottante (Visible & Centrée) */
     .votre-classe-barre-danger {
         position: fixed !important;
-        bottom: 20px !important;
-        left: 15px !important;
-        right: 15px !important;
-        width: auto !important;
-        padding: 12px !important;
-        background: rgba(25, 25, 30, 0.95) !important;
-        backdrop-filter: blur(10px);
-        border-radius: 12px !important;
-        z-index: 5000;
-        display: none; /* Géré par JS */
+        bottom: 30px !important;
+        left: 5% !important; /* Centrage horizontal */
+        width: 90% !important;
+        height: auto !important;
+        padding: 15px 20px !important;
+        background: rgba(20, 20, 25, 0.98) !important;
+        backdrop-filter: blur(15px);
+        border: 2px solid #22c55e !important; /* Bordure verte pour attirer l'oeil */
+        border-radius: 16px !important;
+        z-index: 9000;
+        display: none; /* Toujours géré par ton switchTab */
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
 }
-
