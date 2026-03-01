@@ -1012,3 +1012,17 @@ select option {
         display: none; /* Toujours géré par JS */
     }
 }
+
+@media (max-width: 1024px) {
+    /* Force le bouton menu à rester au-dessus de la sidebar plein écran */
+    .menu-toggle {
+        z-index: 20001 !important; 
+        position: relative;
+    }
+
+    /* Optionnel : animation de rotation pour la croix */
+    #menu-icon-container i {
+        transition: transform 0.3s ease;
+    }
+}
+
