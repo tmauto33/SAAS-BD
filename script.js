@@ -3129,46 +3129,57 @@ window.updateFinancials = function() {
 document.addEventListener('DOMContentLoaded', window.loadOptions);
 
 
-// À mettre dans tes scripts
+// Fonction de navigation
 window.goToHome = function() {
-    showSection('stats'); // Affiche la section
-    // Optionnel : simule un clic sur le premier bouton du menu pour mettre l'onglet en surbrillance
-    const firstBtn = document.querySelector('nav button');
-    if(firstBtn) firstBtn.click(); 
+    if (typeof showSection === 'function') {
+        showSection('stats');
+        const firstBtn = document.querySelector('.nav-item');
+        if(firstBtn) firstBtn.classList.add('active');
+    }
 };
 
-// On s'assure que la fonction est accessible partout
+// Fonction Menu "Blindée"
 window.toggleMenu = function() {
-    console.log("Tentative d'ouverture du menu...");
     const sidebar = document.querySelector('.sidebar');
     const container = document.querySelector('#menu-icon-container');
 
-    if (!sidebar) {
-        console.error("ERREUR : L'élément .sidebar n'existe pas dans le HTML");
-        return;
-    }
+    if (!sidebar) return;
 
     sidebar.classList.toggle('is-menu-open');
 
-    if (sidebar.classList.contains('is-menu-open')) {
-        if (container) container.innerHTML = '<i data-lucide="x"></i>';
-        document.body.style.overflow = 'hidden';
-    } else {
-        if (container) container.innerHTML = '<i data-lucide="menu"></i>';
-        document.body.style.overflow = '';
+    // Gestion de l'icône et du scroll
+    const isOpen = sidebar.classList.contains('is-menu-open');
+    if (container) {
+        container.innerHTML = isOpen ? '<i data-lucide="x"></i>' : '<i data-lucide="menu"></i>';
     }
+    document.body.style.overflow = isOpen ? 'hidden' : '';
 
     if (window.lucide) lucide.createIcons();
 };
 
-// Fermeture auto lors du clic sur une section
-document.addEventListener('click', function(e) {
-    if (e.target.closest('.nav-item')) {
-        const sidebar = document.querySelector('.sidebar');
-        if (sidebar && sidebar.classList.contains('is-menu-open')) {
+// INITIALISATION AU CHARGEMENT
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Force le clic sur le bouton menu
+    const menuBtn = document.querySelector('.menu-toggle');
+    if (menuBtn) {
+        menuBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             window.toggleMenu();
-        }
+        });
     }
+
+    // 2. Fermeture auto quand on clique sur une section
+    document.addEventListener('click', (e) => {
+        const navItem = e.target.closest('.nav-item');
+        if (navItem) {
+            const sidebar = document.querySelector('.sidebar');
+            if (sidebar && sidebar.classList.contains('is-menu-open')) {
+                // On laisse un mini délai pour que l'utilisateur voit le clic
+                setTimeout(() => window.toggleMenu(), 100);
+            }
+        }
+    });
 });
 // ==========================================================================
 // 9. INITIALISATION
@@ -3182,6 +3193,7 @@ window.initApp = function() {
 };
 
 window.onload = window.initApp;
+
 
 
 
