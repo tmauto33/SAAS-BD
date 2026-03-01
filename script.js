@@ -3125,18 +3125,46 @@ window.goToHome = function() {
     if(firstBtn) firstBtn.click(); 
 };
 
-// Fonction pour ouvrir/fermer le menu mobile
+
 function toggleMenu() {
     const sidebar = document.querySelector('.sidebar');
+    const iconContainer = document.querySelector('#menu-icon-container');
+    
+    // 1. Ouvre ou ferme la sidebar
     sidebar.classList.toggle('is-menu-open');
 
-    // Empêche de scroller le dashboard derrière quand le menu est ouvert
+    // 2. Change l'icône (Menu <-> X)
     if (sidebar.classList.contains('is-menu-open')) {
-        document.body.style.overflow = 'hidden';
+        iconContainer.innerHTML = '<i data-lucide="x"></i>';
+        document.body.style.overflow = 'hidden'; // Empêche le scroll derrière
     } else {
-        document.body.style.overflow = '';
+        iconContainer.innerHTML = '<i data-lucide="menu"></i>';
+        document.body.style.overflow = ''; // Réactive le scroll
+    }
+    
+    // Relance Lucide pour afficher la nouvelle icône
+    if (window.lucide) {
+        lucide.createIcons();
     }
 }
+
+// 3. FERMETURE AUTO AU CLIC
+// On sélectionne tous tes liens de navigation
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+        const sidebar = document.querySelector('.sidebar');
+        
+        // Si on est sur mobile et que le menu est ouvert
+        if (sidebar.classList.contains('is-menu-open')) {
+            // On appelle la fonction pour fermer
+            toggleMenu(); 
+            
+            // La page choisie s'ouvrira normalement car 
+            // ton code switchTab est déjà lié au clic
+        }
+    });
+});
+
 // ==========================================================================
 // 9. INITIALISATION
 // ==========================================================================
@@ -3149,6 +3177,7 @@ window.initApp = function() {
 };
 
 window.onload = window.initApp;
+
 
 
 
