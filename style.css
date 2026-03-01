@@ -766,7 +766,7 @@ main.v-main {
 }
 
 /* ==========================================================================
-   OPTIMISATION MOBILE ULTIME (iPhone / Android / iPad)
+   OPTIMISATION MOBILE ULTIME (Version App Native)
    ========================================================================== */
 
 @media (max-width: 1024px) {
@@ -774,46 +774,110 @@ main.v-main {
         --sidebar-width: 0px;
     }
 
-    /* 1. Sidebar : Navigation Horizontale compacte */
+    /* 1. Sidebar devient une Barre de Navigation Basse (Tab Bar) */
     .sidebar {
         width: 100% !important;
-        height: 60px !important;
-        position: sticky !important; /* Reste en haut au scroll */
-        top: 0;
+        height: 65px !important;
+        position: fixed !important;
+        bottom: 0 !important; /* Fixé en bas comme sur iPhone/Android */
+        top: auto !important;
+        left: 0;
         flex-direction: row !important;
-        overflow-x: auto !important; /* Scroll des onglets au doigt */
-        padding: 0 15px !important;
-        background: rgba(10, 10, 10, 0.95) !important;
-        backdrop-filter: blur(10px); /* Effet moderne */
-        border-bottom: 1px solid #333;
-        z-index: 2000;
-        align-items: center;
-        gap: 10px;
-        -webkit-overflow-scrolling: touch;
+        justify-content: space-around !important; /* Espacement égal */
+        padding: 0 5px !important;
+        background: rgba(15, 15, 15, 0.98) !important;
+        backdrop-filter: blur(20px);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        border-bottom: none !important;
+        z-index: 9999;
+        overflow-x: auto;
+        overflow-y: hidden;
     }
 
-    .sidebar .logo {
-        margin: 0 15px 0 0 !important;
-        font-size: 1rem !important;
-        flex-shrink: 0;
+    /* On cache le logo et le profil dans la barre du bas pour gagner de la place */
+    .sidebar-header, .logo, #google_translate_element {
+        display: none !important;
     }
 
+    /* 2. Items de navigation style "Icon-Only" ou "Compact" */
     .nav-item {
-        margin: 0 !important;
-        padding: 8px 12px !important;
-        font-size: 0.75rem !important;
-        white-space: nowrap;
-        width: auto !important;
-        border-radius: 8px !important;
+        flex-direction: column !important; /* Icône au dessus du texte */
+        gap: 4px !important;
+        padding: 8px 4px !important;
+        font-size: 10px !important; /* Texte très petit */
+        background: transparent !important;
+        flex: 1;
+        min-width: 60px;
+        justify-content: center;
+        border-radius: 0 !important;
     }
 
-    /* 2. Ajustement du contenu pour ne pas être caché */
+    .nav-item i {
+        width: 20px !important;
+        height: 20px !important;
+    }
+
+    .nav-item span {
+        display: block !important; /* Force l'affichage du nom sous l'icône */
+    }
+
+    /* 3. Optimisation des CARTES et GRILLES */
     .main-content {
         margin-left: 0 !important;
+        padding: 15px 15px 80px 15px !important; /* Padding bas pour ne pas cacher derrière la nav */
         width: 100% !important;
-        padding: 10px !important;
-        margin-top: 0 !important;
     }
+
+    /* Cartes en plein écran sur mobile */
+    .card, .stat-card, .vehicle-card {
+        padding: 15px !important;
+        margin-bottom: 12px !important;
+        border-radius: 12px !important;
+        width: 100% !important;
+    }
+
+    /* Grilles : on passe tout sur 1 seule colonne */
+    .grid-2, .grid-3, .dashboard-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+    }
+
+    /* 4. Tableaux : Transformation en mode "Liste" */
+    table, thead, tbody, th, td, tr {
+        display: block !important;
+    }
+
+    thead { display: none !important; } /* On cache les titres de colonnes */
+
+    tr {
+        background: #1a1a1a;
+        margin-bottom: 10px;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #333;
+    }
+
+    td {
+        text-align: right;
+        padding: 5px 0 !important;
+        position: relative;
+        font-size: 13px;
+    }
+
+    td::before {
+        content: attr(data-label); /* Utilise l'attribut data-label si présent */
+        float: left;
+        font-weight: bold;
+        color: #888;
+    }
+
+    /* 5. Inputs et Boutons plus larges pour les doigts */
+    input, select, button {
+        min-height: 44px !important; /* Taille minimum recommandée par Apple/Google */
+        font-size: 16px !important; /* Évite le zoom auto sur iPhone */
+    }
+}
 
     /* 3. Dossier Analyse : On force les colonnes à s'empiler */
     /* Remplace 'dashboard-grid' par l'id ou la classe de ton container d'analyse */
