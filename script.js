@@ -3128,22 +3128,15 @@ window.goToHome = function() {
 // Fonction pour ouvrir/fermer le menu mobile
 function toggleMenu() {
     const sidebar = document.querySelector('.sidebar');
-    
-    // On ajoute ou on enlève la classe CSS qui déclenche l'animation
     sidebar.classList.toggle('is-menu-open');
+
+    // Empêche de scroller le dashboard derrière quand le menu est ouvert
+    if (sidebar.classList.contains('is-menu-open')) {
+        document.body.style.overflow = 'hidden';
+    } else {
+        document.body.style.overflow = '';
+    }
 }
-
-// Optionnel : Fermer le menu automatiquement quand on clique sur une section
-// pour naviguer, pour éviter de le faire manuellement à chaque fois.
-document.querySelectorAll('.nav-item').forEach(item => {
-    item.addEventListener('click', () => {
-        // Seulement sur mobile
-        if (window.innerWidth <= 1024) {
-            document.querySelector('.sidebar').classList.remove('is-menu-open');
-        }
-    });
-});
-
 // ==========================================================================
 // 9. INITIALISATION
 // ==========================================================================
@@ -3156,5 +3149,6 @@ window.initApp = function() {
 };
 
 window.onload = window.initApp;
+
 
 
