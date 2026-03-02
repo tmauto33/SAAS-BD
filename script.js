@@ -3125,37 +3125,47 @@ window.goToHome = function() {
     if(firstBtn) firstBtn.click(); 
 };
 
-function toggleMenu() {
+document.addEventListener('DOMContentLoaded', () => {
+    const menuBtn = document.getElementById('menuBtn');
     const sidebar = document.querySelector('.sidebar');
-    const icon = document.querySelector('.menu-toggle i');
-    
-    // On utilise 'active' pour correspondre à ton CSS
-    const isOpen = sidebar.classList.toggle('active');
-    
-    // Change l'icône
-    if (icon) {
-        icon.setAttribute('data-lucide', isOpen ? 'x' : 'menu');
-        if (window.lucide) lucide.createIcons();
+    const menuIcon = menuBtn.querySelector('i');
+
+    // Fonction pour basculer le menu
+    function toggleMenu() {
+        const isOpen = sidebar.classList.toggle('active');
+        
+        // Change l'icône (Lucide)
+        if (menuIcon) {
+            menuIcon.setAttribute('data-lucide', isOpen ? 'x' : 'menu');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // Empêche le scroll du fond
+        document.body.style.overflow = isOpen ? 'hidden' : '';
     }
 
-    // Bloque le scroll du fond quand le menu est ouvert
-    document.body.style.overflow = isOpen ? 'hidden' : '';
-}
+    // Clic sur le bouton hamburger
+    if (menuBtn) {
+        menuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleMenu();
+        });
+    }
 
-// Fermeture automatique au clic sur une section
-document.querySelectorAll('.nav-item').forEach(item => {
-    item.addEventListener('click', () => {
-        const sidebar = document.querySelector('.sidebar');
-        const icon = document.querySelector('.menu-toggle i');
-        
-        if (sidebar.classList.contains('active')) {
-            sidebar.classList.remove('active');
-            document.body.style.overflow = '';
-            
-            if (icon) {
-                icon.setAttribute('data-lucide', 'menu');
-                if (window.lucide) lucide.createIcons();
+    // FERMETURE AUTOMATIQUE : Clic sur une section
+    const navLinks = document.querySelectorAll('.nav-item'); // Ajuste la classe si besoin
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            if (sidebar.classList.contains('active')) {
+                toggleMenu(); // Ferme le menu proprement
             }
+        });
+    });
+
+    // Fermer si on clique en dehors de la sidebar
+    document.addEventListener('click', (e) => {
+        if (sidebar.classList.contains('active') && !sidebar.contains(e.target) && !menuBtn.contains(e.target)) {
+            toggleMenu();
         }
     });
 });
