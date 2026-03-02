@@ -3138,71 +3138,43 @@ window.goToHome = function() {
     }
 };
 
-function toggleMenu() {
-    const sidebar = document.querySelector('.sidebar');
-    const iconContainer = document.querySelector('#menu-icon-container');
-    
-    // 1. Ouvre ou ferme la sidebar
-    sidebar.classList.toggle('is-menu-open');
-
-    // 2. Change l'icône (Menu <-> X)
-    if (sidebar.classList.contains('is-menu-open')) {
-        iconContainer.innerHTML = '<i data-lucide="x"></i>';
-        document.body.style.overflow = 'hidden'; // Empêche le scroll derrière
-    } else {
-        iconContainer.innerHTML = '<i data-lucide="menu"></i>';
-        document.body.style.overflow = ''; // Réactive le scroll
-    }
-    
-    // Relance Lucide pour afficher la nouvelle icône
-    if (window.lucide) {
-        lucide.createIcons();
-    }
-}
 document.addEventListener('DOMContentLoaded', () => {
-    const menuBtn = document.querySelector('.menu-toggle');
+    const menuBtn = document.getElementById('menuBtn');
     const sidebar = document.querySelector('.sidebar');
-    const iconContainer = document.querySelector('#menu-icon-container');
+    const iconContainer = document.getElementById('menu-icon-container');
 
-    // 1. GESTION DU CLIC SUR LE BOUTON
-    if (menuBtn && sidebar) {
+    // Fonction pour ouvrir/fermer le menu
+    function toggleMenu() {
+        const isOpen = sidebar.classList.toggle('is-menu-open');
+        
+        // Change l'icône entre Menu et X
+        if (iconContainer) {
+            iconContainer.innerHTML = isOpen 
+                ? '<i data-lucide="x"></i>' 
+                : '<i data-lucide="menu"></i>';
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // Empêche de scroller la page quand le menu est ouvert
+        document.body.style.overflow = isOpen ? 'hidden' : '';
+    }
+
+    // Écouteur de clic sur le bouton menu
+    if (menuBtn) {
         menuBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation(); // Empêche le clic de traverser le bouton
-
-            // Basculer l'état du menu
-            const isOpen = sidebar.classList.toggle('is-menu-open');
-
-            // Changer l'icône (Menu / X)
-            if (iconContainer) {
-                iconContainer.innerHTML = isOpen 
-                    ? '<i data-lucide="x"></i>' 
-                    : '<i data-lucide="menu"></i>';
-                
-                // Relancer Lucide pour dessiner la nouvelle icône
-                if (window.lucide) lucide.createIcons();
-            }
-
-            // Bloquer le scroll derrière le menu
-            document.body.style.overflow = isOpen ? 'hidden' : '';
+            e.stopPropagation();
+            toggleMenu();
         });
     }
 
-
-// 3. FERMETURE AUTO AU CLIC
-// On sélectionne tous tes liens de navigation
-document.querySelectorAll('.nav-item').forEach(item => {
-    item.addEventListener('click', () => {
-        const sidebar = document.querySelector('.sidebar');
-        
-        // Si on est sur mobile et que le menu est ouvert
-        if (sidebar.classList.contains('is-menu-open')) {
-            // On appelle la fonction pour fermer
-            toggleMenu(); 
-            
-            // La page choisie s'ouvrira normalement car 
-            // ton code switchTab est déjà lié au clic
-        }
+    // Fermeture automatique quand on clique sur une section
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+        item.addEventListener('click', () => {
+            if (sidebar.classList.contains('is-menu-open')) {
+                toggleMenu();
+            }
+        });
     });
 });
 // ==========================================================================
@@ -3217,6 +3189,7 @@ window.initApp = function() {
 };
 
 window.onload = window.initApp;
+
 
 
 
