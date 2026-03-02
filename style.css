@@ -744,3 +744,9 @@ main.v-main {
         width: 100% !important;
     }
 }
+
+.menu-toggle {
+    outline: 5px solid red !important; /* Pour voir la zone de clic */
+    background: rgba(255, 0, 0, 0.5) !important; 
+}
+
