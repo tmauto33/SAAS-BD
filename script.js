@@ -3129,50 +3129,60 @@ window.updateFinancials = function() {
 document.addEventListener('DOMContentLoaded', window.loadOptions);
 
 
-// Fonction de navigation
+// 1. Fonction de navigation globale (Home)
 window.goToHome = function() {
-    if (typeof showSection === 'function') {
-        showSection('stats');
+    // On vérifie si switchTab ou showSection existe
+    const changerPage = window.switchTab || window.showSection;
+    
+    if (typeof changerPage === 'function') {
+        changerPage('stats');
+        
+        // Mise à jour visuelle du bouton actif
+        document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
         const firstBtn = document.querySelector('.nav-item');
         if(firstBtn) firstBtn.classList.add('active');
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-    const menuBtn = document.getElementById('menuBtn');
+// 2. Fonction Toggle Menu (Sortie du DOMContentLoaded pour être accessible par onclick)
+window.toggleMenu = function() {
     const sidebar = document.querySelector('.sidebar');
     const iconContainer = document.getElementById('menu-icon-container');
+    
+    if (!sidebar) return;
 
-    // Fonction pour ouvrir/fermer le menu
-    function toggleMenu() {
-        const isOpen = sidebar.classList.toggle('is-menu-open');
-        
-        // Change l'icône entre Menu et X
-        if (iconContainer) {
-            iconContainer.innerHTML = isOpen 
-                ? '<i data-lucide="x"></i>' 
-                : '<i data-lucide="menu"></i>';
-            if (window.lucide) lucide.createIcons();
-        }
-
-        // Empêche de scroller la page quand le menu est ouvert
-        document.body.style.overflow = isOpen ? 'hidden' : '';
+    const isOpen = sidebar.classList.toggle('is-menu-open');
+    
+    // Changement d'icône
+    if (iconContainer) {
+        iconContainer.innerHTML = isOpen 
+            ? '<i data-lucide="x"></i>' 
+            : '<i data-lucide="menu"></i>';
+        if (window.lucide) lucide.createIcons();
     }
 
-    // Écouteur de clic sur le bouton menu
+    // Blocage du scroll
+    document.body.style.overflow = isOpen ? 'hidden' : '';
+};
+
+// 3. Initialisation des événements
+document.addEventListener('DOMContentLoaded', () => {
+    const menuBtn = document.getElementById('menuBtn');
+
+    // On attache l'événement au bouton s'il n'a pas de onclick dans le HTML
     if (menuBtn) {
         menuBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            toggleMenu();
+            window.toggleMenu();
         });
     }
 
-    // Fermeture automatique quand on clique sur une section
-    const navItems = document.querySelectorAll('.nav-item');
-    navItems.forEach(item => {
+    // Fermeture auto lors du clic sur une section
+    document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', () => {
-            if (sidebar.classList.contains('is-menu-open')) {
-                toggleMenu();
+            const sidebar = document.querySelector('.sidebar');
+            if (sidebar && sidebar.classList.contains('is-menu-open')) {
+                window.toggleMenu();
             }
         });
     });
@@ -3189,6 +3199,7 @@ window.initApp = function() {
 };
 
 window.onload = window.initApp;
+
 
 
 
