@@ -688,65 +688,38 @@ main.v-main {
 
 
 @media (max-width: 1024px) {
-    .header-mobile {
-        display: flex !important;
-        position: fixed !important;
-        top: 0; left: 0; width: 100%;
-        height: 70px;
-        background: #0d0d0f;
-        z-index: 100000 !important;
-        border-bottom: 1px solid #222;
-        padding: 0 15px;
-        align-items: center;
-        justify-content: space-between;
-        box-sizing: border-box; /* Crucial pour la largeur */
-    }
+    /* On cache le bouton original s'il est encore dans ton header */
+    .header-mobile .menu-toggle { display: none !important; }
 
-    .menu-toggle {
-        background: #1a1a1a;
-        border: 1px solid #333;
+    /* Nouveau style pour le bouton flottant */
+    .menu-toggle-floating {
+        position: fixed !important;
+        top: 12px !important;
+        right: 15px !important;
+        width: 45px !important;
+        height: 45px !important;
+        background: #1a1a1a !important;
+        border: 1px solid #333 !important;
+        border-radius: 10px;
         color: white;
-        padding: 8px;
-        border-radius: 8px;
-        cursor: pointer !important;
-        pointer-events: auto !important;
-        display: flex;
+        z-index: 999999 !important; /* Index astronomique */
+        display: flex !important;
         align-items: center;
         justify-content: center;
+        cursor: pointer !important;
+        pointer-events: auto !important; /* Force la détection du doigt */
+        -webkit-tap-highlight-color: transparent;
     }
 
+    /* On s'assure que la sidebar ne le recouvre pas non plus */
     .sidebar {
-        position: fixed !important;
-        top: 0;
-        left: 0 !important; /* On fixe à 0 */
-        width: 280px !important;
-        height: 100vh !important;
-        z-index: 99999 !important; /* Juste en dessous du header */
-        background: #08080a !important;
-        display: flex !important;
-        flex-direction: column !important;
-        padding: 90px 20px 20px 20px !important;
-        
-        /* Animation moderne via transform */
-        transform: translateX(-100%); 
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        pointer-events: none; 
+        z-index: 999998 !important; 
+        pointer-events: none;
+        visibility: hidden;
     }
-
+    
     .sidebar.active {
-        transform: translateX(0); /* On fait glisser vers la droite */
         pointer-events: auto !important;
-    }
-
-    .main-content {
-        margin-top: 75px !important;
-        margin-left: 0 !important;
-        width: 100% !important;
+        visibility: visible;
     }
 }
-
-.menu-toggle {
-    outline: 5px solid red !important; /* Pour voir la zone de clic */
-    background: rgba(255, 0, 0, 0.5) !important; 
-}
-
