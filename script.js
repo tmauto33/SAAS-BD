@@ -135,19 +135,7 @@ window.switchTab = function(id, btn) {
             iaBar.style.display = 'none';
         }
     }
-const sidebar = document.querySelector('.sidebar');
-    if (sidebar) {
-        sidebar.classList.remove('is-menu-open'); // On retire la classe CSS
-        document.body.style.overflow = ''; // On redonne le droit de scroller
-    }
 
-    // 3. REMET L'ICÔNE EN MODE "MENU"
-    const iconContainer = document.querySelector('#menu-icon-container');
-    if (iconContainer) {
-        iconContainer.innerHTML = '<i data-lucide="menu"></i>';
-        if (window.lucide) lucide.createIcons();
-    }
-}
     if (window.lucide) lucide.createIcons();
 };
 
@@ -3129,64 +3117,36 @@ window.updateFinancials = function() {
 document.addEventListener('DOMContentLoaded', window.loadOptions);
 
 
-// 1. Fonction de navigation globale (Home)
+// À mettre dans tes scripts
 window.goToHome = function() {
-    // On vérifie si switchTab ou showSection existe
-    const changerPage = window.switchTab || window.showSection;
-    
-    if (typeof changerPage === 'function') {
-        changerPage('stats');
-        
-        // Mise à jour visuelle du bouton actif
-        document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
-        const firstBtn = document.querySelector('.nav-item');
-        if(firstBtn) firstBtn.classList.add('active');
-    }
+    showSection('stats'); // Affiche la section
+    // Optionnel : simule un clic sur le premier bouton du menu pour mettre l'onglet en surbrillance
+    const firstBtn = document.querySelector('nav button');
+    if(firstBtn) firstBtn.click(); 
 };
 
-// 2. Fonction Toggle Menu (Sortie du DOMContentLoaded pour être accessible par onclick)
-window.toggleMenu = function() {
+function toggleMenu() {
     const sidebar = document.querySelector('.sidebar');
-    const iconContainer = document.getElementById('menu-icon-container');
+    sidebar.classList.toggle('open');
     
-    if (!sidebar) return;
-
-    const isOpen = sidebar.classList.toggle('is-menu-open');
-    
-    // Changement d'icône
-    if (iconContainer) {
-        iconContainer.innerHTML = isOpen 
-            ? '<i data-lucide="x"></i>' 
-            : '<i data-lucide="menu"></i>';
-        if (window.lucide) lucide.createIcons();
+    // Change l'icône entre Menu et X
+    const icon = document.querySelector('.menu-toggle i');
+    if (sidebar.classList.contains('open')) {
+        icon.setAttribute('data-lucide', 'x');
+    } else {
+        icon.setAttribute('data-lucide', 'menu');
     }
+    lucide.createIcons();
+}
 
-    // Blocage du scroll
-    document.body.style.overflow = isOpen ? 'hidden' : '';
-};
-
-// 3. Initialisation des événements
-document.addEventListener('DOMContentLoaded', () => {
-    const menuBtn = document.getElementById('menuBtn');
-
-    // On attache l'événement au bouton s'il n'a pas de onclick dans le HTML
-    if (menuBtn) {
-        menuBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            window.toggleMenu();
-        });
-    }
-
-    // Fermeture auto lors du clic sur une section
-    document.querySelectorAll('.nav-item').forEach(item => {
-        item.addEventListener('click', () => {
-            const sidebar = document.querySelector('.sidebar');
-            if (sidebar && sidebar.classList.contains('is-menu-open')) {
-                window.toggleMenu();
-            }
-        });
+// Optionnel : Fermer le menu quand on clique sur une section
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+        document.querySelector('.sidebar').classList.remove('open');
     });
 });
+
+
 // ==========================================================================
 // 9. INITIALISATION
 // ==========================================================================
@@ -3199,17 +3159,3 @@ window.initApp = function() {
 };
 
 window.onload = window.initApp;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
