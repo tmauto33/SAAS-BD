@@ -3125,28 +3125,28 @@ window.goToHome = function() {
     if(firstBtn) firstBtn.click(); 
 };
 
-function showSection(sectionId) {
-    // 1. Cache toutes les sections
+function switchTab(sectionId, element) {
+    // 1. Masquer toutes les sections
     document.querySelectorAll('.section-content').forEach(section => {
         section.style.display = 'none';
     });
-    
-    // 2. Affiche la section demandée
-    const target = document.getElementById(sectionId);
-    if (target) target.style.display = 'block';
 
-    // 3. Gère l'état visuel des boutons de la barre du bas
-    document.querySelectorAll('.mobile-nav .nav-item').forEach(btn => {
+    // 2. Afficher la section cible
+    const target = document.getElementById(sectionId);
+    if (target) {
+        target.style.display = 'block';
+        window.scrollTo(0, 0); // Remonte en haut de page
+    }
+
+    // 3. Gérer l'état visuel des boutons
+    document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.remove('active');
     });
-    
-    // On ajoute 'active' au bouton cliqué (facultatif si tu gères l'event)
-    if (window.event) window.event.currentTarget.classList.add('active');
-    
-    // Refresh les icônes Lucide
+    if (element) element.classList.add('active');
+
+    // 4. Recharger les icônes si nécessaire
     if (window.lucide) lucide.createIcons();
 }
-
 // ==========================================================================
 // 9. INITIALISATION
 // ==========================================================================
