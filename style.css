@@ -83,85 +83,6 @@ body {
     box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
 }
 
-/* --- AJOUT POUR MOBILE ET IPAD --- */
-/* --- SIDEBAR CORRIGÉE --- */
-.sidebar { 
-    width: var(--sidebar-width); 
-    background: var(--primary); 
-    padding: 30px 20px; 
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    position: fixed; 
-    top: 0;
-    left: 0;
-    z-index: 1000; 
-    pointer-events: auto;
-}
-
-.logo { 
-    font-size: 1.6rem; 
-    font-weight: 800;
-    margin-bottom: 40px; 
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-.logo span { color: var(--accent); }
-
-.nav-item { 
-    background: transparent;
-    border: none;
-    color: var(--text-muted);
-    border-radius: 12px; 
-    padding: 14px 18px;
-    margin-bottom: 8px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-weight: 600;
-    transition: 0.2s;
-    width: 100%;
-    text-align: left;
-}
-
-.nav-item:hover { color: white; background: rgba(255,255,255,0.05); }
-.nav-item.active { 
-    background: var(--accent) !important; 
-    color: white !important;
-    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
-}
-
-/* --- AJOUT POUR NAVIGATION MOBILE ET ZOOM --- */
-/* --- SIDEBAR UNIVERSELLE SCROLLABLE (PC & MOBILE) --- */
-.sidebar { 
-    width: 100%; /* Prend toute la largeur sur PC et Mobile */
-    background: var(--primary); 
-    padding: 10px 20px; 
-    display: flex;
-    flex-direction: row; /* Alignement horizontal partout */
-    height: auto; 
-    min-height: 70px;
-    position: sticky; /* Reste en haut et suit le zoom */
-    top: 0;
-    left: 0;
-    z-index: 1000; 
-    pointer-events: auto;
-
-    /* --- LOGIQUE DE SCROLL HORIZONTAL --- */
-    overflow-x: auto; /* Active le scroll si ça dépasse */
-    overflow-y: hidden;
-    white-space: nowrap; /* Empêche le retour à la ligne */
-    gap: 15px;
-    align-items: center;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    
-    /* Pour un défilement fluide au doigt et à la souris */
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin; /* Pour Firefox */
-}
-
 /* Personnalisation de la barre de scroll pour PC (plus discrète) */
 /* --- SIDEBAR RÉINITIALISÉE AVEC SCROLL --- */
 .sidebar { 
@@ -764,157 +685,70 @@ main.v-main {
     font-weight: 900; 
     color: white; 
 }
-
-/* --- CONFIGURATION MOBILE (Media Query) --- */
 @media (max-width: 1024px) {
-    
-    /* 1. On cache la sidebar par défaut et on la transforme en tiroir */
-    .sidebar {
+    /* 1. Reset et Header Mobile */
+    .mobile-header, .header-mobile {
+        display: flex !important;
         position: fixed !important;
-        top: 0;
-        left: -100% !important; /* Totalement cachée à gauche */
-        width: 280px !important;
-        height: 100% !important;
-        z-index: 10000;
-        transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+        top: 0; left: 0; width: 100%;
+        height: 65px;
+        background: #0f0f12 !important;
+        z-index: 9000 !important;
+        border-bottom: 1px solid #222;
+        padding: 0 15px;
+        align-items: center;
+        justify-content: space-between;
+        box-sizing: border-box;
     }
 
-    /* Classe ajoutée par JS pour ouvrir le menu */
-    .sidebar.active {
+    /* 2. LE BOUTON : Doit être devant la sidebar quand elle s'ouvre */
+    .menu-toggle, .menu-btn {
+        display: flex !important;
+        position: relative !important;
+        z-index: 20000 !important; /* Plus haut que la sidebar */
+        background: #1a1a1a !important;
+        border: 1px solid #333 !important;
+        color: white !important;
+        padding: 8px;
+        border-radius: 8px;
+        cursor: pointer !important;
+        pointer-events: auto !important;
+    }
+
+    /* 3. LA SIDEBAR : Tiroir propre */
+    .sidebar {
+        display: flex !important;
+        position: fixed !important;
+        top: 0;
+        left: -100% !important; /* Cachée par défaut */
+        width: 80% !important; /* Prend presque tout l'écran */
+        max-width: 300px;
+        height: 100vh !important;
+        height: 100dvh !important;
+        background: #08080a !important;
+        z-index: 10000 !important;
+        transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        box-shadow: 10px 0 30px rgba(0,0,0,0.8);
+        flex-direction: column !important;
+        padding-top: 80px !important; /* Espace sous le header */
+    }
+
+    /* Classe d'ouverture */
+    .sidebar.active, .sidebar.is-menu-open {
         left: 0 !important;
     }
 
-    /* 2. Affichage du Header Mobile */
-    .mobile-header {
-        display: flex !important;
-        align-items: center;
-        justify-content: space-between;
-        background: #0f0f12;
-        padding: 12px 15px;
-        position: fixed;
-        top: 0; width: 100%;
-        z-index: 9000;
-        border-bottom: 1px solid #222;
-    }
-
-    .menu-btn {
-        background: #1a1a1a;
-        border: 1px solid #333;
-        color: white;
-        padding: 8px;
-        border-radius: 8px;
-    }
-
-    /* 3. On réajuste le contenu principal (plus de marge à gauche) */
+    /* 4. Contenu Principal */
     .main-content {
         margin-left: 0 !important;
-        margin-top: 65px !important; /* Laisse la place au header mobile */
-        padding: 15px !important;
+        margin-top: 65px !important;
         width: 100% !important;
+        padding: 15px !important;
+        box-sizing: border-box;
     }
 
-    /* 4. Cartes de statistiques : On les passe en 1 seule colonne ou 2 petites */
+    /* 5. Ajustements Statistiques */
     .dashboard-grid, .stats-container {
-        display: grid !important;
-        grid-template-columns: 1fr !important; /* Une carte par ligne pour la lisibilité */
-        gap: 15px !important;
+        grid-template-columns: 1fr !important;
     }
-
-    .stat-card {
-        width: 100% !important;
-        padding: 20px !important;
-    }
-
-    /* 5. On agrandit les boutons pour les doigts */
-    .nav-item {
-        padding: 15px !important;
-        font-size: 1rem !important;
-    }
-}
-
-/* Cache le header mobile sur ordinateur */
-@media (min-width: 1025px) {
-    .mobile-header { display: none; }
-}
-
-    /* 4. Barre IA : Version "Bouton Flottant" sur Mobile */
-    .ia-status-bar {
-        width: calc(100% - 20px) !important;
-        bottom: 10px !important;
-        border-radius: 15px !important;
-        padding: 8px 15px !important;
-        height: auto !important;
-        min-height: 60px !important;
-        background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%) !important;
-        border: 1px solid var(--accent) !important;
-        box-shadow: 0 -5px 20px rgba(0,0,0,0.5) !important;
-    }
-
-    .stat-group {
-        text-align: center;
-    }
-
-    .stat-group small {
-        font-size: 0.6rem !important;
-        display: block;
-    }
-
-    .ia-value {
-        font-size: 0.9rem !important;
-    }
-
-    /* On réduit le badge central pour gagner de la place */
-    .ia-central-badge {
-        transform: scale(0.85);
-        margin: 0 5px;
-    }
-
-    /* On cache certains textes trop longs */
-    .stat-group:nth-child(1) { order: 1; } /* Bénéfice */
-    .ia-central-badge { order: 2; }    /* Cercle */
-    .stat-group:nth-child(3) { order: 3; } /* Achat Max */
-
-    /* Cacher les labels "Bénéfice estimé" pour ne laisser que le chiffre sur mini écrans */
-    @media (max-width: 400px) {
-        .stat-group small { display: none; }
-        .ia-value { font-size: 1rem !important; }
-    }
-}
-
-/* --- STYLE DU MENU DÉROULANT (SELECT) --- */
-select {
-    width: 100%;
-    padding: 12px 15px;
-    background: #1a1a1a; /* Fond sombre comme tes inputs */
-    color: white;
-    border: 1px solid #333;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    cursor: pointer;
-    appearance: none; /* Supprime la flèche par défaut du navigateur */
-    -webkit-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 15px center;
-    background-size: 18px;
-    transition: all 0.2s;
-}
-
-/* Effet au survol et focus */
-select:hover {
-    border-color: var(--accent);
-}
-
-select:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-}
-
-/* Style des options (limité par le navigateur, mais aide à la cohérence) */
-select option {
-    background: #1a1a1a;
-    color: white;
-    padding: 10px;
 }
