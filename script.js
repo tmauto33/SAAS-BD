@@ -3126,46 +3126,48 @@ window.goToHome = function() {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
     const menuBtn = document.getElementById('menuBtn');
     const sidebar = document.querySelector('.sidebar');
-    const menuIcon = menuBtn.querySelector('i');
+    const menuIcon = menuBtn ? menuBtn.querySelector('i') : null;
 
-    // Fonction pour basculer le menu
     function toggleMenu() {
+        if (!sidebar) return;
         const isOpen = sidebar.classList.toggle('active');
         
-        // Change l'icône (Lucide)
+        // Mise à jour de l'icône
         if (menuIcon) {
             menuIcon.setAttribute('data-lucide', isOpen ? 'x' : 'menu');
             if (window.lucide) lucide.createIcons();
         }
 
-        // Empêche le scroll du fond
+        // Bloque le scroll du site en arrière-plan
         document.body.style.overflow = isOpen ? 'hidden' : '';
     }
 
-    // Clic sur le bouton hamburger
     if (menuBtn) {
+        // e.preventDefault() est crucial ici pour éviter les doubles clics sur mobile
         menuBtn.addEventListener('click', (e) => {
+            e.preventDefault();
             e.stopPropagation();
             toggleMenu();
         });
     }
 
-    // FERMETURE AUTOMATIQUE : Clic sur une section
-    const navLinks = document.querySelectorAll('.nav-item'); // Ajuste la classe si besoin
-    navLinks.forEach(link => {
-        link.addEventListener('click', () => {
-            if (sidebar.classList.contains('active')) {
-                toggleMenu(); // Ferme le menu proprement
-            }
+    // On ferme si on clique sur un lien ou le logo intérieur
+    const closeItems = document.querySelectorAll('.nav-item, .sidebar .logo');
+    closeItems.forEach(item => {
+        item.addEventListener('click', () => {
+            if (sidebar.classList.contains('active')) toggleMenu();
         });
     });
 
-    // Fermer si on clique en dehors de la sidebar
+    // Fermer en cliquant à l'extérieur
     document.addEventListener('click', (e) => {
-        if (sidebar.classList.contains('active') && !sidebar.contains(e.target) && !menuBtn.contains(e.target)) {
-            toggleMenu();
+        if (sidebar && sidebar.classList.contains('active')) {
+            if (!sidebar.contains(e.target) && !menuBtn.contains(e.target)) {
+                toggleMenu();
+            }
         }
     });
 });
@@ -3182,3 +3184,4 @@ window.initApp = function() {
 };
 
 window.onload = window.initApp;
+
