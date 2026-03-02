@@ -765,6 +765,78 @@ main.v-main {
     color: white; 
 }
 
+/* --- CONFIGURATION MOBILE (Media Query) --- */
+@media (max-width: 1024px) {
+    
+    /* 1. On cache la sidebar par défaut et on la transforme en tiroir */
+    .sidebar {
+        position: fixed !important;
+        top: 0;
+        left: -100% !important; /* Totalement cachée à gauche */
+        width: 280px !important;
+        height: 100% !important;
+        z-index: 10000;
+        transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+    }
+
+    /* Classe ajoutée par JS pour ouvrir le menu */
+    .sidebar.active {
+        left: 0 !important;
+    }
+
+    /* 2. Affichage du Header Mobile */
+    .mobile-header {
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
+        background: #0f0f12;
+        padding: 12px 15px;
+        position: fixed;
+        top: 0; width: 100%;
+        z-index: 9000;
+        border-bottom: 1px solid #222;
+    }
+
+    .menu-btn {
+        background: #1a1a1a;
+        border: 1px solid #333;
+        color: white;
+        padding: 8px;
+        border-radius: 8px;
+    }
+
+    /* 3. On réajuste le contenu principal (plus de marge à gauche) */
+    .main-content {
+        margin-left: 0 !important;
+        margin-top: 65px !important; /* Laisse la place au header mobile */
+        padding: 15px !important;
+        width: 100% !important;
+    }
+
+    /* 4. Cartes de statistiques : On les passe en 1 seule colonne ou 2 petites */
+    .dashboard-grid, .stats-container {
+        display: grid !important;
+        grid-template-columns: 1fr !important; /* Une carte par ligne pour la lisibilité */
+        gap: 15px !important;
+    }
+
+    .stat-card {
+        width: 100% !important;
+        padding: 20px !important;
+    }
+
+    /* 5. On agrandit les boutons pour les doigts */
+    .nav-item {
+        padding: 15px !important;
+        font-size: 1rem !important;
+    }
+}
+
+/* Cache le header mobile sur ordinateur */
+@media (min-width: 1025px) {
+    .mobile-header { display: none; }
+}
 
     /* 4. Barre IA : Version "Bouton Flottant" sur Mobile */
     .ia-status-bar {
@@ -845,39 +917,4 @@ select option {
     background: #1a1a1a;
     color: white;
     padding: 10px;
-}
-@media (max-width: 1024px) {
-    /* Position de départ de la sidebar (Cachée à gauche) */
-    .sidebar {
-        position: fixed !important;
-        top: 0;
-        left: -100% !important; /* Hors écran */
-        width: 100% !important;
-        height: 100vh !important;
-        z-index: 9999 !important;
-        background: #08080a !important;
-        transition: left 0.4s ease-in-out !important;
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: center;
-        align-items: center;
-    }
-
-    /* État quand le bouton est cliqué */
-    .sidebar.is-menu-open {
-        left: 0 !important; /* Elle glisse sur tout l'écran */
-    }
-
-    .header-mobile {
-        display: flex !important;
-        position: fixed;
-        top: 0; left: 0; width: 100%;
-        height: 70px;
-        z-index: 10000; /* Toujours au-dessus de la sidebar */
-        background: #0d0d0f;
-        padding: 0 20px;
-        align-items: center;
-        justify-content: space-between;
-        box-sizing: border-box;
-    }
 }
