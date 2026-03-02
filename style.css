@@ -688,37 +688,39 @@ main.v-main {
 
 
 /* --- ADAPTATION MOBILE (Remplacement du bouton par la barre basse) --- */
-/* --- MODE MINI POUR TÉLÉPHONE --- */
+/* 1. RÉGLAGE POUR ORDINATEUR (Normal) */
+.main-content { margin-left: 260px; }
 
-/* --- CORRECTIF PORTRAIT (TÉLÉPHONE VERTICAL) --- */
-@media screen and (max-width: 480px) and (orientation: portrait) {
+/* 2. RÉGLAGE POUR TABLETTE (Moyen) */
+@media (max-width: 1024px) {
+    .main-content { margin-left: 80px; padding: 20px; }
+    .sidebar { width: 80px; }
+    .sidebar span { display: none; } /* On cache le texte, on garde les icônes */
+}
+
+/* 3. RÉGLAGE POUR TÉLÉPHONE (Petit) */
+@media (max-width: 768px) {
+    /* On cache la sidebar car elle prend trop de place */
+    .sidebar { display: none !important; } 
     
-    /* 1. On force l'affichage en mode mini */
-    html {
-        font-size: 12px !important; /* Réduit encore plus pour le vertical */
+    /* Le contenu prend toute la largeur */
+    .main-content { 
+        margin-left: 0 !important; 
+        padding: 15px !important; 
+        width: 100% !important; 
     }
 
-    /* 2. On ajuste la sidebar pour qu'elle n'écrase pas le contenu */
-    .sidebar {
-        display: none !important; /* En portrait, la sidebar DOIT être cachée pour laisser la place */
-    }
-
-    /* 3. On centre tout le contenu */
-    .main-content {
-        margin: 0 !important;
-        padding: 10px !important;
-        width: 100vw !important;
-    }
-
-    /* 4. On force les cartes à prendre toute la largeur pour être lisibles */
+    /* On réduit la taille globale pour que tout rentre */
+    body { font-size: 14px; }
+    
     .dashboard-grid {
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 15px !important;
+        display: flex;
+        flex-direction: column; /* On empile les éléments les uns sous les autres */
+        gap: 10px;
     }
 
     .stat-card {
         width: 100% !important;
-        padding: 20px !important;
+        padding: 15px !important;
     }
 }
