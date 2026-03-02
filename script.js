@@ -3128,47 +3128,35 @@ window.goToHome = function() {
 document.addEventListener('DOMContentLoaded', () => {
     const menuBtn = document.getElementById('menuBtn');
     const sidebar = document.querySelector('.sidebar');
-    const menuIcon = menuBtn ? menuBtn.querySelector('i') : null;
-
-    function toggleMenu() {
-        if (!sidebar) return;
-        const isOpen = sidebar.classList.toggle('active');
-        
-        // Mise à jour de l'icône
-        if (menuIcon) {
-            menuIcon.setAttribute('data-lucide', isOpen ? 'x' : 'menu');
-            if (window.lucide) lucide.createIcons();
-        }
-
-        // Bloque le scroll du site en arrière-plan
-        document.body.style.overflow = isOpen ? 'hidden' : '';
-    }
 
     if (menuBtn) {
-        // e.preventDefault() est crucial ici pour éviter les doubles clics sur mobile
-        menuBtn.addEventListener('click', (e) => {
+        const toggleAction = (e) => {
             e.preventDefault();
             e.stopPropagation();
-            toggleMenu();
-        });
-    }
+            
+            // TEST DE DEBUG : Si tu vois cette alerte, le clic fonctionne !
+            // alert("Clic détecté sur le bouton !"); 
 
-    // On ferme si on clique sur un lien ou le logo intérieur
-    const closeItems = document.querySelectorAll('.nav-item, .sidebar .logo');
-    closeItems.forEach(item => {
-        item.addEventListener('click', () => {
-            if (sidebar.classList.contains('active')) toggleMenu();
-        });
-    });
-
-    // Fermer en cliquant à l'extérieur
-    document.addEventListener('click', (e) => {
-        if (sidebar && sidebar.classList.contains('active')) {
-            if (!sidebar.contains(e.target) && !menuBtn.contains(e.target)) {
-                toggleMenu();
+            if (sidebar) {
+                const isOpen = sidebar.classList.toggle('active');
+                
+                // Mise à jour de l'icône
+                const iconContainer = document.getElementById('menu-icon-container');
+                if (iconContainer) {
+                    iconContainer.innerHTML = isOpen ? '<i data-lucide="x"></i>' : '<i data-lucide="menu"></i>';
+                    if (window.lucide) lucide.createIcons();
+                }
+                
+                document.body.style.overflow = isOpen ? 'hidden' : '';
             }
-        }
-    });
+        };
+
+        // On écoute les deux types d'interactions mobiles
+        menuBtn.addEventListener('click', toggleAction);
+        menuBtn.addEventListener('touchstart', toggleAction, { passive: false });
+    } else {
+        console.error("Le bouton menuBtn est introuvable dans le HTML !");
+    }
 });
 
 // ==========================================================================
