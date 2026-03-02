@@ -688,90 +688,55 @@ main.v-main {
 
 
 /* --- ADAPTATION MOBILE (Remplacement du bouton par la barre basse) --- */
-@media (max-width: 1024px) {
-    /* 1. On cache la sidebar et les anciens headers mobiles pour gagner de la place */
-    .sidebar, .menu-toggle, .header-mobile, .header-mobile-container {
+/* FORCE LE MODE MOBILE SUR SMARTPHONE */
+@media screen and (max-width: 1024px) {
+    /* 1. On nettoie l'écran des éléments qui bloquent */
+    aside.sidebar, .menu-toggle, .header-mobile {
         display: none !important;
+        visibility: hidden !important;
+        width: 0 !important;
     }
 
-    /* 2. On réduit la taille des polices globales */
-    body {
-        font-size: 14px !important;
+    /* 2. On réinitialise le conteneur principal */
+    .app-container {
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
 
-    /* 3. Contenu principal : on enlève les marges inutiles et on prévoit l'espace pour la nav basse */
     .main-content {
         margin-left: 0 !important;
         margin-top: 20px !important;
-        padding: 10px 12px 90px 12px !important; /* Marge de 90px en bas pour ne pas cacher le contenu */
+        padding: 15px 15px 100px 15px !important; /* Espace vital pour la barre du bas */
         width: 100% !important;
-        box-sizing: border-box;
+        display: block !important;
     }
 
-    /* 4. Cartes de statistiques : affichage en 2 colonnes (plus petit et compact) */
-    .dashboard-grid, .stats-container {
+    /* 3. On force l'affichage de TA NOUVELLE BARRE */
+    nav.mobile-nav {
+        display: flex !important; /* Indispensable */
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        height: 70px !important;
+        background: #0d0d0f !important;
+        border-top: 2px solid #1f1f22 !important;
+        z-index: 999999 !important;
+        justify-content: space-around !important;
+        align-items: center !important;
+        visibility: visible !important;
+    }
+
+    /* 4. On réduit les cartes de stats pour qu'elles rentrent (2 par ligne) */
+    .dashboard-grid {
         display: grid !important;
-        grid-template-columns: 1fr 1fr !important; /* Deux cartes par ligne */
+        grid-template-columns: 1fr 1fr !important;
         gap: 10px !important;
     }
 
     .stat-card {
-        width: 100% !important;
-        padding: 12px !important;
-        border-radius: 12px !important;
-    }
-
-    .stat-card h3 {
-        font-size: 0.75rem !important;
-    }
-
-    .stat-card .value {
-        font-size: 1.1rem !important;
-    }
-
-    /* 5. STYLE DE LA BARRE DE NAVIGATION BASSE */
-    .mobile-nav {
-        display: flex !important; /* On l'affiche uniquement sur mobile */
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 65px;
-        background: #0d0d0f;
-        border-top: 1px solid #1f1f22;
-        z-index: 100000;
-        justify-content: space-around;
-        align-items: center;
-        padding-bottom: env(safe-area-inset-bottom);
-    }
-
-    .nav-item {
-        background: none;
-        border: none;
-        color: #666;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        font-size: 0.65rem;
-        gap: 4px;
-        flex: 1;
-        padding: 8px 0;
-        cursor: pointer;
-    }
-
-    .nav-item i {
-        width: 20px;
-        height: 20px;
-    }
-
-    .nav-item.active {
-        color: #6366f1; /* Couleur violette pour l'onglet actif */
+        padding: 10px !important;
     }
 }
 
-/* Cache la barre basse sur ordinateur */
-@media (min-width: 1025px) {
-    .mobile-nav { 
-        display: none !important; 
-    }
-}
