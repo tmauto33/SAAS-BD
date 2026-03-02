@@ -685,22 +685,23 @@ main.v-main {
     font-weight: 900; 
     color: white; 
 }
+
+
 @media (max-width: 1024px) {
-    /* 1. Le Header Mobile doit être devant TOUT */
     .header-mobile {
         display: flex !important;
         position: fixed !important;
         top: 0; left: 0; width: 100%;
         height: 70px;
         background: #0d0d0f;
-        z-index: 100000 !important; /* Priorité maximale */
+        z-index: 100000 !important;
         border-bottom: 1px solid #222;
         padding: 0 15px;
         align-items: center;
         justify-content: space-between;
+        box-sizing: border-box; /* Crucial pour la largeur */
     }
 
-    /* 2. Le Bouton Menu */
     .menu-toggle {
         background: #1a1a1a;
         border: 1px solid #333;
@@ -708,34 +709,39 @@ main.v-main {
         padding: 8px;
         border-radius: 8px;
         cursor: pointer !important;
-        pointer-events: auto !important; /* On s'assure qu'il capte le clic */
+        pointer-events: auto !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    /* 3. La Sidebar (Le tiroir) */
     .sidebar {
         position: fixed !important;
         top: 0;
-        left: -100% !important; /* Cachée par défaut */
+        left: 0 !important; /* On fixe à 0 */
         width: 280px !important;
         height: 100vh !important;
-        z-index: 90000 !important; /* Juste en dessous du header */
+        z-index: 99999 !important; /* Juste en dessous du header */
         background: #08080a !important;
-        transition: transform 0.3s ease-in-out;
         display: flex !important;
         flex-direction: column !important;
-        padding: 80px 20px 20px 20px !important;
-        pointer-events: none; /* Ne bloque pas le clic quand elle est fermée */
+        padding: 90px 20px 20px 20px !important;
+        
+        /* Animation moderne via transform */
+        transform: translateX(-100%); 
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        pointer-events: none; 
     }
 
-    /* Activation de la sidebar */
     .sidebar.active {
-        left: 0 !important;
-        pointer-events: auto !important; /* Devient cliquable une fois ouverte */
+        transform: translateX(0); /* On fait glisser vers la droite */
+        pointer-events: auto !important;
     }
 
-    /* 4. Décalage du contenu principal */
     .main-content {
         margin-top: 75px !important;
         margin-left: 0 !important;
+        width: 100% !important;
     }
 }
+
