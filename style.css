@@ -689,46 +689,27 @@ main.v-main {
 
 /* --- ADAPTATION MOBILE (Remplacement du bouton par la barre basse) --- */
 /* FORCE LE MODE MOBILE SUR SMARTPHONE */
-@media screen and (max-width: 1024px) {
-    /* 1. On nettoie l'écran des éléments qui bloquent */
-    aside.sidebar, .menu-toggle, .header-mobile {
+/* --- CONFIGURATION MOBILE SIMPLE --- */
+@media (max-width: 1024px) {
+    
+    /* 1. On cache ce qui bloque (Sidebar et anciens menus) */
+    .sidebar, .menu-toggle, .header-mobile, .sidebar-header {
         display: none !important;
-        visibility: hidden !important;
-        width: 0 !important;
     }
 
-    /* 2. On réinitialise le conteneur principal */
+    /* 2. On libère tout l'espace pour le contenu */
     .app-container {
         display: block !important;
-        margin: 0 !important;
-        padding: 0 !important;
     }
 
     .main-content {
-        margin-left: 0 !important;
-        margin-top: 20px !important;
-        padding: 15px 15px 100px 15px !important; /* Espace vital pour la barre du bas */
+        margin: 0 !important;
+        padding: 20px 15px 100px 15px !important; /* Marge en bas pour la barre */
         width: 100% !important;
-        display: block !important;
+        box-sizing: border-box;
     }
 
-    /* 3. On force l'affichage de TA NOUVELLE BARRE */
-    nav.mobile-nav {
-        display: flex !important; /* Indispensable */
-        position: fixed !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        height: 70px !important;
-        background: #0d0d0f !important;
-        border-top: 2px solid #1f1f22 !important;
-        z-index: 999999 !important;
-        justify-content: space-around !important;
-        align-items: center !important;
-        visibility: visible !important;
-    }
-
-    /* 4. On réduit les cartes de stats pour qu'elles rentrent (2 par ligne) */
+    /* 3. On force les cartes de stats sur 2 colonnes (plus petit) */
     .dashboard-grid {
         display: grid !important;
         grid-template-columns: 1fr 1fr !important;
@@ -736,7 +717,51 @@ main.v-main {
     }
 
     .stat-card {
-        padding: 10px !important;
+        padding: 12px !important;
+        border-radius: 12px !important;
+        background: #121217 !important;
+    }
+
+    /* 4. Affichage de la barre de navigation basse */
+    .mobile-nav {
+        display: flex !important;
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 65px !important;
+        background: #0d0d0f !important;
+        border-top: 1px solid #222 !important;
+        z-index: 99999 !important;
+        justify-content: space-around !important;
+        align-items: center !important;
+    }
+
+    /* Style des boutons dans la barre */
+    .nav-item {
+        color: #666;
+        text-decoration: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-size: 10px;
+        background: none;
+        border: none;
+        flex: 1;
+    }
+
+    .nav-item i {
+        width: 20px;
+        height: 20px;
+        margin-bottom: 4px;
+    }
+
+    .nav-item.active {
+        color: #6366f1 !important; /* Couleur active violette */
     }
 }
 
+/* Cache la barre sur ordinateur */
+@media (min-width: 1025px) {
+    .mobile-nav { display: none !important; }
+}
