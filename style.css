@@ -846,89 +846,38 @@ select option {
     color: white;
     padding: 10px;
 }
-/* --- CONFIGURATION ORDINATEUR (Par défaut) --- */
-.header-mobile { display: none; } /* Cacher le header mobile sur grand écran */
-/* Styles Mobile (Écrans de moins de 1024px) */
 @media (max-width: 1024px) {
-    
-    /* 1. Header Mobile Fixe */
-    .header-mobile {
-        display: flex !important;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 70px;
-        background: #0d0d0f;
-        z-index: 10000; /* Très haut pour rester devant */
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 20px;
-        border-bottom: 1px solid #1f1f22;
-        box-sizing: border-box;
-    }
-
-    .logo-app-mobile {
-        font-weight: 800;
-        color: #fff;
-        font-size: 1.2rem;
-    }
-
-    /* 2. Bouton Menu */
-    .menu-toggle {
-        background: #1a1a1e;
-        border: 1px solid #333;
-        color: white;
-        padding: 10px;
-        border-radius: 8px;
-        cursor: pointer;
-        z-index: 10001; /* Toujours au-dessus du menu noir */
-    }
-
-    /* 3. Sidebar en mode "Application" (Plein écran) */
+    /* Position de départ de la sidebar (Cachée à gauche) */
     .sidebar {
         position: fixed !important;
         top: 0;
-        left: -100% !important; /* Caché par défaut à gauche */
+        left: -100% !important; /* Hors écran */
         width: 100% !important;
         height: 100vh !important;
-        height: 100dvh !important; /* Hauteur dynamique mobile */
-        background: #08080a !important;
         z-index: 9999 !important;
+        background: #08080a !important;
+        transition: left 0.4s ease-in-out !important;
         display: flex !important;
         flex-direction: column !important;
         justify-content: center;
         align-items: center;
-        transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    /* Classe activée par le JS */
+    /* État quand le bouton est cliqué */
     .sidebar.is-menu-open {
-        left: 0 !important; /* On fait glisser le menu vers la droite */
+        left: 0 !important; /* Elle glisse sur tout l'écran */
     }
 
-    .sidebar nav {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-        width: 80%;
-    }
-
-    .nav-item {
-        padding: 20px !important;
-        font-size: 1.3rem !important;
-        background: #121217 !important;
-        border: 1px solid #1f1f25 !important;
-        border-radius: 12px;
-        color: white;
-        text-align: center;
-        width: 100%;
-    }
-
-    /* 4. Ajustement du contenu principal */
-    .main-content {
-        margin-left: 0 !important;
-        margin-top: 70px !important; /* Espace pour le header mobile */
-        padding: 20px !important;
+    .header-mobile {
+        display: flex !important;
+        position: fixed;
+        top: 0; left: 0; width: 100%;
+        height: 70px;
+        z-index: 10000; /* Toujours au-dessus de la sidebar */
+        background: #0d0d0f;
+        padding: 0 20px;
+        align-items: center;
+        justify-content: space-between;
+        box-sizing: border-box;
     }
 }
