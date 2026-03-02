@@ -3126,7 +3126,6 @@ window.goToHome = function() {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-document.addEventListener('DOMContentLoaded', () => {
     const menuBtn = document.getElementById('menuBtn');
     const sidebar = document.querySelector('.sidebar');
     const menuIcon = menuBtn ? menuBtn.querySelector('i') : null;
@@ -3184,4 +3183,3 @@ window.initApp = function() {
 };
 
 window.onload = window.initApp;
-
