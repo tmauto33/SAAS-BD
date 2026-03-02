@@ -3127,25 +3127,38 @@ window.goToHome = function() {
 
 function toggleMenu() {
     const sidebar = document.querySelector('.sidebar');
-    sidebar.classList.toggle('open');
-    
-    // Change l'icône entre Menu et X
     const icon = document.querySelector('.menu-toggle i');
-    if (sidebar.classList.contains('open')) {
-        icon.setAttribute('data-lucide', 'x');
-    } else {
-        icon.setAttribute('data-lucide', 'menu');
+    
+    // On utilise 'active' pour correspondre à ton CSS
+    const isOpen = sidebar.classList.toggle('active');
+    
+    // Change l'icône
+    if (icon) {
+        icon.setAttribute('data-lucide', isOpen ? 'x' : 'menu');
+        if (window.lucide) lucide.createIcons();
     }
-    lucide.createIcons();
+
+    // Bloque le scroll du fond quand le menu est ouvert
+    document.body.style.overflow = isOpen ? 'hidden' : '';
 }
 
-// Optionnel : Fermer le menu quand on clique sur une section
+// Fermeture automatique au clic sur une section
 document.querySelectorAll('.nav-item').forEach(item => {
     item.addEventListener('click', () => {
-        document.querySelector('.sidebar').classList.remove('open');
+        const sidebar = document.querySelector('.sidebar');
+        const icon = document.querySelector('.menu-toggle i');
+        
+        if (sidebar.classList.contains('active')) {
+            sidebar.classList.remove('active');
+            document.body.style.overflow = '';
+            
+            if (icon) {
+                icon.setAttribute('data-lucide', 'menu');
+                if (window.lucide) lucide.createIcons();
+            }
+        }
     });
 });
-
 
 // ==========================================================================
 // 9. INITIALISATION
