@@ -3125,39 +3125,27 @@ window.goToHome = function() {
     if(firstBtn) firstBtn.click(); 
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-    const menuBtn = document.getElementById('menuBtn');
-    const sidebar = document.querySelector('.sidebar');
+function showSection(sectionId) {
+    // 1. Cache toutes les sections
+    document.querySelectorAll('.section-content').forEach(section => {
+        section.style.display = 'none';
+    });
+    
+    // 2. Affiche la section demandée
+    const target = document.getElementById(sectionId);
+    if (target) target.style.display = 'block';
 
-    if (menuBtn) {
-        const toggleAction = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            // TEST DE DEBUG : Si tu vois cette alerte, le clic fonctionne !
-            // alert("Clic détecté sur le bouton !"); 
-
-            if (sidebar) {
-                const isOpen = sidebar.classList.toggle('active');
-                
-                // Mise à jour de l'icône
-                const iconContainer = document.getElementById('menu-icon-container');
-                if (iconContainer) {
-                    iconContainer.innerHTML = isOpen ? '<i data-lucide="x"></i>' : '<i data-lucide="menu"></i>';
-                    if (window.lucide) lucide.createIcons();
-                }
-                
-                document.body.style.overflow = isOpen ? 'hidden' : '';
-            }
-        };
-
-        // On écoute les deux types d'interactions mobiles
-        menuBtn.addEventListener('click', toggleAction);
-        menuBtn.addEventListener('touchstart', toggleAction, { passive: false });
-    } else {
-        console.error("Le bouton menuBtn est introuvable dans le HTML !");
-    }
-});
+    // 3. Gère l'état visuel des boutons de la barre du bas
+    document.querySelectorAll('.mobile-nav .nav-item').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // On ajoute 'active' au bouton cliqué (facultatif si tu gères l'event)
+    if (window.event) window.event.currentTarget.classList.add('active');
+    
+    // Refresh les icônes Lucide
+    if (window.lucide) lucide.createIcons();
+}
 
 // ==========================================================================
 // 9. INITIALISATION
