@@ -686,69 +686,56 @@ main.v-main {
     color: white; 
 }
 @media (max-width: 1024px) {
-    /* 1. Reset et Header Mobile */
-    .mobile-header, .header-mobile {
+    /* 1. Le Header Mobile doit être devant TOUT */
+    .header-mobile {
         display: flex !important;
         position: fixed !important;
         top: 0; left: 0; width: 100%;
-        height: 65px;
-        background: #0f0f12 !important;
-        z-index: 9000 !important;
+        height: 70px;
+        background: #0d0d0f;
+        z-index: 100000 !important; /* Priorité maximale */
         border-bottom: 1px solid #222;
         padding: 0 15px;
         align-items: center;
         justify-content: space-between;
-        box-sizing: border-box;
     }
 
-    /* 2. LE BOUTON : Doit être devant la sidebar quand elle s'ouvre */
-    .menu-toggle, .menu-btn {
-        display: flex !important;
-        position: relative !important;
-        z-index: 20000 !important; /* Plus haut que la sidebar */
-        background: #1a1a1a !important;
-        border: 1px solid #333 !important;
-        color: white !important;
+    /* 2. Le Bouton Menu */
+    .menu-toggle {
+        background: #1a1a1a;
+        border: 1px solid #333;
+        color: white;
         padding: 8px;
         border-radius: 8px;
         cursor: pointer !important;
-        pointer-events: auto !important;
+        pointer-events: auto !important; /* On s'assure qu'il capte le clic */
     }
 
-    /* 3. LA SIDEBAR : Tiroir propre */
+    /* 3. La Sidebar (Le tiroir) */
     .sidebar {
-        display: flex !important;
         position: fixed !important;
         top: 0;
         left: -100% !important; /* Cachée par défaut */
-        width: 80% !important; /* Prend presque tout l'écran */
-        max-width: 300px;
+        width: 280px !important;
         height: 100vh !important;
-        height: 100dvh !important;
+        z-index: 90000 !important; /* Juste en dessous du header */
         background: #08080a !important;
-        z-index: 10000 !important;
-        transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        box-shadow: 10px 0 30px rgba(0,0,0,0.8);
+        transition: transform 0.3s ease-in-out;
+        display: flex !important;
         flex-direction: column !important;
-        padding-top: 80px !important; /* Espace sous le header */
+        padding: 80px 20px 20px 20px !important;
+        pointer-events: none; /* Ne bloque pas le clic quand elle est fermée */
     }
 
-    /* Classe d'ouverture */
-    .sidebar.active, .sidebar.is-menu-open {
+    /* Activation de la sidebar */
+    .sidebar.active {
         left: 0 !important;
+        pointer-events: auto !important; /* Devient cliquable une fois ouverte */
     }
 
-    /* 4. Contenu Principal */
+    /* 4. Décalage du contenu principal */
     .main-content {
+        margin-top: 75px !important;
         margin-left: 0 !important;
-        margin-top: 65px !important;
-        width: 100% !important;
-        padding: 15px !important;
-        box-sizing: border-box;
-    }
-
-    /* 5. Ajustements Statistiques */
-    .dashboard-grid, .stats-container {
-        grid-template-columns: 1fr !important;
     }
 }
