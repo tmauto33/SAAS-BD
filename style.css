@@ -688,38 +688,78 @@ main.v-main {
 
 
 @media (max-width: 1024px) {
-    /* On cache le bouton original s'il est encore dans ton header */
-    .header-mobile .menu-toggle { display: none !important; }
-
-    /* Nouveau style pour le bouton flottant */
-    .menu-toggle-floating {
-        position: fixed !important;
-        top: 12px !important;
-        right: 15px !important;
-        width: 45px !important;
-        height: 45px !important;
-        background: #1a1a1a !important;
-        border: 1px solid #333 !important;
-        border-radius: 10px;
-        color: white;
-        z-index: 999999 !important; /* Index astronomique */
-        display: flex !important;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer !important;
-        pointer-events: auto !important; /* Force la détection du doigt */
-        -webkit-tap-highlight-color: transparent;
+    /* 1. Suppression des anciens éléments gênants */
+    .sidebar, .menu-toggle, .header-mobile .menu-toggle {
+        display: none !important;
     }
 
-    /* On s'assure que la sidebar ne le recouvre pas non plus */
-    .sidebar {
-        z-index: 999998 !important; 
-        pointer-events: none;
-        visibility: hidden;
+    /* 2. Header ultra-fin et discret */
+    .header-mobile {
+        height: 50px !important;
+        background: #08080a !important;
+        border-bottom: 1px solid #1f1f22;
+        padding: 0 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center; /* Logo centré */
     }
     
-    .sidebar.active {
-        pointer-events: auto !important;
-        visibility: visible;
+    .logo-app-mobile { font-size: 1.1rem !important; }
+
+    /* 3. Contenu compact */
+    .main-content {
+        margin: 0 !important;
+        padding: 10px 12px 80px 12px !important; /* Marge en bas pour la nav */
+        width: 100% !important;
+        box-sizing: border-box;
     }
+
+    /* 4. Cartes plus petites */
+    .stat-card {
+        padding: 12px !important;
+        border-radius: 12px !important;
+        background: #121217 !important;
+    }
+
+    .stat-card h3 { font-size: 0.8rem !important; color: #888; }
+    .stat-card .value { font-size: 1.2rem !important; font-weight: 700; }
+
+    /* 5. Grille de stats serrée */
+    .dashboard-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important; /* 2 colonnes pour gagner de la place */
+        gap: 10px !important;
+    }
+
+    /* 6. LA BARRE DE NAVIGATION BASSE */
+    .mobile-nav {
+        display: flex !important;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 65px;
+        background: rgba(13, 13, 15, 0.95);
+        backdrop-filter: blur(10px);
+        border-top: 1px solid #1f1f22;
+        z-index: 100000;
+        justify-content: space-around;
+        align-items: center;
+        padding-bottom: env(safe-area-inset-bottom); /* Pour les iPhones récents */
+    }
+
+    .mobile-nav .nav-item {
+        background: none;
+        border: none;
+        color: #666;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-size: 0.7rem;
+        gap: 4px;
+        padding: 10px;
+    }
+
+    .mobile-nav .nav-item i { width: 20px; height: 20px; }
+    .mobile-nav .nav-item.active { color: #6366f1; }
 }
