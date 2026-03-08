@@ -3125,6 +3125,97 @@ window.goToHome = function() {
     if(firstBtn) firstBtn.click(); 
 };
 
+
+// --- FONCTIONNALITÉS OX PRO ---
+// --- FONCTION D'IMPRESSION OX PRO ---
+window.printActivityReport = function() {
+    // 1. Récupération des données
+    const start = document.getElementById('report-start').value;
+    const end = document.getElementById('report-end').value;
+    const bizName = document.getElementById('biz-name').value || "MON GARAGE";
+    const bizSiret = document.getElementById('biz-siret').value || "";
+
+    if (!start || !end) {
+        alert("⚠️ Veuillez sélectionner une période (Date début et fin).");
+        return;
+    }
+
+    // 2. Sauvegarde du contenu actuel de ton site
+    const originalContent = document.body.innerHTML;
+
+    // 3. Création du gabarit du rapport (fond blanc, texte noir)
+    const reportTemplate = `
+        <div style="background:white; color:black; padding:50px; font-family:Arial, sans-serif; height:100vh;">
+            <div style="display:flex; justify-content:space-between; border-bottom:4px solid #1db954; padding-bottom:20px;">
+                <h1 style="margin:0; font-size:35px;">OX<span style="color:#1db954;">PRO</span></h1>
+                <div style="text-align:right;">
+                    <h2 style="margin:0;">${bizName.toUpperCase()}</h2>
+                    <p>SIRET : ${bizSiret}</p>
+                </div>
+            </div>
+            
+            <h2 style="text-align:center; margin-top:50px; text-decoration:underline;">RAPPORT D'ACTIVITÉ PROFESSIONNEL</h2>
+            <p style="margin-top:30px;"><strong>Période du :</strong> ${start} <strong> au </strong> ${end}</p>
+
+            <table style="width:100%; border-collapse:collapse; margin-top:30px;">
+                <thead>
+                    <tr style="background:#eee;">
+                        <th style="border:1px solid #000; padding:10px; text-align:left;">SECTION</th>
+                        <th style="border:1px solid #000; padding:10px; text-align:left;">DÉTAILS</th>
+                        <th style="border:1px solid #000; padding:10px; text-align:right;">STATUT</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="border:1px solid #000; padding:10px;">Livre de Police</td>
+                        <td style="border:1px solid #000; padding:10px;">Registre des transactions de véhicules d'occasion</td>
+                        <td style="border:1px solid #000; padding:10px; text-align:right;">CERTIFIÉ</td>
+                    </tr>
+                    <tr>
+                        <td style="border:1px solid #000; padding:10px;">État des Stocks</td>
+                        <td style="border:1px solid #000; padding:10px;">Inventaire complet du parc automobile</td>
+                        <td style="border:1px solid #000; padding:10px; text-align:right;">À JOUR</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div style="margin-top:100px; text-align:center; font-size:12px; color:#555;">
+                Document généré par OX PRO - Logiciel de gestion automobile agréé.<br>
+                Fait le ${new Date().toLocaleDateString()} à ${new Date().toLocaleTimeString()}
+            </div>
+        </div>
+    `;
+
+    // 4. On remplace le corps du site par le rapport
+    document.body.innerHTML = reportTemplate;
+
+    // 5. On lance l'impression
+    window.print();
+
+    // 6. On remet ton site comme avant après l'impression
+    document.body.innerHTML = originalContent;
+    
+    // Relancer Lucide pour les icônes après restauration
+    if (window.lucide) { lucide.createIcons(); }
+};
+
+function deleteAllActivity() {
+    // On vérifie que la fonction est bien appelée
+    console.log("Tentative de suppression..."); 
+    
+    if (confirm("🚨 ATTENTION : Supprimer TOUTES les données ?")) {
+        const code = prompt("Tapez 'SUPPRIMER' pour confirmer :");
+        if (code === "SUPPRIMER") {
+            localStorage.clear();
+            alert("✅ Toutes les données ont été effacées.");
+            location.reload();
+        } else {
+            alert("❌ Annulé : mot de passe incorrect.");
+        }
+    }
+}
+
+
 // ==========================================================================
 // 9. INITIALISATION
 // ==========================================================================
