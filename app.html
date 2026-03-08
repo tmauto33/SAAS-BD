@@ -835,13 +835,17 @@ N'hésitez pas à nous contacter pour plus d'informations ou pour convenir d'un 
     <div class="card" style="margin-top:20px; border: 1px dashed #444; background: transparent;">
         <h3 style="margin-bottom:15px; font-size:1rem; color:#ef4444;">Maintenance du Système</h3>
         <div style="display:flex; gap:10px;">
-            <button onclick="exportDatabase()" style="flex:1; background:#222; color:white; border:none; padding:10px; border-radius:5px; cursor:pointer;">📥 EXPORTER LES DONNÉES (JSON)</button>
-            <button onclick="resetApp()" style="flex:1; background:rgba(239, 68, 68, 0.1); color:#ef4444; border:1px solid #ef4444; padding:10px; border-radius:5px; cursor:pointer;">⚠️ RÉINITIALISER TOUT</button>
-        </div>
+            <button class="tab-btn" onclick="printActivityReport()">
+    <i data-lucide="printer"></i> IMPRIMER LE SUIVI
+</button>
+
+<button class="btn-orange" style="border:1px solid #ff4d4d; color:#ff4d4d;" onclick="deleteAllActivity()">
+    <i data-lucide="trash-2"></i> TOUT SUPPRIMER
+</button>
     </div>
 </section>
 
-           <section id="profil" class="view">
+          <section id="profil" class="view">
     <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 25px;">
         <h1>Mon Compte <span>Business</span></h1>
         <div style="text-align:right;">
@@ -864,6 +868,29 @@ N'hésitez pas à nous contacter pour plus d'informations ou pour convenir d'un 
                 </div>
                 <h3 id="display-biz-name" style="margin:0;">Nom de l'enseigne</h3>
                 <p style="font-size:0.8rem; color:#666;">ID Client: #OX-8829</p>
+            </div>
+
+            <div class="card" style="border-top: 3px solid #ff4d4d40;">
+                <h3><i data-lucide="database"></i> Données & Archives</h3>
+                <div style="margin-top:15px; display:flex; flex-direction:column; gap:15px;">
+                    <div>
+                        <label class="input-label">RAPPORT D'ACTIVITÉ</label>
+                        <div style="display:flex; gap:5px; margin-bottom:8px;">
+                            <input type="date" id="report-start" style="font-size:0.7rem; padding:5px; flex:1;">
+                            <input type="date" id="report-end" style="font-size:0.7rem; padding:5px; flex:1;">
+                        </div>
+                        <button class="tab-btn" style="width:100%; font-size:0.7rem; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="window.printActivityReport()">
+                            <i data-lucide="printer" style="width:14px;"></i> IMPRIMER LE SUIVI
+                        </button>
+                    </div>
+                    
+                    <div style="padding-top:10px; border-top:1px solid #222;">
+                        <label class="input-label" style="color:#ff4d4d80;">ZONE DE DANGER</label>
+                        <button class="btn-orange" style="width:100%; background:transparent; border:1px solid #ff4d4d; color:#ff4d4d;" onclick="window.deleteAllActivity()">
+                            <i data-lucide="trash-2" style="width:14px; margin-right:8px;"></i> TOUT SUPPRIMER
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div class="card">
@@ -893,6 +920,12 @@ N'hésitez pas à nous contacter pour plus d'informations ou pour convenir d'un 
                     </div>
                     <button class="tab-btn" style="width:100%; font-size:0.7rem;" onclick="window.manageBilling()">GÉRER MA FACTURATION</button>
                 </div>
+            </div>
+
+            <div class="card" style="padding:0;">
+                <button id="logout-btn-side" class="nav-item" style="color: #ff4d4d; width: 100%; border: none; background: none; cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 15px;">
+                    <i data-lucide="log-out"></i> <span>Déconnexion</span>
+                </button>
             </div>
         </div>
 
@@ -933,16 +966,10 @@ N'hésitez pas à nous contacter pour plus d'informations ou pour convenir d'un 
                 <label class="input-label" style="display:flex; align-items:center; gap:8px;">
                     <i data-lucide="file-text" style="width:14px;"></i> MENTION LÉGALE BAS DE PAGE
                 </label>
-                <textarea id="biz-footer" style="width:100%; height:80px; margin-top:10px; font-size:0.8rem;" placeholder="Mention obligatoire sur vos documents (Capital social, RCS...)"></textarea>
-              
+                <textarea id="biz-footer" style="width:100%; height:80px; margin-top:10px; font-size:0.8rem; background:#000; border:1px solid #222; color:white; padding:10px;" placeholder="Mention obligatoire sur vos documents (Capital social, RCS...)"></textarea>
             </div>
         </div>
-       <div class="card" style="border-left: 4px solid var(--accent);">
-                    <button id="logout-btn-side" class="nav-item" style="color: #ff4d4d; width: 100%; border: none; background: none; cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 12px;">
-    <i data-lucide="log-out"></i> <span>Déconnexion</span>
-</button>
     </div>
-             </div>
 </section>
           
         </main>
@@ -1009,4 +1036,3 @@ N'hésitez pas à nous contacter pour plus d'informations ou pour convenir d'un 
     </script>
 </body>
 </html>
-
