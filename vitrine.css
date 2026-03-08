@@ -1,365 +1,732 @@
-/* --- VARIABLES OFFICIELLES --- */
+/* --- 1. CONFIGURATION DES VARIABLES (Vivid & Modern iOS 26) --- */
 :root {
-    --sp-green: #1ed760;
-    --sp-black: #121212;
-    --sp-deep-black: #000000;
-    --sp-card-grey: #181818; 
-    --sp-text-white: #ffffff;
-    --sp-text-muted: #b3b3b3;
-    --sp-pink: #f8d7da; 
-    --neon-shadow: 0 0 20px rgba(30, 215, 96, 0.4);
+    --primary: #0a0a0c;           /* Noir Onyx (plus riche que le noir Spotify) */
+    --accent: #6366f1;            /* Indigo Électrique (Vif et moderne) */
+    --accent-light: rgba(99, 102, 241, 0.1);
+    --success: #10b981;           /* Émeraude vif */
+    --danger: #ff3b30;            /* Rouge iOS */
+    --bg: #050505;                
+    --card-bg: #121215;           /* Fond de carte solide pour la netteté */
+    --text-main: #ffffff;
+    --text-muted: #94a3b8;
+    --border: rgba(255, 255, 255, 0.08); 
+    --sidebar-width: 280px;
+    --footer-height: 100px;
 }
 
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+/* --- 2. RESET & BASE --- */
+* { 
+    box-sizing: border-box; 
+    margin: 0; 
+    padding: 0; 
 }
 
-body {
-    background-color: var(--sp-deep-black);
-    color: var(--sp-text-white);
-    font-family: 'Inter', sans-serif;
-    -webkit-font-smoothing: antialiased;
-}
-
-/* --- HEADER --- */
-.v-header {
+body { 
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; 
+    background: var(--bg); 
+    color: var(--text-main); 
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px 8%;
-    background-color: #000;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
 }
 
-.v-logo {
-    font-size: 1.5rem;
-    font-weight: 900;
+/* --- 3. SIDEBAR (Placement d'origine préservé) --- */
+
+/* /* --- SIDEBAR CORRIGÉE --- */
+.sidebar { 
+    width: var(--sidebar-width); 
+    background: var(--primary); 
+    padding: 30px 20px; 
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    position: fixed; 
+    top: 0;
+    left: 0;
+    /* On baisse le z-index pour qu'il ne couvre pas les modales mais reste au-dessus du contenu */
+    z-index: 1000; 
+    pointer-events: auto;
+}
+
+.logo { 
+    font-size: 1.6rem; 
+    font-weight: 800;
+    margin-bottom: 40px; 
     display: flex;
     align-items: center;
     gap: 10px;
-    color: var(--sp-green);
 }
+.logo span { color: var(--accent); }
 
-.v-btn-login {
-    background-color: white;
-    color: black;
-    padding: 10px 25px;
-    border-radius: 500px;
-    font-weight: 700;
+.nav-item { 
+    background: transparent;
     border: none;
+    color: var(--text-muted);
+    border-radius: 12px; 
+    padding: 14px 18px;
+    margin-bottom: 8px;
     cursor: pointer;
-    transition: transform 0.2s;
-}
-
-.v-btn-login:hover { transform: scale(1.05); }
-
-/* --- CONTENEUR PRINCIPAL --- */
-.v-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 60px 20px;
-    text-align: center;
-}
-
-h1 {
-    font-size: 3.5rem;
-    font-weight: 900;
-    margin-bottom: 20px;
-    letter-spacing: -1.5px;
-}
-
-.subtitle {
-    color: var(--sp-text-muted);
-    font-size: 1.2rem;
-    margin-bottom: 40px;
-}
-
-/* --- LOGOS PAIEMENT (FIXÉ) --- */
-.payment-methods {
     display: flex;
-    justify-content: center;
     align-items: center;
-    gap: 25px;
-    margin-bottom: 50px;
-}
-
-.payment-methods img {
-    height: 24px; /* Taille fixe pour éviter les logos géants */
-    width: auto;
-    filter: brightness(1.1);
-    opacity: 0.9;
-}
-
-/* --- GRILLE DE PRIX --- */
-.v-grid {
-    display: flex;
-    justify-content: center;
-    gap: 30px;
-    flex-wrap: wrap;
-    margin-top: 20px;
-}
-
-.v-card {
-    background-color: var(--sp-card-grey);
-    border-radius: 12px;
-    padding: 45px 35px;
-    width: 400px; /* Largeur confortable comme sur la photo */
+    gap: 12px;
+    font-weight: 600;
+    transition: 0.2s;
+    width: 100%;
     text-align: left;
+}
+
+.nav-item:hover { color: white; background: rgba(255,255,255,0.05); }
+.nav-item.active { 
+    background: var(--accent) !important; 
+    color: white !important;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+}
+
+/* Personnalisation de la barre de scroll pour PC (plus discrète) */
+/* --- SIDEBAR RÉINITIALISÉE AVEC SCROLL --- */
+.sidebar { 
+    width: var(--sidebar-width); 
+    background: var(--primary); 
+    padding: 30px 20px; 
     display: flex;
     flex-direction: column;
-    border: 1px solid #282828;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    height: 100vh;
+    position: fixed; 
+    top: 0;
+    left: 0;
+    /* On baisse le z-index pour qu'il ne couvre pas les modales mais reste au-dessus du contenu */
+    z-index: 1000; 
+    pointer-events: auto;
+
+    /* --- AJOUT : FONCTION SCROLL VERTICAL --- */
+    overflow-y: auto;  /* Active le scroll vertical si les boutons dépassent */
+    overflow-x: hidden; /* Empêche le scroll horizontal parasite */
 }
 
-/* --- CARTE PRO AVEC EFFET NÉON --- */
-.v-card.pro {
-    border: 2px solid var(--sp-green);
-    box-shadow: var(--neon-shadow);
+/* Optionnel : Rendre la barre de scroll invisible ou très fine pour l'esthétique */
+.sidebar::-webkit-scrollbar {
+    width: 4px;
+}
+.sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
 }
 
-.v-card.pro:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 0 35px rgba(30, 215, 96, 0.6);
-}
-
-/* --- ÉLÉMENTS INTERNES DES CARTES --- */
-.v-badge {
-    background-color: var(--sp-pink);
-    color: #000;
+.logo { 
+    font-size: 1.6rem; 
     font-weight: 800;
-    font-size: 0.8rem;
-    padding: 6px 14px;
-    border-radius: 5px;
-    margin-bottom: 25px;
-    width: fit-content;
-}
-
-.v-badge.pro {
-    background-color: #0d6efd;
-    color: white;
-}
-
-h2 {
-    font-size: 2.5rem;
-    font-weight: 900;
-    margin-bottom: 8px;
-}
-
-.price-sub {
-    color: var(--sp-text-muted);
-    font-size: 1rem;
-    margin-bottom: 25px;
-    display: block;
-}
-
-hr {
-    border: 0;
-    border-top: 1px solid #333;
-    margin: 25px 0;
-}
-
-/* --- LISTES D'AVANTAGES --- */
-ul {
-    list-style: none;
-    margin-bottom: 40px;
-    flex-grow: 1;
-}
-
-ul li {
-    margin-bottom: 15px;
+    margin-bottom: 40px; 
     display: flex;
     align-items: center;
-    font-size: 1.05rem;
-    color: #e0e0e0;
+    gap: 10px;
+    flex-shrink: 0; /* Empêche le logo de s'écraser si on scrolle */
 }
+.logo span { color: var(--accent); }
 
-ul li i {
-    color: var(--sp-green);
-    margin-right: 15px;
-    width: 20px;
-}
-
-/* --- BOUTONS D'ACTION --- */
-.v-card button {
-    width: 100%;
-    padding: 16px;
-    border-radius: 500px;
+.nav-item { 
+    background: transparent;
     border: none;
-    font-weight: 800;
-    font-size: 1.1rem;
+    color: var(--text-muted);
+    border-radius: 12px; 
+    padding: 14px 18px;
+    margin-bottom: 8px;
     cursor: pointer;
-    transition: transform 0.2s, filter 0.2s;
-}
-
-.v-card:not(.pro) button { background-color: var(--sp-pink); color: #000; }
-.v-card.pro button { background-color: var(--sp-green); color: #000; }
-
-.v-card button:hover { 
-    transform: scale(1.04);
-    filter: brightness(1.1);
-}
-
-/* --- PAGE DE CONNEXION --- */
-#view-login {
-    display: none;
-    justify-content: center;
+    display: flex;
     align-items: center;
-    min-height: 90vh;
-}
-
-.v-login-box {
-    background-color: #121212;
-    padding: 50px;
-    border-radius: 15px;
+    gap: 12px;
+    font-weight: 600;
+    transition: 0.2s;
     width: 100%;
-    max-width: 450px;
-    text-align: center;
+    text-align: left;
+    flex-shrink: 0; /* Garde la taille des boutons intacte */
 }
 
-.login-icon {
-    font-size: 3rem;
-    color: var(--sp-green);
-    margin-bottom: 20px;
+.nav-item:hover { color: white; background: rgba(255,255,255,0.05); }
+.nav-item.active { 
+    background: var(--accent) !important; 
+    color: white !important;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
 }
 
-.v-login-box h1 {
-    font-size: 2.2rem;
-    margin-bottom: 40px;
+/* --- 4. CONTENU PRINCIPAL --- */
+.main-content {
+    flex: 1;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 40px;
+    /* On garde de la place pour la sidebar fixe à gauche et le footer en bas */
+    margin-left: var(--sidebar-width); 
+    width: calc(100vw - var(--sidebar-width)); 
+    padding-bottom: calc(var(--footer-height) + 60px); 
+    
+    position: relative;
+    z-index: 1; /* Reste derrière la sidebar */
+    background: radial-gradient(circle at top right, #0f111a, #050505);
+}
+
+.view { display: none; width: 100%; }
+.view.active { display: block; animation: fadeIn 0.4s ease; }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.view h1 { 
+    font-size: 2.2rem; 
+    font-weight: 800; 
+    margin-bottom: 30px; 
     letter-spacing: -1px;
 }
 
-.form-group {
-    text-align: left;
-    margin-bottom: 20px;
+/* --- 5. GRILLE & CARTES (Netteté absolue) --- */
+.dashboard-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
+    gap: 24px; 
 }
 
-.form-group label {
-    display: block;
+.card { 
+    background: var(--card-bg); 
+    border-radius: 20px; 
+    border: 1px solid var(--border); 
+    padding: 24px; 
+    transition: 0.3s;
+}
+
+.card:hover { border-color: var(--accent); }
+
+.card h3 { 
+    font-size: 0.75rem; 
+    text-transform: uppercase; 
+    color: var(--text-muted); 
+    margin-bottom: 20px;
     font-weight: 700;
-    font-size: 0.9rem;
+    letter-spacing: 1px;
+}
+
+/* --- 6. FORMULAIRES & PLAQUE --- */
+input, select, textarea { 
+    width: 100%;
+    background: rgba(255, 255, 255, 0.03); 
+    border: 1px solid var(--border); 
+    padding: 14px 16px; 
+    border-radius: 12px; 
+    font-size: 0.95rem;
+    margin-bottom: 15px;
+    color: white;
+}
+
+input:focus { 
+    outline: none; 
+    border-color: var(--accent); 
+    background: rgba(255, 255, 255, 0.06); 
+}
+
+.plate-style {
+    font-weight: 900;
+    text-align: center;
+    border: none !important;
+    font-size: 2.2rem !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    text-transform: uppercase;
+    font-family: 'SF Mono', monospace;
+    letter-spacing: 4px;
+    border-radius: 10px !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+/* --- 7. MODALE (Centrage absolu respecté) --- */
+.modal-overlay {
+    display: none; 
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.8); 
+    z-index: 2000;
+}
+
+#recap-modal {
+    display: none; 
+    position: fixed !important;
+    top: 50% !important; left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 90%; max-width: 500px;
+    background: #1a1a1e;
+    padding: 30px;
+    border-radius: 28px;
+    z-index: 2001;
+    border: 1px solid var(--border);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+}
+
+/* --- 8. BARRE IA (Placement exact conservé & Fixé) --- */
+.ia-status-bar { 
+    position: fixed;
+    bottom: 20px; 
+    left: calc(var(--sidebar-width) + 20px); 
+    right: 20px; 
+    height: 90px;
+    
+    background: rgba(15, 15, 18, 0.85); 
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    
+    border-radius: 20px; 
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 30px;
+    border: 1px solid var(--border);
+    
+    /* FIX CRITIQUE : */
+    z-index: 500; /* Plus bas que la sidebar */
+    pointer-events: auto; /* Permet le clic sur la barre elle-même */
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+}
+
+.profit-value {
+    color: var(--success);
+    font-size: 1.6rem;
+    font-weight: 800;
+}
+
+.ia-central-brain {
+    padding: 0 40px;
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    height: 60%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* --- 9. BOUTONS TRANSPARENTS (iOS 26 Style) --- */
+.btn-orange { 
+    background: var(--accent); 
+    color: white;
+    border: none;
+    font-weight: 800;
+    padding: 16px; 
+    border-radius: 14px; 
+    cursor: pointer;
+}
+
+.pill-btn {
+    padding: 10px 22px;
+    border-radius: 500px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.02); /* Transparent Crystal */
+    color: white;
+    font-weight: 700;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.pill-btn:hover { background: rgba(255, 255, 255, 0.05); }
+
+.pill-btn.active.btn-ok { background: var(--success); color: white; border-color: var(--success); }
+.pill-btn.active.btn-ko { background: var(--danger); color: white; border-color: var(--danger); }
+
+.check-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+}
+
+/* --- 10. SCROLLBAR --- */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+.input-label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 5px;
+    margin-top: 10px;
+}
+#repairs {
+    border: 2px solid var(--accent) !important;
+    background: rgba(99, 102, 241, 0.05) !important;
+    color: var(--accent) !important;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+.nego-step {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 15px;
+    text-align: center;
+}
+
+.nego-step h4 {
+    font-size: 0.8rem;
+    color: var(--text-muted);
     margin-bottom: 8px;
 }
 
-.v-login-box input {
-    width: 100%;
-    padding: 15px;
-    background-color: #2a2a2a;
-    border: 1px solid #727272;
-    border-radius: 5px;
-    color: white;
-    font-size: 1rem;
-    transition: border-color 0.3s;
-}
-
-.v-login-box input:focus {
-    border-color: white;
-    outline: none;
-}
-
-.v-btn-auth {
-    width: 100%;
-    padding: 15px;
-    background-color: var(--sp-green);
-    color: black;
-    border-radius: 500px;
-    border: none;
+.nego-step .price {
+    font-size: 1.2rem;
     font-weight: 800;
-    font-size: 1.1rem;
-    cursor: pointer;
-    margin-top: 15px;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 10px;
 }
 
-.social-divider {
-    margin: 30px 0;
-    color: #727272;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    font-size: 0.85rem;
-    font-weight: 600;
+.nego-step p {
+    font-size: 0.75rem;
+    line-height: 1.4;
+    font-style: italic;
+    color: var(--text-main);
+    opacity: 0.9;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+}
+#ad-output {
+    background: #000000 !important;
+    color: #00ff41 !important; /* Vert Matrix/Terminal pour la clarté */
+    font-size: 0.85rem !important;
+    line-height: 1.6;
+    border: 1px solid var(--border);
+    resize: none;
+}
+.stat-box {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.social-divider::before, .social-divider::after {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background: #333;
+.stat-box small {
+    display: block;
+    color: #888;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
 }
 
-.social-btn {
+.dark-card h3 {
+    margin-bottom: 10px;
+}
+.view {
+    display: none; /* Cache tout par défaut */
+}
+
+.view.active {
+    display: block !important; /* Affiche uniquement l'onglet actif */
+}
+.modern-input {
     width: 100%;
-    padding: 13px;
-    background: transparent;
-    border: 1px solid #727272;
+    padding: 10px;
+    background: #252525;
+    border: 1px solid #444;
     color: white;
-    border-radius: 500px;
-    font-weight: 700;
-    margin-bottom: 12px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-button, .v-btn-auth, .v-btn-login {
-    position: relative !important;
-    z-index: 10000 !important;
-    pointer-events: auto !important;
-    cursor: pointer !important;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    margin-top: 5px;
 }
 
-/* --- HEADER AUTH GROUP --- */
-.header-auth-group {
+.form-group label {
+    font-size: 0.7rem;
+    color: var(--accent);
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+
+}
+
+/* Supprime le vide noir et remonte le contenu */
+main.v-main {
     display: flex;
-    gap: 15px;
+    flex-direction: column;
+    justify-content: flex-start !important; /* Force l'alignement en haut */
     align-items: center;
+    padding-top: 10px !important; /* Réduit l'espace en haut */
+    min-height: 100vh;
+    background: #0a0a0a; /* Assure un fond uni */
 }
 
-.v-btn-login-outline {
-    background: transparent;
+/* Ajuste les conteneurs de vue */
+.view {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Style compact pour la section Analyse */
+.analysis-input {
+    width: 100%;
+    padding: 8px 12px; /* Plus petit */
+    margin-bottom: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
     color: white;
-    border: 1px solid #333;
-    padding: 10px 20px;
-    border-radius: 500px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.v-btn-login-outline:hover {
-    border-color: white;
-}
-
-.v-btn-signup-solid {
-    background-color: var(--sp-green);
-    color: black;
-    padding: 10px 20px;
-    border-radius: 500px;
-    font-weight: 700;
-    border: none;
-    cursor: pointer;
-    transition: transform 0.2s;
-}
-
-.v-btn-signup-solid:hover {
-    transform: scale(1.05);
-}
-
-/* --- PROMPT INSCRIPTION DANS LOGIN --- */
-.signup-prompt {
-    margin-top: 20px;
-    color: var(--sp-text-muted);
     font-size: 0.9rem;
 }
 
-.signup-prompt span {
-    color: var(--sp-green);
-    font-weight: 700;
+.btn-analysis {
+    width: 100%;
+    padding: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.contact-card .analysis-input {
+    height: 32px; /* Très compact */
+    font-size: 12px;
+    padding: 0 10px;
+    margin-bottom: 5px;
+}
+
+.profile-btn-container {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    z-index: 1000;
+}
+
+#btn-profil {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    padding: 8px 15px;
+    border-radius: 5px;
     cursor: pointer;
-    text-decoration: underline;
-    margin-left: 5px;
+    transition: 0.3s;
 }
 
-.signup-prompt span:hover {
+#btn-profil:hover {
+    border-color: #f97316;
+}
+
+.sidebar .logo:hover {
+    transform: scale(1.05);
+    transition: transform 0.2s ease;
+    filter: brightness(1.2);
+}
+
+#marge-val, #ia-verdict {
+    transition: all 0.3s ease;
+}
+
+.ia-status-bar {
+    font-family: 'Inter', sans-serif;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stat-group {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+#ia-verdict {
+    text-shadow: 0 0 10px rgba(255,255,255,0.2);
+}
+
+/* Animation de la jauge */
+#confidence-level {
+    box-shadow: 0 0 15px currentColor;
+    border-radius: 4px;
+}
+
+.ia-status-bar {
+    position: fixed;
+    bottom: 20px; /* Décollé du bas comme sur l'image */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 95%;
+    max-width: 1200px;
+    height: 75px;
+    background: rgba(10, 10, 15, 0.95);
+    backdrop-filter: blur(20px);
+    border: 2.5px solid #7c4dff; /* Bordure violette néon */
+    border-radius: 50px; /* Forme capsule */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px;
+    z-index: 9999;
+    box-shadow: 0 0 30px rgba(124, 77, 255, 0.3);
     color: white;
+    font-family: 'Inter', sans-serif;
 }
-.social-btn:hover { background: rgba(255,255,255,0.05); }
 
+.stat-group { display: flex; flex-direction: column; min-width: 160px; }
+.stat-group.align-right { text-align: right; }
+
+.stat-group small {
+    letter-spacing: 1px;
+    color: #888;
+    font-weight: 700;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+}
+
+/* 1. CONTENEUR PRINCIPAL (LA CAPSULE) */
+.ia-status-bar {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%); /* Centrage horizontal parfait */
+    
+    width: 95%;
+    max-width: 1200px;
+    height: 80px;
+    
+    /* Design & Couleurs */
+    background: rgba(10, 10, 15, 0.95);
+    backdrop-filter: blur(15px);
+    border: 2px solid #7c4dff; /* La bordure violette de l'image */
+    border-radius: 50px;       /* Forme capsule arrondie */
+    
+    /* Alignement interne */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px;
+    
+    /* Effets visuels */
+    box-shadow: 0 0 25px rgba(124, 77, 255, 0.4), inset 0 0 10px rgba(124, 77, 255, 0.2);
+    z-index: 9999;
+    box-sizing: border-box;
+}
+
+/* 2. VALEURS ET TEXTES */
+.ia-value { 
+    font-weight: 900; 
+    font-size: 1.6rem; 
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.currency { 
+    font-size: 0.9rem; 
+    font-weight: 700;
+    opacity: 0.8;
+}
+
+/* 3. BADGE CENTRAL (ANALYSE EN COURS) */
+.ia-central-badge {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 8px 25px 8px 10px;
+    border-radius: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    gap: 15px;
+    height: 50px;
+}
+
+#ia-verdict {
+    font-weight: 800;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #fff;
+    white-space: nowrap;
+}
+
+/* 4. CERCLE DE PROGRESSION IA */
+.progress-ring-container { 
+    position: relative; 
+    width: 42px; 
+    height: 42px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+}
+
+.progress-ring-container svg { 
+    transform: rotate(-90deg); 
+    width: 42px;
+    height: 42px;
+}
+
+.ring-bg { 
+    fill: none; 
+    stroke: rgba(255, 255, 255, 0.1); 
+    stroke-width: 4; 
+}
+
+.ring-fill {
+    fill: none;
+    stroke: #22c55e; /* Couleur par défaut (vert) */
+    stroke-width: 4;
+    stroke-dasharray: 100.53; /* Circonférence : 2 * π * 16 */
+    stroke-dashoffset: 100.53; 
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease;
+}
+
+#score-percent { 
+    position: absolute; 
+    font-size: 0.65rem; 
+    font-weight: 900; 
+    color: white; 
+}
+
+
+/* --- ADAPTATION MOBILE (Remplacement du bouton par la barre basse) --- */
+/* 1. RÉGLAGE POUR ORDINATEUR (Normal) */
+.main-content { margin-left: 260px; }
+
+/* 2. RÉGLAGE POUR TABLETTE (Moyen) */
+@media (max-width: 1024px) {
+    .main-content { margin-left: 80px; padding: 20px; }
+    .sidebar { width: 80px; }
+    .sidebar span { display: none; } /* On cache le texte, on garde les icônes */
+}
+
+/* 3. RÉGLAGE POUR TÉLÉPHONE (Petit) */
+@media (max-width: 768px) {
+    /* On cache la sidebar car elle prend trop de place */
+    .sidebar { display: none !important; } 
+    
+    /* Le contenu prend toute la largeur */
+    .main-content { 
+        margin-left: 0 !important; 
+        padding: 15px !important; 
+        width: 100% !important; 
+    }
+
+    /* On réduit la taille globale pour que tout rentre */
+    body { font-size: 14px; }
+    
+    .dashboard-grid {
+        display: flex;
+        flex-direction: column; /* On empile les éléments les uns sous les autres */
+        gap: 10px;
+    }
+
+    .stat-card {
+        width: 100% !important;
+        padding: 15px !important;
+    }
+}
+
+
+/* --- STYLE POUR L'ÉCRAN --- */
+#print-zone-export {
+    display: none; /* Cache le rapport sur ton dashboard noir */
+}
