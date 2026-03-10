@@ -20,7 +20,7 @@
         <div class="logo" 
              onclick="switchTab('pilotage', document.querySelector('.nav-item'));" 
              style="cursor: pointer; margin: 0; transition: transform 0.2s;">
-            <i data-lucide="zap"></i> OX<span>PRO</span>
+            <i data-lucide="zap"></i> Lucrum<span>PRO</span>
         </div>
 
         <div class="profile-trigger" 
@@ -35,7 +35,7 @@
                 align-items: center; 
                 justify-content: center; 
                 cursor: pointer; 
-                box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+                bLucrum-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
                 transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
              ">
             <i data-lucide="user" style="color: white; width: 20px;"></i>
@@ -63,7 +63,7 @@
     <style>
         .profile-trigger:hover {
             transform: rotate(5deg) scale(1.1);
-            box-shadow: 0 6px 15px rgba(34, 197, 94, 0.3);
+            bLucrum-shadow: 0 6px 15px rgba(34, 197, 94, 0.3);
         }
         .profile-trigger:active {
             transform: scale(0.9);
@@ -157,7 +157,7 @@
             </div>
             <h2 id="kpi-marge" style="font-size:2rem; margin:15px 0;">0 €</h2>
             <div style="width:100%; height:8px; background:rgba(255,255,255,0.05); border-radius:10px; margin-bottom:8px;">
-                <div id="dash-progress-bar" style="width:0%; height:100%; background:var(--accent); border-radius:10px; box-shadow: 0 0 15px var(--accent); transition: width 1.5s ease;"></div>
+                <div id="dash-progress-bar" style="width:0%; height:100%; background:var(--accent); border-radius:10px; bLucrum-shadow: 0 0 15px var(--accent); transition: width 1.5s ease;"></div>
             </div>
             <div id="dash-obj-status" style="font-size:0.7rem; color:#888; font-weight:bold;"></div>
         </div>
@@ -681,7 +681,7 @@ N'hésitez pas à nous contacter pour plus d'informations ou pour convenir d'un 
                 <i data-lucide="file-spreadsheet"></i> TÉLÉCHARGER LE RAPPORT
                  </button>
           <button class="btn-orange" style="width:100%; margin-top:10px; display:flex; align-items:center; justify-content:center; gap:10px;" onclick="window.generateProReport()">
-    <i data-lucide="file-check"></i> GÉNÉRER RAPPORT OX PRO
+    <i data-lucide="file-check"></i> GÉNÉRER RAPPORT Lucrum PRO
 </button>
         </div>
 
@@ -867,7 +867,7 @@ N'hésitez pas à nous contacter pour plus d'informations ou pour convenir d'un 
                     <input type="file" id="logo-upload" hidden onchange="window.handleLogoUpload(event)">
                 </div>
                 <h3 id="display-biz-name" style="margin:0;">Nom de l'enseigne</h3>
-                <p style="font-size:0.8rem; color:#666;">ID Client: #OX-8829</p>
+                <p style="font-size:0.8rem; color:#666;">ID Client: #Lucrum-8829</p>
             </div>
 
             <div class="card" style="border-top: 3px solid #ff4d4d40;">
@@ -1008,7 +1008,7 @@ N'hésitez pas à nous contacter pour plus d'informations ou pour convenir d'un 
 </footer>
 
 <div id="recap-overlay" class="modal-overlay" onclick="closeRecap()"></div>
-<div id="recap-modal" style="border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+<div id="recap-modal" style="border-radius: 20px; bLucrum-shadow: 0 20px 50px rgba(0,0,0,0.5);">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
         <h2 id="recap-model" style="font-weight: 800; margin: 0; font-size: 1.5rem; color: #fff;">Détails</h2>
         <button onclick="closeRecap()" style="background:none; border:none; font-size: 2rem; cursor:pointer; color: #666;">&times;</button>
@@ -1036,3 +1036,4 @@ N'hésitez pas à nous contacter pour plus d'informations ou pour convenir d'un 
     </script>
 </body>
 </html>
+
